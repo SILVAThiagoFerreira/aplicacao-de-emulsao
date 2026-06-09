@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { createRequire } from 'node:module';
+import admin from 'firebase-admin';
 import XLSX from 'xlsx';
 
 const require = createRequire(import.meta.url);
@@ -10,6 +11,7 @@ const sampleDashboard = require('../web/src/data/sampleDashboard.json');
 const SOURCE_URL = process.env.SOURCE_URL || 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf';
 const SOURCE_FILE = process.env.SOURCE_FILE || '';
 const outputPath = path.resolve('web/public/dashboard-cache.json');
+const firestoreOutputPath = process.env.FIRESTORE_OUTPUT_PATH || 'dashboard/cache';
 
 let sourceState = 'live';
 let records = [];
@@ -37,6 +39,8 @@ const dashboard = {
 
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await fs.writeFile(outputPath, `${JSON.stringify(dashboard, null, 2)}\n`, 'utf8');
+
+await writeToFirestore(dashboard, firestoreOutputPath);
 
 console.log(`Dashboard cache atualizado: ${records.length} registros em ${outputPath}`);
 
@@ -172,4 +176,23 @@ function toNumber(value) {
     .replace(/[^0-9.-]/g, '');
   const number = Number(normalized);
   return Number.isFinite(number) ? number : 0;
+}
+
+async function writeToFirestore(dashboard, docPath) {
+  const credentialsJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '';
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'aplicacao-de-emulsao';
+  if (!credentialsJson) {
+    console.warn('FIREBASE_SERVICE_ACCOUNT_JSON ausente; pulando gravação no Firestore.');
+    return;
+  }
+  if (!admin.apps.length) {
+    const credential = admin.credential.cert(JSON.parse(credentialsJson));
+    admin.initializeApp({ credential, projectId });
+  }
+  const db = admin.firestore();
+  await db.doc(docPath).set({
+    ...dashboard,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedBy: 'github-actions'
+  }, { merge: false });
 }

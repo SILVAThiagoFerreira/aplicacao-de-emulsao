@@ -7,10 +7,10 @@ A aplicação foi montada a partir do material zipado, mantendo a lógica do pai
 ## Arquitetura
 
 - **Front-end:** React + Vite + Recharts, pronto para GitHub Pages.
-- **Banco:** cache estático gerado a partir da planilha e publicado no GitHub Pages.
-- **Login admin:** preservado apenas para a versão Firebase legada.
+- **Banco:** Firestore com `dashboard/cache` como JSON online.
+- **Login admin:** token secreto validado nas Cloud Functions.
 - **Monitoramento da planilha:** GitHub Actions a cada 5 minutos.
-- **Email de falha:** não usado no fluxo sem custo.
+- **Email de falha:** SendGrid via Cloud Functions, opcional.
 - **Planilha original:** OneDrive/SharePoint, configurável no painel admin.
 
 ## Estrutura principal
@@ -81,7 +81,7 @@ firebase use seu-projeto
 firebase deploy --only functions,firestore:rules,firestore:indexes
 ```
 
-No fluxo sem custo, a atualização vem do GitHub Actions, que baixa a planilha e publica `web/public/dashboard-cache.json` a cada 5 minutos.
+No fluxo online, o GitHub Actions baixa a planilha, grava `dashboard/cache` no Firestore e o front lê esse documento em tempo real.
 
 ## Email de alerta
 
@@ -129,7 +129,7 @@ VITE_FIREBASE_APP_ID
 
 ## Observação importante
 
-GitHub Pages é hospedagem estática. Neste modo, o GitHub Actions faz a leitura da planilha fora do navegador, gera o cache e publica o JSON final no Pages. Isso evita CORS do OneDrive/SharePoint e não exige Firebase Functions.
+GitHub Pages hospeda só a interface. O estado real do dashboard fica no Firestore em `dashboard/cache`. O workflow do GitHub Actions atualiza esse documento online a cada 5 minutos.
 
 ## Atualização adicionada
 
@@ -177,6 +177,16 @@ firebase login
 firebase use aplicacao-de-emulsao
 firebase deploy --only functions,firestore:rules,firestore:indexes
 ```
+
+## Secret do GitHub Actions
+
+Para o workflow gravar no Firestore, cadastre em **Settings > Secrets and variables > Actions**:
+
+```text
+FIREBASE_SERVICE_ACCOUNT_JSON
+```
+
+Esse secret deve conter o JSON completo de uma service account com permissão de escrita no Firestore do projeto `aplicacao-de-emulsao`.
 
 ## Pacote pronto para Codex
 

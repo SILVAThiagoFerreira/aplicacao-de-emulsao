@@ -41,6 +41,8 @@ jobs:
         env:
           SOURCE_FILE: workbook.xlsx
           SOURCE_URL: https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_PROJECT_ID: aplicacao-de-emulsao
       - name: Build web app
         run: npm --workspace web run build
       - name: Setup Pages

@@ -24,7 +24,9 @@ import {
   UploadCloud
 } from 'lucide-react';
 import sampleDashboard from './data/sampleDashboard.json';
-import { firebaseReady } from './lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { db, firebaseReady, functions } from './lib/firebase';
 import {
   applyFilters,
   buildDailyTable,
@@ -68,25 +70,19 @@ function App() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    const loadPublishedCache = async () => {
-      try {
-        const response = await fetch('/dashboard-cache.json', { cache: 'no-store' });
-        if (!response.ok) return;
-        const data = await response.json();
-        if (!active || !Array.isArray(data?.records)) return;
-        setCache({ ...data, records: data.records });
-        setOnline(true);
-      } catch (_) {
-        setOnline(false);
-      }
-    };
-    loadPublishedCache();
-    const interval = window.setInterval(loadPublishedCache, 5 * 60 * 1000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
+    if (!firebaseReady || !db) return undefined;
+    const unsubscribers = [
+      onSnapshot(doc(db, 'dashboard', 'cache'), (snapshot) => {
+        if (snapshot.exists()) setCache({ ...snapshot.data(), records: snapshot.data().records || [] });
+      }, () => setOnline(false)),
+      onSnapshot(doc(db, 'monitor', 'status'), (snapshot) => {
+        if (snapshot.exists()) setStatus(snapshot.data());
+      }),
+      onSnapshot(doc(db, 'app', 'config'), (snapshot) => {
+        if (snapshot.exists()) setConfig((old) => ({ ...old, ...snapshot.data() }));
+      })
+    ];
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, []);
 
   return (
@@ -111,7 +107,7 @@ function Topbar() {
         <img src="assets/Enaex Brasil - White.png" alt="Enaex Brasil" />
       </div>
       <h1>Emulsão</h1>
-        <div className="topbarRight">Atualização automática a cada 5 min</div>
+      <div className="topbarRight">Atualização automática online</div>
     </header>
   );
 }
@@ -424,15 +420,19 @@ function AdminPage({ config, status, cache }) {
     setBusy(true);
     setMessage('');
     try {
-      const updateConfig = httpsCallable(functions, 'updateConfig');
-      await updateConfig({
-        adminToken,
-        sourceUrl: form.sourceUrl.trim(),
-        alertEmail: form.alertEmail.trim(),
-        alertFrom: form.alertFrom.trim(),
-        refreshSeconds: Number(form.refreshSeconds) || 120
-      });
-      setMessage('Configuração salva.');
+      if (functions) {
+        const updateConfig = httpsCallable(functions, 'updateConfig');
+        await updateConfig({
+          adminToken,
+          sourceUrl: form.sourceUrl.trim(),
+          alertEmail: form.alertEmail.trim(),
+          alertFrom: form.alertFrom.trim(),
+          refreshSeconds: Number(form.refreshSeconds) || 120
+        });
+        setMessage('Configuração salva.');
+      } else {
+        setMessage('Firebase Functions não configurado nesta sessão.');
+      }
     } catch (error) {
       setMessage(`Não foi possível salvar: ${error.message}`);
     } finally {
@@ -444,9 +444,13 @@ function AdminPage({ config, status, cache }) {
     setBusy(true);
     setMessage('');
     try {
-      const refreshWorkbook = httpsCallable(functions, 'refreshWorkbook');
-      const result = await refreshWorkbook({ manual: true, adminToken });
-      setMessage(`Atualização executada: ${result.data?.records || 0} registros.`);
+      if (functions) {
+        const refreshWorkbook = httpsCallable(functions, 'refreshWorkbook');
+        const result = await refreshWorkbook({ manual: true, adminToken });
+        setMessage(`Atualização executada: ${result.data?.records || 0} registros.`);
+      } else {
+        setMessage('Firebase Functions não configurado nesta sessão.');
+      }
     } catch (error) {
       setMessage(`Falha ao atualizar: ${error.message}`);
     } finally {
