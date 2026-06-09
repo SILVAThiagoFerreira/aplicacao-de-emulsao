@@ -10,7 +10,8 @@
     "preview": "npm --workspace web run preview",
     "functions:serve": "npm --workspace functions run serve",
     "functions:deploy": "firebase deploy --only functions,firestore:rules,firestore:indexes",
-    "seed": "node scripts/seed-firestore.mjs"
+    "seed": "node scripts/seed-firestore.mjs",
+    "refresh:cache": "node scripts/update-dashboard-cache.mjs"
   },
   "dependencies": {
     "firebase-admin": "^13.4.0"

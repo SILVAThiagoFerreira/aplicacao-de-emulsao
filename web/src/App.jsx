@@ -23,10 +23,8 @@ import {
   ShieldCheck,
   UploadCloud
 } from 'lucide-react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import sampleDashboard from './data/sampleDashboard.json';
-import { db, firebaseReady, functions } from './lib/firebase';
+import { firebaseReady } from './lib/firebase';
 import {
   applyFilters,
   buildDailyTable,
@@ -70,19 +68,25 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!firebaseReady || !db) return undefined;
-    const unsubscribers = [
-      onSnapshot(doc(db, 'dashboard', 'cache'), (snapshot) => {
-        if (snapshot.exists()) setCache({ ...snapshot.data(), records: snapshot.data().records || [] });
-      }, () => setOnline(false)),
-      onSnapshot(doc(db, 'monitor', 'status'), (snapshot) => {
-        if (snapshot.exists()) setStatus(snapshot.data());
-      }),
-      onSnapshot(doc(db, 'app', 'config'), (snapshot) => {
-        if (snapshot.exists()) setConfig((old) => ({ ...old, ...snapshot.data() }));
-      })
-    ];
-    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+    let active = true;
+    const loadPublishedCache = async () => {
+      try {
+        const response = await fetch('/dashboard-cache.json', { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active || !Array.isArray(data?.records)) return;
+        setCache({ ...data, records: data.records });
+        setOnline(true);
+      } catch (_) {
+        setOnline(false);
+      }
+    };
+    loadPublishedCache();
+    const interval = window.setInterval(loadPublishedCache, 5 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -107,7 +111,7 @@ function Topbar() {
         <img src="assets/Enaex Brasil - White.png" alt="Enaex Brasil" />
       </div>
       <h1>Emulsão</h1>
-      <div className="topbarRight">Atualização automática a cada 2 min</div>
+        <div className="topbarRight">Atualização automática a cada 5 min</div>
     </header>
   );
 }

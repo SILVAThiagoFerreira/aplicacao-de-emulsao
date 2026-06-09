@@ -7,10 +7,10 @@ A aplicação foi montada a partir do material zipado, mantendo a lógica do pai
 ## Arquitetura
 
 - **Front-end:** React + Vite + Recharts, pronto para GitHub Pages.
-- **Banco:** Firebase Firestore.
-- **Login admin:** token secreto validado nas Cloud Functions.
-- **Monitoramento da planilha:** Firebase Cloud Functions.
-- **Email de falha:** SendGrid via Cloud Functions.
+- **Banco:** cache estático gerado a partir da planilha e publicado no GitHub Pages.
+- **Login admin:** preservado apenas para a versão Firebase legada.
+- **Monitoramento da planilha:** GitHub Actions a cada 5 minutos.
+- **Email de falha:** não usado no fluxo sem custo.
 - **Planilha original:** OneDrive/SharePoint, configurável no painel admin.
 
 ## Estrutura principal
@@ -81,7 +81,7 @@ firebase use seu-projeto
 firebase deploy --only functions,firestore:rules,firestore:indexes
 ```
 
-A função programada roda a cada 2 minutos e atualiza `dashboard/cache`.
+No fluxo sem custo, a atualização vem do GitHub Actions, que baixa a planilha e publica `web/public/dashboard-cache.json` a cada 5 minutos.
 
 ## Email de alerta
 
@@ -108,7 +108,7 @@ O link inicial configurado é:
 https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAU30PI_479TJVck9e61RHSQ?e=x49ktL
 ```
 
-O sistema tenta baixar o arquivo adicionando `download=1`. Se o SharePoint exigir login ou bloquear o download externo, a função registrará falha em `monitor/status` e enviará email de alerta.
+O sistema tenta baixar o arquivo adicionando `download=1`. Se o SharePoint exigir login ou bloquear o download externo, o workflow do GitHub Actions falhará e o Pages continuará servindo o último cache publicado.
 
 ## Publicar no GitHub Pages
 
@@ -129,7 +129,7 @@ VITE_FIREBASE_APP_ID
 
 ## Observação importante
 
-GitHub Pages é hospedagem estática. Por isso, a leitura confiável da planilha, o cache e o envio de email ficam nas Cloud Functions do Firebase. Isso evita problema de CORS do OneDrive/SharePoint e impede exposição de credenciais no navegador.
+GitHub Pages é hospedagem estática. Neste modo, o GitHub Actions faz a leitura da planilha fora do navegador, gera o cache e publica o JSON final no Pages. Isso evita CORS do OneDrive/SharePoint e não exige Firebase Functions.
 
 ## Atualização adicionada
 
