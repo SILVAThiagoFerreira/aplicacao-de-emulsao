@@ -1,0 +1,57 @@
+name: Deploy Dashboard to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Build web app
+        run: npm --workspace web run build
+        env:
+          VITE_FIREBASE_API_KEY: AIzaSyAPikdmfPWILjPcfpOb7ZNjqkrgcTobG4s
+          VITE_FIREBASE_AUTH_DOMAIN: aplicacao-de-emulsao.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: aplicacao-de-emulsao
+          VITE_FIREBASE_STORAGE_BUCKET: aplicacao-de-emulsao.firebasestorage.app
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "594699607402"
+          VITE_FIREBASE_APP_ID: 1:594699607402:web:d8b4b5015bc02e90dbd913
+          VITE_FIREBASE_MEASUREMENT_ID: G-S85JJRWHK1
+          VITE_FUNCTIONS_REGION: southamerica-east1
+          VITE_ADMIN_EMAILS: thiago.ferreira@enaex.com
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

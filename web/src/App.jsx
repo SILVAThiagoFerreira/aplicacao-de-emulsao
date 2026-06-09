@@ -41,6 +41,17 @@ import { formatDate, formatKg, formatMil, monthNames } from './lib/format';
 
 const DEFAULT_SOURCE = 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBNfcEnfmS4RZlkGt3BEY2DAQtYi-xgHqm5mXnZOk9s8EM?e=p2wUE0';
 
+function getCurrentMonthRange() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const pad = (value) => String(value).padStart(2, '0');
+  const start = `${year}-${month}-01`;
+  const lastDay = new Date(year, now.getMonth() + 1, 0);
+  const end = `${lastDay.getFullYear()}-${pad(lastDay.getMonth() + 1)}-${pad(lastDay.getDate())}`;
+  return { start, end };
+}
+
 function App() {
   const [route, setRoute] = useState(() => window.location.hash || '#/');
   const [cache, setCache] = useState(sampleDashboard);
@@ -124,15 +135,14 @@ function Dashboard({ cache, status, config }) {
     operador: 'Todos',
     year: 'Todos',
     month: 'Todos',
-    startDate: '',
-    endDate: ''
+    ...getCurrentMonthRange()
   });
 
   useEffect(() => {
     setFilters((old) => ({
       ...old,
-      startDate: old.startDate || dateRange.start,
-      endDate: old.endDate || dateRange.end
+      startDate: old.startDate || getCurrentMonthRange().start,
+      endDate: old.endDate || getCurrentMonthRange().end
     }));
   }, [dateRange.start, dateRange.end]);
 
