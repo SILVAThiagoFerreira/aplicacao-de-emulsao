@@ -105,7 +105,7 @@ Também é possível editar o destinatário pelo painel admin.
 O link inicial configurado é:
 
 ```text
-https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBNfcEnfmS4RZlkGt3BEY2DAQtYi-xgHqm5mXnZOk9s8EM?e=p2wUE0
+https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAU30PI_479TJVck9e61RHSQ?e=x49ktL
 ```
 
 O sistema tenta baixar o arquivo adicionando `download=1`. Se o SharePoint exigir login ou bloquear o download externo, a função registrará falha em `monitor/status` e enviará email de alerta.

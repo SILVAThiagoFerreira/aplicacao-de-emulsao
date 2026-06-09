@@ -13,7 +13,7 @@ const db = admin.firestore();
 const SENDGRID_API_KEY = defineSecret('SENDGRID_API_KEY');
 const SENDGRID_FROM = defineSecret('SENDGRID_FROM');
 const ADMIN_PANEL_TOKEN = defineSecret('ADMIN_PANEL_TOKEN');
-const DEFAULT_SOURCE = 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBNfcEnfmS4RZlkGt3BEY2DAQtYi-xgHqm5mXnZOk9s8EM?e=p2wUE0';
+const DEFAULT_SOURCE = 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAU30PI_479TJVck9e61RHSQ?e=x49ktL';
 const DEFAULT_ALERT_EMAIL = 'thiago.ferreira@enaex.com';
 
 exports.refreshWorkbook = onCall({ secrets: [SENDGRID_API_KEY, SENDGRID_FROM, ADMIN_PANEL_TOKEN] }, async (request) => {
