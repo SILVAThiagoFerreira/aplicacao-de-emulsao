@@ -1,0 +1,34 @@
+Você é o Codex trabalhando neste repositório.
+
+O usuário não tem acesso ao Firebase Authentication. Portanto, não use Firebase Auth.
+
+Objetivo:
+Validar e finalizar o dashboard de aplicação de emulsão com GitHub Pages, Firestore e Cloud Functions.
+
+Arquitetura:
+- Front-end: React + Vite + Recharts
+- Banco: Firestore
+- Backend: Firebase Cloud Functions
+- Admin: token secreto `ADMIN_PANEL_TOKEN` via Firebase Functions Secret Manager
+- Atualização: a cada 2 minutos
+- Email de alerta: thiago.ferreira@enaex.com
+
+Tarefas:
+1. Rode `npm install`.
+2. Rode `npm run build`.
+3. Corrija erros de build.
+4. Não adicione Firebase Authentication.
+5. Mantenha as gravações administrativas passando por Cloud Functions.
+6. Não permita gravação direta no Firestore pelo browser.
+7. Preserve o gráfico “EMULSÃO: Aplicação Dia a Dia”.
+8. Não coloque secrets no repositório.
+9. Ao final, informe os arquivos alterados.
+
+Critérios de aceite:
+- `npm run build` passa.
+- Dashboard abre com dados de amostra se não houver cache.
+- Firestore permite leitura pública de `dashboard/cache`, `monitor/status` e `app/config`.
+- Firestore bloqueia escrita direta do browser.
+- Function `updateConfig` salva o link usando token.
+- Function `refreshWorkbook` atualiza a planilha usando token.
+- Scheduler continua rodando a cada 2 minutos.

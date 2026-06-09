@@ -1,0 +1,21 @@
+{
+  "name": "emulsao-dashboard-firebase",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Dashboard de aplicação de emulsão com GitHub Pages, Firebase Firestore e Cloud Functions.",
+  "workspaces": ["web", "functions"],
+  "scripts": {
+    "dev": "npm --workspace web run dev",
+    "build": "npm --workspace web run build",
+    "preview": "npm --workspace web run preview",
+    "functions:serve": "npm --workspace functions run serve",
+    "functions:deploy": "firebase deploy --only functions,firestore:rules,firestore:indexes",
+    "seed": "node scripts/seed-firestore.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.4.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^14.10.1"
+  }
+}
