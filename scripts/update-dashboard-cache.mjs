@@ -7,13 +7,14 @@ import XLSX from 'xlsx';
 const require = createRequire(import.meta.url);
 const sampleDashboard = require('../web/src/data/sampleDashboard.json');
 
-const SOURCE_URL = process.env.SOURCE_URL || 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAU30PI_479TJVck9e61RHSQ?e=x49ktL';
+const SOURCE_URL = process.env.SOURCE_URL || 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf';
+const SOURCE_FILE = process.env.SOURCE_FILE || '';
 const outputPath = path.resolve('web/public/dashboard-cache.json');
 
 let sourceState = 'live';
 let records = [];
 try {
-  const buffer = await fetchWorkbookBuffer(SOURCE_URL);
+  const buffer = SOURCE_FILE ? await fs.readFile(SOURCE_FILE) : await fetchWorkbookBuffer(SOURCE_URL);
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   records = parseWorkbook(workbook);
 } catch (error) {

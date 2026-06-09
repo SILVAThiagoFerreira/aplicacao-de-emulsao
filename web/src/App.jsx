@@ -37,7 +37,7 @@ import {
 } from './lib/aggregate';
 import { formatDate, formatKg, formatMil, monthNames } from './lib/format';
 
-const DEFAULT_SOURCE = 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAU30PI_479TJVck9e61RHSQ?e=x49ktL';
+const DEFAULT_SOURCE = 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf';
 
 function getCurrentMonthRange() {
   const now = new Date();

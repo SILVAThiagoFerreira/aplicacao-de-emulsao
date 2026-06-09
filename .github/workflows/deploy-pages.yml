@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,10 +29,18 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install
+      - name: Download workbook
+        shell: pwsh
+        run: |
+          $url = "https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf"
+          $out = "workbook.xlsx"
+          Invoke-WebRequest -Uri "$url&download=1" -MaximumRedirection 5 -TimeoutSec 120 -OutFile $out -UseBasicParsing
+          if (-not (Test-Path $out)) { throw "Workbook download failed." }
       - name: Refresh workbook cache
         run: node scripts/update-dashboard-cache.mjs
         env:
-          SOURCE_URL: https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAU30PI_479TJVck9e61RHSQ?e=x49ktL
+          SOURCE_FILE: workbook.xlsx
+          SOURCE_URL: https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf
       - name: Build web app
         run: npm --workspace web run build
       - name: Setup Pages
