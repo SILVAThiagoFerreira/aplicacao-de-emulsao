@@ -69,6 +69,9 @@ function readCell(row, index) {
 }
 
 function normalizeDate(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return excelSerialToDate(value);
+  }
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     return value.toISOString().slice(0, 10);
   }
@@ -84,6 +87,16 @@ function normalizeDate(value) {
     return parsed.toISOString().slice(0, 10);
   }
   return text.slice(0, 10);
+}
+
+function excelSerialToDate(serial) {
+  const excelEpoch = Date.UTC(1899, 11, 30);
+  const milliseconds = Math.round(serial * 24 * 60 * 60 * 1000);
+  const date = new Date(excelEpoch + milliseconds);
+  if (!Number.isNaN(date.getTime())) {
+    return date.toISOString().slice(0, 10);
+  }
+  return String(serial);
 }
 
 function toNumber(value) {
