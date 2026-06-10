@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 
 const projectId = process.env.FIREBASE_PROJECT_ID || 'aplicacao-de-emulsao';
-const sourceUrl = process.env.SOURCE_URL || 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAU30PI_479TJVck9e61RHSQ?e=x49ktL';
+const sourceUrl = process.env.SOURCE_URL || 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true';
 const alertEmail = process.env.ALERT_EMAIL || 'thiago.ferreira@enaex.com';
 const alertFrom = process.env.ALERT_FROM || '';
 

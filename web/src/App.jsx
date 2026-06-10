@@ -39,7 +39,7 @@ import {
 } from './lib/aggregate';
 import { formatDate, formatKg, formatMil, monthNames } from './lib/format';
 
-const DEFAULT_SOURCE = 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf';
+const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true';
 
 function getCurrentMonthRange() {
   const now = new Date();
@@ -255,6 +255,8 @@ function Dashboard({ cache, status, config }) {
 
 function StatusStrip({ cache, status, config, total }) {
   const failed = status?.state === 'error';
+  const sourceState = cache?.sourceState || 'live';
+  const isFallback = sourceState !== 'live';
   return (
     <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
       <div>
@@ -271,7 +273,11 @@ function StatusStrip({ cache, status, config, total }) {
       </div>
       <div className="statusMessage">
         {failed ? <AlertTriangle size={16} /> : <Database size={16} />}
-        {failed ? `Falha: ${status?.lastError || 'sem detalhe'}` : `Fonte: ${truncate(config?.sourceUrl || '', 52)}`}
+        {failed
+          ? `Falha: ${status?.lastError || 'sem detalhe'}`
+          : isFallback
+            ? `Cache em fallback: ${truncate(config?.sourceUrl || '', 52)}`
+            : `Fonte: ${truncate(config?.sourceUrl || '', 52)}`}
       </div>
     </div>
   );

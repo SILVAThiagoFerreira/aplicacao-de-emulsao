@@ -105,10 +105,10 @@ Também é possível editar o destinatário pelo painel admin.
 O link inicial configurado é:
 
 ```text
-https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf
+https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true
 ```
 
-O sistema tenta baixar o arquivo adicionando `download=1`. Se o SharePoint exigir login ou bloquear o download externo, o workflow do GitHub Actions falhará e o Pages continuará servindo o último cache publicado.
+O sistema tenta baixar o arquivo no formato `xlsx` usando exportação do Google Sheets. Se a planilha exigir login ou restringir o download, o workflow do GitHub Actions falhará e o Pages continuará servindo o último cache publicado.
 
 ## Publicar no GitHub Pages
 

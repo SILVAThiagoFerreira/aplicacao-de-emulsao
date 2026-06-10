@@ -4,7 +4,10 @@ node_modules
 .env.*.local
 web/dist
 functions/lib
+!functions/lib/
+!functions/lib/parseWorkbook.js
 .firebase
+firebase/*.json
 *.log
 .DS_Store
 serviceAccountKey.json

@@ -13,7 +13,7 @@ const db = admin.firestore();
 const SENDGRID_API_KEY = defineSecret('SENDGRID_API_KEY');
 const SENDGRID_FROM = defineSecret('SENDGRID_FROM');
 const ADMIN_PANEL_TOKEN = defineSecret('ADMIN_PANEL_TOKEN');
-const DEFAULT_SOURCE = 'https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAU30PI_479TJVck9e61RHSQ?e=x49ktL';
+const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true';
 const DEFAULT_ALERT_EMAIL = 'thiago.ferreira@enaex.com';
 
 exports.refreshWorkbook = onCall({ secrets: [SENDGRID_API_KEY, SENDGRID_FROM, ADMIN_PANEL_TOKEN] }, async (request) => {
@@ -141,6 +141,7 @@ function makeDownloadCandidates(sourceUrl) {
   const add = (candidate) => {
     if (candidate && !urls.includes(candidate)) urls.push(candidate);
   };
+  add(toGoogleSheetsExportUrl(sourceUrl));
   add(addDownloadParam(sourceUrl));
   add(sourceUrl);
   try {
@@ -152,6 +153,18 @@ function makeDownloadCandidates(sourceUrl) {
     // ignora URL inválida para manter erro original no fetch
   }
   return urls;
+}
+
+function toGoogleSheetsExportUrl(sourceUrl) {
+  try {
+    const url = new URL(sourceUrl);
+    if (!url.hostname.includes('docs.google.com')) return sourceUrl;
+    const match = url.pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match) return sourceUrl;
+    return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=xlsx`;
+  } catch (_) {
+    return sourceUrl;
+  }
 }
 
 function addDownloadParam(sourceUrl) {

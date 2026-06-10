@@ -32,15 +32,15 @@ jobs:
       - name: Download workbook
         shell: pwsh
         run: |
-          $url = "https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf"
+          $url = "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
           $out = "workbook.xlsx"
-          Invoke-WebRequest -Uri "$url&download=1" -MaximumRedirection 5 -TimeoutSec 120 -OutFile $out -UseBasicParsing
+          Invoke-WebRequest -Uri "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx" -MaximumRedirection 5 -TimeoutSec 120 -OutFile $out -UseBasicParsing
           if (-not (Test-Path $out)) { throw "Workbook download failed." }
       - name: Refresh workbook cache
         run: node scripts/update-dashboard-cache.mjs
         env:
           SOURCE_FILE: workbook.xlsx
-          SOURCE_URL: https://empresassk-my.sharepoint.com/:x:/g/personal/jose_queiroz_enaex_com/IQBOjdbs_K8tTKIXFm3nd_9LAUp1C8FrYgMroBbug01U3A4?e=whRgaf
+          SOURCE_URL: https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_PROJECT_ID: aplicacao-de-emulsao
       - name: Build web app
