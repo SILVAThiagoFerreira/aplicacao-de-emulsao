@@ -26,7 +26,7 @@ import {
 import sampleDashboard from './data/sampleDashboard.json';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, firebaseReady, functions } from './lib/firebase';
+import { db, firebaseReady, functions, functionsRegion } from './lib/firebase';
 import {
   applyFilters,
   buildDailyTable,
@@ -83,6 +83,36 @@ function App() {
       })
     ];
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timerId = null;
+
+    async function loadDashboard() {
+      try {
+        const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+        const region = functionsRegion;
+        const url = `https://${region}-${projectId}.cloudfunctions.net/getDashboard`;
+        const response = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        if (cancelled) return;
+        if (payload?.cache) setCache({ ...payload.cache, records: payload.cache.records || [] });
+        if (payload?.status) setStatus(payload.status);
+        if (payload?.config) setConfig((old) => ({ ...old, ...payload.config }));
+      } catch (_) {
+        // Mantém o listener do Firestore como fallback.
+      } finally {
+        if (!cancelled) timerId = window.setTimeout(loadDashboard, 120000);
+      }
+    }
+
+    loadDashboard();
+    return () => {
+      cancelled = true;
+      if (timerId) window.clearTimeout(timerId);
+    };
   }, []);
 
   return (

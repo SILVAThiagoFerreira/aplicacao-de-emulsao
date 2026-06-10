@@ -30,3 +30,5 @@ export const db = app ? getFirestore(app) : null;
 export const functions = app
   ? getFunctions(app, import.meta.env.VITE_FUNCTIONS_REGION || 'southamerica-east1')
   : null;
+
+export const functionsRegion = import.meta.env.VITE_FUNCTIONS_REGION || 'southamerica-east1';

@@ -2,6 +2,7 @@ const admin = require('firebase-admin');
 const sgMail = require('@sendgrid/mail');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onRequest } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const { parseWorkbookToDashboard } = require('./lib/parseWorkbook');
@@ -53,6 +54,24 @@ exports.scheduledWorkbookMonitor = onSchedule({
   secrets: [SENDGRID_API_KEY, SENDGRID_FROM]
 }, async () => {
   await runRefresh({ manualBy: 'scheduler' });
+});
+
+exports.getDashboard = onRequest({ cors: true }, async (_request, response) => {
+  try {
+    const [cacheSnap, statusSnap, configSnap] = await Promise.all([
+      db.doc('dashboard/cache').get(),
+      db.doc('monitor/status').get(),
+      db.doc('app/config').get()
+    ]);
+    response.set('Cache-Control', 'no-store, max-age=0');
+    response.json({
+      cache: cacheSnap.exists ? cacheSnap.data() : null,
+      status: statusSnap.exists ? statusSnap.data() : null,
+      config: configSnap.exists ? configSnap.data() : null
+    });
+  } catch (error) {
+    response.status(500).json({ error: error.message });
+  }
 });
 
 function assertAdminToken(token) {
