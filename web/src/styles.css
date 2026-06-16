@@ -27,7 +27,7 @@ button { cursor: pointer; }
   background: var(--topbar);
   border-bottom: 4px solid var(--enaex-red);
   display: grid;
-  grid-template-columns: 220px 1fr 260px;
+  grid-template-columns: 220px 1fr 220px;
   align-items: center;
   z-index: 10;
   color: white;
@@ -35,7 +35,6 @@ button { cursor: pointer; }
 .brand { padding-left: 44px; display: flex; align-items: center; }
 .brand img { height: 28px; width: auto; object-fit: contain; }
 .topbar h1 { margin: 0; text-align: center; font-size: 23px; letter-spacing: -0.02em; }
-.topbarRight { color: #d9dee3; font-size: 12px; text-align: right; padding-right: 24px; }
 .sidebar {
   position: fixed;
   top: 54px;
@@ -116,7 +115,7 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .dateRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
 .statusStrip {
   display: grid;
-  grid-template-columns: 150px 130px 130px 220px 90px 1fr;
+  grid-template-columns: 150px 150px 220px 120px;
   gap: 12px;
   align-items: center;
   background: white;
@@ -126,9 +125,7 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 }
 .statusStrip .label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 2px; }
 .statusStrip strong { font-size: 13px; }
-.statusMessage { display: flex; gap: 8px; align-items: center; color: var(--muted); justify-self: end; }
 .statusStrip.hasError { border-left: 4px solid var(--enaex-red); }
-.statusStrip.hasError .statusMessage { color: var(--enaex-red); }
 .chartCard { padding: 10px 18px 8px; min-width: 0; }
 .chartTitle { margin-bottom: 8px; color: #26323d; }
 .recharts-text { fill: #5d6872; }
@@ -177,7 +174,6 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .dashboardGrid { grid-template-columns: 1fr; }
   .rightPanel { grid-template-rows: auto; }
   .topbar { grid-template-columns: 180px 1fr; }
-  .topbarRight { display: none; }
   .statusStrip { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 720px) {

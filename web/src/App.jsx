@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
-import { AlertTriangle, Database, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
 import {
   applyMetaFilters,
   applyFilters,
@@ -176,7 +176,6 @@ function Topbar() {
         <img src="assets/Enaex Brasil - White.png" alt="Enaex Brasil" />
       </div>
       <h1>Emulsão</h1>
-      <div className="topbarRight">Atualiza automaticamente no GitHub Pages</div>
     </header>
   );
 }
@@ -336,14 +335,8 @@ function Dashboard({ cache, status, config }) {
 
 function StatusStrip({ cache, status, config, total, latestApplication }) {
   const failed = status?.state === 'error';
-  const sourceState = cache?.sourceState || 'live';
-  const isFallback = sourceState !== 'live';
   return (
     <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
-      <div>
-        <span className="label">Base de dados</span>
-        <strong>Google Sheets + GitHub Pages</strong>
-      </div>
       <div>
         <span className="label">Registros filtrados</span>
         <strong>{total.registros.toLocaleString('pt-BR')}</strong>
@@ -359,14 +352,6 @@ function StatusStrip({ cache, status, config, total, latestApplication }) {
       <div>
         <span className="label">Ciclo automático</span>
         <strong>{Math.round((config?.refreshSeconds || DEFAULT_REFRESH_SECONDS) / 60)} min</strong>
-      </div>
-      <div className="statusMessage">
-        {failed ? <AlertTriangle size={16} /> : <Database size={16} />}
-        {failed
-          ? `Falha: ${status?.lastError || 'sem detalhe'}`
-          : isFallback
-            ? `Cache estático: ${truncate(config?.sourceUrl || '', 52)}`
-            : `Fonte: ${truncate(config?.sourceUrl || '', 52)}`}
       </div>
     </div>
   );
@@ -472,11 +457,6 @@ function readTimestamp(value) {
   if (typeof value === 'string') return new Date(value).toLocaleString('pt-BR');
   if (value?.seconds) return new Date(value.seconds * 1000).toLocaleString('pt-BR');
   return '';
-}
-
-function truncate(text, length) {
-  if (!text) return '';
-  return text.length > length ? `${text.slice(0, length)}...` : text;
 }
 
 export default App;
