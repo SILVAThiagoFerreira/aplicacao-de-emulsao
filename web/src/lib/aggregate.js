@@ -69,7 +69,12 @@ export function buildDailyTrend(records, metas = []) {
     map.set(data, previous);
   });
 
-  return Array.from(map.values()).sort((a, b) => a.data.localeCompare(b.data));
+  const rows = Array.from(map.values()).sort((a, b) => a.data.localeCompare(b.data));
+  return rows.map((row, index) => {
+    const windowRows = rows.slice(Math.max(0, index - 6), index + 1);
+    const movingAverage = windowRows.reduce((sum, item) => sum + toNumber(item.aplicado), 0) / windowRows.length;
+    return { ...row, mediaMovel: movingAverage };
+  });
 }
 
 export function buildMonthly(records) {

@@ -275,6 +275,7 @@ function Dashboard({ cache, status, config }) {
               <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 12 }} />
               <Area dataKey="aplicado" fill="url(#dailyEmulsaoFill)" stroke="none" />
               <Line type="monotone" dataKey="aplicado" name="Aplicado" stroke="#e30613" strokeWidth={2.6} dot={false} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="mediaMovel" name="Média móvel 7d" stroke="#00A79D" strokeWidth={2.4} dot={false} activeDot={{ r: 4, fill: '#00A79D' }} />
               <Line type="monotone" dataKey="meta" name="Meta" stroke="#B8A53D" strokeWidth={2.2} strokeDasharray="7 5" dot={false} activeDot={{ r: 4, fill: '#B8A53D' }} connectNulls />
             </ComposedChart>
           </ResponsiveContainer>
