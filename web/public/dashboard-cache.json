@@ -6176,6 +6176,15 @@
       "umb": 1123,
       "operador": "GILMAR",
       "mediaKgFuro": 134.41221374045801
+    },
+    {
+      "data": "2026-06-11",
+      "poligono": "PP340626",
+      "emulsao": 17608,
+      "furos": 131,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 134.41221374045801
     }
   ],
   "ritmo": [
@@ -6224,8 +6233,8 @@
       "mes": "Junho",
       "mesNumero": 6,
       "meta": 400000,
-      "ritmo": 388106.25,
-      "aplicado": 206990
+      "ritmo": 421121.25,
+      "aplicado": 224598
     },
     {
       "ano": 2026,
@@ -6469,10 +6478,10 @@
     }
   ],
   "totals": {
-    "emulsao": 6539241,
-    "furos": 54196
+    "emulsao": 6556849,
+    "furos": 54327
   },
-  "updatedAt": "2026-06-16T11:34:55.754Z",
+  "updatedAt": "2026-06-16T11:55:41.169Z",
   "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
