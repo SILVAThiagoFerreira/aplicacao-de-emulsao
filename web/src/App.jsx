@@ -12,21 +12,7 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
-import {
-  AlertTriangle,
-  Database,
-  Home,
-  KeyRound,
-  LogOut,
-  RefreshCcw,
-  Settings,
-  ShieldCheck,
-  UploadCloud
-} from 'lucide-react';
-import sampleDashboard from './data/sampleDashboard.json';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, firebaseReady, functions, functionsRegion } from './lib/firebase';
+import { AlertTriangle, Database, Home } from 'lucide-react';
 import {
   applyFilters,
   buildDailyTable,
@@ -40,6 +26,73 @@ import {
 import { formatDate, formatKg, formatMil, monthNames } from './lib/format';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true';
+const DEFAULT_REFRESH_SECONDS = 300;
+
+function normalizeRefreshMs(value) {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds)) return DEFAULT_REFRESH_SECONDS * 1000;
+  return Math.min(Math.max(Math.round(seconds), DEFAULT_REFRESH_SECONDS), 24 * 60 * 60) * 1000;
+}
+
+async function fetchDashboardPayload() {
+  const liveUrl = import.meta.env.VITE_DASHBOARD_API_URL || '';
+  const staticUrl = getStaticCacheUrl();
+  const errors = [];
+
+  for (const candidate of [liveUrl, staticUrl].filter(Boolean)) {
+    try {
+      const payload = await fetchJson(candidate);
+      return normalizeDashboardPayload(payload, candidate === liveUrl ? 'function' : 'static-cache');
+    } catch (error) {
+      errors.push(`${candidate}: ${error.message}`);
+    }
+  }
+
+  throw new Error(errors.join(' | ') || 'Nenhuma fonte de dashboard configurada.');
+}
+
+function getStaticCacheUrl() {
+  const base = import.meta.env.BASE_URL || '/';
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+  return `${normalizedBase}dashboard-cache.json`;
+}
+
+async function fetchJson(url) {
+  const response = await fetch(withCacheBuster(url), {
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
+function withCacheBuster(url) {
+  const separator = String(url).includes('?') ? '&' : '?';
+  return `${url}${separator}t=${Date.now()}`;
+}
+
+function normalizeDashboardPayload(payload, sourceKind) {
+  const rawCache = payload?.cache && typeof payload.cache === 'object' ? payload.cache : payload;
+  if (!rawCache || typeof rawCache !== 'object') {
+    throw new Error('Resposta sem objeto de cache.');
+  }
+
+  const records = Array.isArray(rawCache.records) ? rawCache.records : [];
+  const config = payload?.config && typeof payload.config === 'object' ? payload.config : {};
+  const sourceUrl = config.sourceUrl || rawCache.sourceUrl || rawCache.source || payload?.sourceUrl || payload?.source || DEFAULT_SOURCE;
+  const refreshSeconds = payload?.refreshSeconds || config.refreshSeconds || rawCache.refreshSeconds || DEFAULT_REFRESH_SECONDS;
+
+  return {
+    cache: { ...rawCache, records, sourceKind },
+    status: payload?.status || null,
+    updatedAt: payload?.updatedAt || rawCache.updatedAt || payload?.status?.lastSuccessAt || null,
+    config: {
+      sourceUrl,
+      alertEmail: config.alertEmail,
+      refreshSeconds
+    }
+  };
+}
 
 function getCurrentMonthRange() {
   const now = new Date();
@@ -54,14 +107,14 @@ function getCurrentMonthRange() {
 
 function App() {
   const [route, setRoute] = useState(() => window.location.hash || '#/');
-  const [cache, setCache] = useState(sampleDashboard);
+  const [cache, setCache] = useState({ records: [] });
   const [status, setStatus] = useState(null);
   const [config, setConfig] = useState({
     sourceUrl: DEFAULT_SOURCE,
     alertEmail: 'thiago.ferreira@enaex.com',
-    refreshSeconds: 120
+    refreshSeconds: DEFAULT_REFRESH_SECONDS
   });
-  const [online, setOnline] = useState(firebaseReady);
+  const [online, setOnline] = useState(true);
 
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || '#/');
@@ -70,41 +123,30 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!firebaseReady || !db) return undefined;
-    const unsubscribers = [
-      onSnapshot(doc(db, 'dashboard', 'cache'), (snapshot) => {
-        if (snapshot.exists()) setCache({ ...snapshot.data(), records: snapshot.data().records || [] });
-      }, () => setOnline(false)),
-      onSnapshot(doc(db, 'monitor', 'status'), (snapshot) => {
-        if (snapshot.exists()) setStatus(snapshot.data());
-      }),
-      onSnapshot(doc(db, 'app', 'config'), (snapshot) => {
-        if (snapshot.exists()) setConfig((old) => ({ ...old, ...snapshot.data() }));
-      })
-    ];
-    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
     let timerId = null;
+    const pollIntervalMs = normalizeRefreshMs(config?.refreshSeconds);
 
     async function loadDashboard() {
       try {
-        const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-        const region = functionsRegion;
-        const url = `https://${region}-${projectId}.cloudfunctions.net/getDashboard`;
-        const response = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = await response.json();
+        const payload = await fetchDashboardPayload();
         if (cancelled) return;
-        if (payload?.cache) setCache({ ...payload.cache, records: payload.cache.records || [] });
-        if (payload?.status) setStatus(payload.status);
-        if (payload?.config) setConfig((old) => ({ ...old, ...payload.config }));
-      } catch (_) {
-        // Mantém o listener do Firestore como fallback.
+        setCache(payload.cache);
+        setStatus(payload.status || { state: 'ok', lastSuccessAt: payload.updatedAt || new Date().toISOString() });
+        setConfig((old) => ({
+          ...old,
+          sourceUrl: payload.config?.sourceUrl || old.sourceUrl || DEFAULT_SOURCE,
+          alertEmail: payload.config?.alertEmail || old.alertEmail,
+          refreshSeconds: payload.config?.refreshSeconds || old.refreshSeconds || DEFAULT_REFRESH_SECONDS
+        }));
+        setOnline(true);
+      } catch (error) {
+        if (!cancelled) {
+          setOnline(false);
+          setStatus({ state: 'error', lastError: error.message });
+        }
       } finally {
-        if (!cancelled) timerId = window.setTimeout(loadDashboard, 120000);
+        if (!cancelled) timerId = window.setTimeout(loadDashboard, pollIntervalMs);
       }
     }
 
@@ -113,18 +155,14 @@ function App() {
       cancelled = true;
       if (timerId) window.clearTimeout(timerId);
     };
-  }, []);
+  }, [config?.refreshSeconds]);
 
   return (
     <div className="appShell">
       <Topbar />
       <Sidebar route={route} online={online} />
       <main className="mainCanvas">
-        {route.startsWith('#/admin') ? (
-          <AdminPage config={config} status={status} cache={cache} />
-        ) : (
-          <Dashboard cache={cache} status={status} config={config} />
-        )}
+        <Dashboard cache={cache} status={status} config={config} />
       </main>
     </div>
   );
@@ -137,7 +175,7 @@ function Topbar() {
         <img src="assets/Enaex Brasil - White.png" alt="Enaex Brasil" />
       </div>
       <h1>Emulsão</h1>
-      <div className="topbarRight">Atualização automática online</div>
+      <div className="topbarRight">Atualiza automaticamente no GitHub Pages</div>
     </header>
   );
 }
@@ -146,10 +184,25 @@ function Sidebar({ route, online }) {
   return (
     <aside className="sidebar">
       <a className={route === '#/' ? 'active' : ''} href="#/" title="Dashboard"><Home size={23} /></a>
-      <a className={route.startsWith('#/admin') ? 'active' : ''} href="#/admin" title="Admin"><Settings size={22} /></a>
-      <span className={`connectionDot ${online ? 'isOnline' : 'isOffline'}`} title={online ? 'Firebase conectado' : 'Modo amostra/local'} />
+      <span className={`connectionDot ${online ? 'isOnline' : 'isOffline'}`} title={online ? 'Cache online' : 'Falha ao ler cache'} />
     </aside>
   );
+}
+
+function getDateTicks(rows) {
+  if (rows.length <= 6) return rows.map((item) => item.dia);
+
+  const lastIndex = rows.length - 1;
+  const indexes = new Set([0, lastIndex]);
+
+  for (let item = 1; item <= 4; item += 1) {
+    indexes.add(Math.round((item * lastIndex) / 5));
+  }
+
+  return Array.from(indexes)
+    .sort((a, b) => a - b)
+    .map((index) => rows[index]?.dia)
+    .filter(Boolean);
 }
 
 function Dashboard({ cache, status, config }) {
@@ -158,6 +211,7 @@ function Dashboard({ cache, status, config }) {
     const dates = records.map((item) => item.data).filter(Boolean).sort();
     return { start: dates[0] || '2026-01-01', end: dates[dates.length - 1] || '2026-04-24' };
   }, [records]);
+  const currentMonth = useMemo(() => getCurrentMonthRange(), []);
   const [filters, setFilters] = useState({
     poligonoSearch: '',
     poligono: 'Todos',
@@ -165,7 +219,8 @@ function Dashboard({ cache, status, config }) {
     operador: 'Todos',
     year: 'Todos',
     month: 'Todos',
-    ...getCurrentMonthRange()
+    startDate: currentMonth.start,
+    endDate: currentMonth.end
   });
 
   useEffect(() => {
@@ -179,6 +234,8 @@ function Dashboard({ cache, status, config }) {
   const filtered = useMemo(() => applyFilters(records, filters), [records, filters]);
   const dailyRows = useMemo(() => buildDailyTable(filtered), [filtered]);
   const dailyTrend = useMemo(() => buildDailyTrend(filtered), [filtered]);
+  const dailyTicks = useMemo(() => getDateTicks(dailyTrend), [dailyTrend]);
+  const latestApplication = dailyTrend.length ? dailyTrend[dailyTrend.length - 1].data : '';
   const monthly = useMemo(() => buildMonthly(filtered), [filtered]);
   const monthlyByUmb = useMemo(() => buildMonthlyByUmb(filtered), [filtered]);
   const projection = useMemo(() => buildProjection(filtered, cache.ritmo || []), [filtered, cache.ritmo]);
@@ -198,7 +255,7 @@ function Dashboard({ cache, status, config }) {
         <FilterPanel filters={filters} setFilters={setFilters} options={options} dateRange={dateRange} />
       </section>
       <section className="rightPanel">
-        <StatusStrip cache={cache} status={status} config={config} total={total} />
+        <StatusStrip cache={cache} status={status} config={config} total={total} latestApplication={latestApplication} />
 
         <ChartCard title="EMULSÃO: Aplicação Dia a Dia" className="chartDailyTrend">
           <ResponsiveContainer width="100%" height={190}>
@@ -210,22 +267,11 @@ function Dashboard({ cache, status, config }) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="1 5" vertical={false} />
-              <XAxis dataKey="dia" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={18} />
+              <XAxis dataKey="dia" ticks={dailyTicks} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={8} />
               <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
-              <Tooltip
-                formatter={(value) => formatKg(value)}
-                labelFormatter={(_, items) => items?.[0]?.payload ? `Data: ${formatDate(items[0].payload.data)}` : ''}
-              />
+              <Tooltip formatter={(value) => formatKg(value)} labelFormatter={(_, items) => items?.[0]?.payload ? `Data: ${formatDate(items[0].payload.data)}` : ''} />
               <Area dataKey="aplicado" fill="url(#dailyEmulsaoFill)" stroke="none" />
-              <Line
-                type="monotone"
-                dataKey="aplicado"
-                name="Aplicado"
-                stroke="#e30613"
-                strokeWidth={2.6}
-                dot={false}
-                activeDot={{ r: 5 }}
-              />
+              <Line type="monotone" dataKey="aplicado" name="Aplicado" stroke="#e30613" strokeWidth={2.6} dot={false} activeDot={{ r: 5 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -283,7 +329,7 @@ function Dashboard({ cache, status, config }) {
   );
 }
 
-function StatusStrip({ cache, status, config, total }) {
+function StatusStrip({ cache, status, config, total, latestApplication }) {
   const failed = status?.state === 'error';
   const sourceState = cache?.sourceState || 'live';
   const isFallback = sourceState !== 'live';
@@ -291,22 +337,30 @@ function StatusStrip({ cache, status, config, total }) {
     <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
       <div>
         <span className="label">Base de dados</span>
-        <strong>{firebaseReady ? 'Firebase/Firestore' : 'Amostra local'}</strong>
+        <strong>Google Sheets + GitHub Pages</strong>
       </div>
       <div>
         <span className="label">Registros filtrados</span>
         <strong>{total.registros.toLocaleString('pt-BR')}</strong>
       </div>
       <div>
+        <span className="label">Última aplicação</span>
+        <strong>{formatDate(latestApplication) || '-'}</strong>
+      </div>
+      <div>
         <span className="label">Última atualização</span>
         <strong>{readTimestamp(cache?.updatedAt) || readTimestamp(status?.lastSuccessAt) || 'Aguardando refresh'}</strong>
+      </div>
+      <div>
+        <span className="label">Ciclo automático</span>
+        <strong>{Math.round((config?.refreshSeconds || DEFAULT_REFRESH_SECONDS) / 60)} min</strong>
       </div>
       <div className="statusMessage">
         {failed ? <AlertTriangle size={16} /> : <Database size={16} />}
         {failed
           ? `Falha: ${status?.lastError || 'sem detalhe'}`
           : isFallback
-            ? `Cache em fallback: ${truncate(config?.sourceUrl || '', 52)}`
+            ? `Cache estático: ${truncate(config?.sourceUrl || '', 52)}`
             : `Fonte: ${truncate(config?.sourceUrl || '', 52)}`}
       </div>
     </div>
@@ -406,176 +460,6 @@ function ChartCard({ title, children, className = '' }) {
     </div>
   );
 }
-
-function AdminPage({ config, status, cache }) {
-  const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem('emulsaoAdminToken') || '');
-  const [isUnlocked, setIsUnlocked] = useState(() => Boolean(sessionStorage.getItem('emulsaoAdminToken')));
-  const [form, setForm] = useState({
-    token: '',
-    sourceUrl: config?.sourceUrl || DEFAULT_SOURCE,
-    alertEmail: config?.alertEmail || 'thiago.ferreira@enaex.com',
-    alertFrom: config?.alertFrom || '',
-    refreshSeconds: config?.refreshSeconds || 120
-  });
-  const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    setForm((old) => ({
-      ...old,
-      sourceUrl: config?.sourceUrl || old.sourceUrl || DEFAULT_SOURCE,
-      alertEmail: config?.alertEmail || old.alertEmail || 'thiago.ferreira@enaex.com',
-      alertFrom: config?.alertFrom || old.alertFrom || '',
-      refreshSeconds: config?.refreshSeconds || old.refreshSeconds || 120
-    }));
-  }, [config?.sourceUrl, config?.alertEmail, config?.alertFrom, config?.refreshSeconds]);
-
-  const unlockPanel = (event) => {
-    event.preventDefault();
-    const token = form.token.trim();
-    if (!token) {
-      setMessage('Informe o token administrativo.');
-      return;
-    }
-    sessionStorage.setItem('emulsaoAdminToken', token);
-    setAdminToken(token);
-    setIsUnlocked(true);
-    setForm((old) => ({ ...old, token: '' }));
-    setMessage('Painel administrativo liberado nesta sessão.');
-  };
-
-  const lockPanel = () => {
-    sessionStorage.removeItem('emulsaoAdminToken');
-    setAdminToken('');
-    setIsUnlocked(false);
-    setMessage('Sessão administrativa encerrada.');
-  };
-
-  const saveConfig = async (event) => {
-    event.preventDefault();
-    setBusy(true);
-    setMessage('');
-    try {
-      if (functions) {
-        const updateConfig = httpsCallable(functions, 'updateConfig');
-        await updateConfig({
-          adminToken,
-          sourceUrl: form.sourceUrl.trim(),
-          alertEmail: form.alertEmail.trim(),
-          alertFrom: form.alertFrom.trim(),
-          refreshSeconds: Number(form.refreshSeconds) || 120
-        });
-        setMessage('Configuração salva.');
-      } else {
-        setMessage('Firebase Functions não configurado nesta sessão.');
-      }
-    } catch (error) {
-      setMessage(`Não foi possível salvar: ${error.message}`);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const refreshNow = async () => {
-    setBusy(true);
-    setMessage('');
-    try {
-      if (functions) {
-        const refreshWorkbook = httpsCallable(functions, 'refreshWorkbook');
-        const result = await refreshWorkbook({ manual: true, adminToken });
-        setMessage(`Atualização executada: ${result.data?.records || 0} registros.`);
-      } else {
-        setMessage('Firebase Functions não configurado nesta sessão.');
-      }
-    } catch (error) {
-      setMessage(`Falha ao atualizar: ${error.message}`);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (!firebaseReady) {
-    return (
-      <div className="adminLayout">
-        <div className="panel adminCard">
-          <h2>Firebase ainda não configurado</h2>
-          <p>Copie <code>web/.env.example</code> para <code>web/.env.local</code> e preencha as chaves do Firebase para ativar banco, funções e monitoramento.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isUnlocked) {
-    return (
-      <div className="adminLayout">
-        <div className="panel adminCard">
-          <div className="adminIcon"><KeyRound size={28} /></div>
-          <h2>Acesso administrativo</h2>
-          <p>Este projeto não usa Firebase Authentication. O acesso ao painel é feito por token secreto salvo no Firebase Functions Secret Manager.</p>
-          <form onSubmit={unlockPanel} className="adminForm">
-            <input
-              value={form.token}
-              onChange={(event) => setForm({ ...form, token: event.target.value })}
-              placeholder="token administrativo"
-              type="password"
-              autoComplete="current-password"
-            />
-            <button disabled={busy}>Entrar no painel</button>
-          </form>
-          <div className="warningBox">
-            <AlertTriangle size={18} />
-            Configure o token com <code>firebase functions:secrets:set ADMIN_PANEL_TOKEN</code> antes de publicar as funções.
-          </div>
-          {message && <p className="message">{message}</p>}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="adminLayout">
-      <div className="panel adminCard wide">
-        <div className="adminHeader">
-          <div>
-            <span className="eyebrow">Administrador</span>
-            <h2>Painel de configuração</h2>
-            <p>Acesso por token administrativo. Sem Firebase Authentication.</p>
-          </div>
-          <button className="secondaryButton" onClick={lockPanel}><LogOut size={16} /> Sair</button>
-        </div>
-
-        <form onSubmit={saveConfig} className="adminForm configForm">
-          <label>Link da planilha OneDrive/SharePoint</label>
-          <textarea value={form.sourceUrl} onChange={(event) => setForm({ ...form, sourceUrl: event.target.value })} rows={4} />
-          <div className="twoColumns">
-            <label>Email de alerta
-              <input value={form.alertEmail} onChange={(event) => setForm({ ...form, alertEmail: event.target.value })} type="email" />
-            </label>
-            <label>Remetente SendGrid verificado
-              <input value={form.alertFrom} onChange={(event) => setForm({ ...form, alertFrom: event.target.value })} placeholder="alertas@seudominio.com" />
-            </label>
-            <label>Intervalo em segundos
-              <input value={form.refreshSeconds} onChange={(event) => setForm({ ...form, refreshSeconds: event.target.value })} type="number" min="60" step="30" />
-            </label>
-          </div>
-          <div className="buttonRow">
-            <button disabled={busy}><UploadCloud size={16} /> Salvar configuração</button>
-            <button type="button" className="secondaryButton" disabled={busy} onClick={refreshNow}><RefreshCcw size={16} /> Atualizar agora</button>
-          </div>
-        </form>
-
-        <div className="adminStatusGrid">
-          <div><span>Última leitura</span><strong>{readTimestamp(cache?.updatedAt) || 'Sem cache'}</strong></div>
-          <div><span>Status</span><strong>{status?.state || 'sem status'}</strong></div>
-          <div><span>Erro</span><strong>{status?.lastError || 'nenhum'}</strong></div>
-          <div><span>Registros</span><strong>{cache?.records?.length || 0}</strong></div>
-        </div>
-        {message && <p className="message">{message}</p>}
-      </div>
-    </div>
-  );
-}
-
 
 function readTimestamp(value) {
   if (!value) return '';
