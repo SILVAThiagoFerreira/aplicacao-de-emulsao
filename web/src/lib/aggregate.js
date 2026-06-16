@@ -22,6 +22,20 @@ export function applyFilters(records, filters) {
   });
 }
 
+export function applyMetaFilters(metas, filters) {
+  const start = filters.startDate || '';
+  const end = filters.endDate || '';
+  return metas.filter((item) => {
+    const data = String(item.data || '').slice(0, 10);
+    if (!data) return false;
+    if (start && data < start) return false;
+    if (end && data > end) return false;
+    if (filters.year !== 'Todos' && getYear(data) !== Number(filters.year)) return false;
+    if (filters.month !== 'Todos' && Number(data.slice(5, 7)) !== Number(filters.month)) return false;
+    return true;
+  });
+}
+
 export function buildDailyTable(records) {
   const map = new Map();
   records.forEach((item) => {
@@ -36,16 +50,25 @@ export function buildDailyTable(records) {
     .map((item) => ({ ...item, mediaKgFuro: item.furos ? item.emulsao / item.furos : 0 }));
 }
 
-export function buildDailyTrend(records) {
+export function buildDailyTrend(records, metas = []) {
   const map = new Map();
   records.forEach((item) => {
     const data = String(item.data || '').slice(0, 10);
     if (!data) return;
-    const previous = map.get(data) || { data, dia: formatDate(data), aplicado: 0, furos: 0 };
+    const previous = map.get(data) || { data, dia: formatDate(data), aplicado: 0, furos: 0, meta: null };
     previous.aplicado += toNumber(item.emulsao);
     previous.furos += toNumber(item.furos);
     map.set(data, previous);
   });
+
+  metas.forEach((item) => {
+    const data = String(item.data || '').slice(0, 10);
+    if (!data) return;
+    const previous = map.get(data) || { data, dia: formatDate(data), aplicado: 0, furos: 0, meta: null };
+    previous.meta = toNumber(item.meta);
+    map.set(data, previous);
+  });
+
   return Array.from(map.values()).sort((a, b) => a.data.localeCompare(b.data));
 }
 
@@ -75,11 +98,12 @@ export function buildMonthlyByUmb(records) {
 export function buildProjection(records, ritmoFromCache = []) {
   const monthly = buildMonthly(records);
   const appliedTotal = monthly.reduce((sum, item) => sum + item.aplicado, 0);
+  const monthKeys = new Set(monthly.map((item) => item.key));
   const rhythmTotal = ritmoFromCache
-    .filter((item) => monthly.some((month) => month.key === `${item.ano}-${String(item.mesNumero).padStart(2, '0')}`))
-    .reduce((sum, item) => sum + toNumber(item.ritmo || item.aplicado), 0);
+    .filter((item) => monthKeys.has(`${item.ano}-${String(item.mesNumero).padStart(2, '0')}`))
+    .reduce((sum, item) => sum + toNumber(item.ritmo), 0);
   return [
-    { name: 'Ritmo', value: rhythmTotal || appliedTotal },
+    { name: 'Ritmo', value: rhythmTotal },
     { name: 'Aplicado', value: appliedTotal }
   ];
 }

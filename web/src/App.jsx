@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { AlertTriangle, Database, Home } from 'lucide-react';
 import {
+  applyMetaFilters,
   applyFilters,
   buildDailyTable,
   buildDailyTrend,
@@ -207,6 +208,7 @@ function getDateTicks(rows) {
 
 function Dashboard({ cache, status, config }) {
   const records = useMemo(() => cache?.records || [], [cache]);
+  const metas = useMemo(() => cache?.metas || [], [cache]);
   const dateRange = useMemo(() => {
     const dates = records.map((item) => item.data).filter(Boolean).sort();
     return { start: dates[0] || '2026-01-01', end: dates[dates.length - 1] || '2026-04-24' };
@@ -232,8 +234,9 @@ function Dashboard({ cache, status, config }) {
   }, [dateRange.start, dateRange.end]);
 
   const filtered = useMemo(() => applyFilters(records, filters), [records, filters]);
+  const filteredMetas = useMemo(() => applyMetaFilters(metas, filters), [metas, filters]);
   const dailyRows = useMemo(() => buildDailyTable(filtered), [filtered]);
-  const dailyTrend = useMemo(() => buildDailyTrend(filtered), [filtered]);
+  const dailyTrend = useMemo(() => buildDailyTrend(filtered, filteredMetas), [filtered, filteredMetas]);
   const dailyTicks = useMemo(() => getDateTicks(dailyTrend), [dailyTrend]);
   const latestApplication = dailyTrend.length ? dailyTrend[dailyTrend.length - 1].data : '';
   const monthly = useMemo(() => buildMonthly(filtered), [filtered]);
@@ -270,8 +273,10 @@ function Dashboard({ cache, status, config }) {
               <XAxis dataKey="dia" ticks={dailyTicks} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={8} />
               <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
               <Tooltip formatter={(value) => formatKg(value)} labelFormatter={(_, items) => items?.[0]?.payload ? `Data: ${formatDate(items[0].payload.data)}` : ''} />
+              <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 12 }} />
               <Area dataKey="aplicado" fill="url(#dailyEmulsaoFill)" stroke="none" />
               <Line type="monotone" dataKey="aplicado" name="Aplicado" stroke="#e30613" strokeWidth={2.6} dot={false} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="meta" name="Meta" stroke="#B8A53D" strokeWidth={2.2} strokeDasharray="7 5" dot={false} activeDot={{ r: 4, fill: '#B8A53D' }} connectNulls />
             </ComposedChart>
           </ResponsiveContainer>
         </ChartCard>

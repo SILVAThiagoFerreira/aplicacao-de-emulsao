@@ -3,12 +3,15 @@ const XLSX = require('xlsx');
 function parseWorkbookToDashboard(buffer, { sourceUrl = '', finalUrl = '' } = {}) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const records = parseWorkbook(workbook);
+  const ritmo = parseRitmo(workbook);
+  const metas = parseMetas(workbook);
   return {
     sourceUrl,
     finalUrl,
     sourceState: 'live',
     records,
-    ritmo: [],
+    ritmo,
+    metas,
     totals: records.reduce((acc, item) => {
       acc.emulsao += toNumber(item.emulsao);
       acc.furos += toNumber(item.furos);
@@ -18,15 +21,17 @@ function parseWorkbookToDashboard(buffer, { sourceUrl = '', finalUrl = '' } = {}
 }
 
 function parseWorkbook(workbook) {
-  const firstSheetName = workbook.SheetNames[0];
-  if (!firstSheetName) return [];
-  const sheet = workbook.Sheets[firstSheetName];
-  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: '' });
+  const sheetName = findSheetName(workbook, ['entrada', 'dados', 'base']) || workbook.SheetNames[0];
+  if (!sheetName) return [];
+  const rows = readSheetRows(workbook, sheetName);
   if (!rows.length) return [];
-  const headers = rows[0].map(normalizeHeader);
+  const headerIndex = findHeaderRow(rows, ['data', 'poligono', 'emulsao']);
+  if (headerIndex < 0) return [];
+
+  const headers = rows[headerIndex].map(normalizeHeader);
   const indexed = indexHeaders(headers);
   const records = [];
-  for (const row of rows.slice(1)) {
+  for (const row of rows.slice(headerIndex + 1)) {
     const record = {
       data: readCell(row, indexed.data),
       poligono: readCell(row, indexed.poligono),
@@ -43,12 +48,94 @@ function parseWorkbook(workbook) {
   return records;
 }
 
+function parseRitmo(workbook) {
+  const sheetName = findSheetNameWithHeaders(workbook, ['ritmo', 'projecao'], ['ano', 'mes', 'ritmo'])
+    || findSheetNameWithHeaders(workbook, ['meta'], ['ano', 'mes', 'ritmo']);
+  if (!sheetName) return [];
+  const rows = readSheetRows(workbook, sheetName);
+  const headerIndex = findHeaderRow(rows, ['ano', 'mes', 'ritmo']);
+  if (headerIndex < 0) return [];
+  const headers = rows[headerIndex].map(normalizeHeader);
+  const lookup = (names) => headers.findIndex((header) => names.includes(header));
+  const indexes = {
+    ano: lookup(['ano', 'year']),
+    mes: lookup(['mes', 'mês', 'month']),
+    meta: lookup(['meta', 'objetivo']),
+    ritmo: lookup(['ritmo']),
+    aplicado: lookup(['aplicado', 'realizado'])
+  };
+
+  return rows.slice(headerIndex + 1).map((row) => {
+    const ano = toNumber(readCell(row, indexes.ano));
+    const mesRaw = readCell(row, indexes.mes);
+    const mesNumero = normalizeMonth(mesRaw);
+    return {
+      ano,
+      mes: String(mesRaw || ''),
+      mesNumero,
+      meta: toNumber(readCell(row, indexes.meta)),
+      ritmo: toNumber(readCell(row, indexes.ritmo)),
+      aplicado: toNumber(readCell(row, indexes.aplicado))
+    };
+  }).filter((item) => item.ano && item.mesNumero);
+}
+
+function parseMetas(workbook) {
+  const sheetName = findSheetNameWithHeaders(workbook, ['meta'], ['data', 'meta']);
+  if (!sheetName) return [];
+  const rows = readSheetRows(workbook, sheetName);
+  const headerIndex = findHeaderRow(rows, ['data', 'meta']);
+  if (headerIndex < 0) return [];
+
+  const headers = rows[headerIndex].map(normalizeHeader);
+  const lookup = (names) => headers.findIndex((header) => names.some((name) => header.includes(normalizeHeader(name))));
+  const indexes = {
+    data: lookup(['data', 'dia', 'date']),
+    meta: lookup(['meta', 'objetivo', 'planejado', 'kg'])
+  };
+
+  return rows.slice(headerIndex + 1).map((row) => {
+    const data = normalizeDate(readCell(row, indexes.data));
+    return {
+      data,
+      meta: toNumber(readCell(row, indexes.meta))
+    };
+  }).filter((item) => item.data && item.meta);
+}
+
+function findSheetName(workbook, tokens) {
+  return workbook.SheetNames.find((name) => {
+    const normalized = normalizeHeader(name);
+    return tokens.some((token) => normalized.includes(normalizeHeader(token)));
+  });
+}
+
+function findSheetNameWithHeaders(workbook, tokens, requiredTerms) {
+  return workbook.SheetNames.find((name) => {
+    const normalized = normalizeHeader(name);
+    if (!tokens.some((token) => normalized.includes(normalizeHeader(token)))) return false;
+    const rows = readSheetRows(workbook, name);
+    return findHeaderRow(rows, requiredTerms) >= 0;
+  });
+}
+
+function readSheetRows(workbook, sheetName) {
+  return XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true, defval: '' });
+}
+
+function findHeaderRow(rows, requiredTerms) {
+  return rows.findIndex((row) => {
+    const normalized = row.map(normalizeHeader);
+    return requiredTerms.every((term) => normalized.some((header) => header.includes(normalizeHeader(term))));
+  });
+}
+
 function indexHeaders(headers) {
   const lookup = (names) => headers.findIndex((header) => names.includes(header));
   return {
     data: lookup(['data', 'dt', 'date', 'dia']),
-    poligono: lookup(['poligono', 'polígono', 'bloco', 'nomepoligono']),
-    emulsao: lookup(['emulsao', 'emulsão', 'kgemulsao', 'aplicado', 'peso']),
+    poligono: lookup(['poligono', 'bloco', 'nomepoligono']),
+    emulsao: lookup(['emulsao', 'kgemulsao', 'aplicado', 'peso']),
     furos: lookup(['furos', 'furo', 'quantidadefuros']),
     umb: lookup(['umb']),
     operador: lookup(['operador', 'nomeoperador', 'responsavel'])
@@ -97,6 +184,18 @@ function excelSerialToDate(serial) {
     return date.toISOString().slice(0, 10);
   }
   return String(serial);
+}
+
+function normalizeMonth(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(Math.max(Math.round(value), 1), 12);
+  }
+  const normalized = normalizeHeader(value);
+  const months = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const index = months.findIndex((month) => normalized === month || normalized.startsWith(month.slice(0, 3)));
+  if (index >= 0) return index + 1;
+  const numeric = toNumber(value);
+  return numeric ? Math.min(Math.max(Math.round(numeric), 1), 12) : 0;
 }
 
 function toNumber(value) {
