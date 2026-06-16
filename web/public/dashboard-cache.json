@@ -1,6 +1,6 @@
 {
   "sourceUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true",
-  "finalUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true",
+  "finalUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx",
   "sourceState": "live",
   "records": [
     {
@@ -6167,13 +6167,312 @@
       "umb": 1123,
       "operador": "GILMAR",
       "mediaKgFuro": 134.41221374045801
+    },
+    {
+      "data": "2026-06-10",
+      "poligono": "PP340626",
+      "emulsao": 17608,
+      "furos": 131,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 134.41221374045801
     }
   ],
-  "ritmo": [],
+  "ritmo": [
+    {
+      "ano": 2026,
+      "mes": "Janeiro",
+      "mesNumero": 1,
+      "meta": 400000,
+      "ritmo": 547771,
+      "aplicado": 547771
+    },
+    {
+      "ano": 2026,
+      "mes": "Fevereiro",
+      "mesNumero": 2,
+      "meta": 400000,
+      "ritmo": 381832,
+      "aplicado": 381832
+    },
+    {
+      "ano": 2026,
+      "mes": "Março",
+      "mesNumero": 3,
+      "meta": 400000,
+      "ritmo": 577816,
+      "aplicado": 577816
+    },
+    {
+      "ano": 2026,
+      "mes": "Abril",
+      "mesNumero": 4,
+      "meta": 400000,
+      "ritmo": 274096,
+      "aplicado": 274096
+    },
+    {
+      "ano": 2026,
+      "mes": "Maio",
+      "mesNumero": 5,
+      "meta": 400000,
+      "ritmo": 432211,
+      "aplicado": 432211
+    },
+    {
+      "ano": 2026,
+      "mes": "Junho",
+      "mesNumero": 6,
+      "meta": 400000,
+      "ritmo": 388106.25,
+      "aplicado": 206990
+    },
+    {
+      "ano": 2026,
+      "mes": "Julho",
+      "mesNumero": 7,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2026,
+      "mes": "Agosto",
+      "mesNumero": 8,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2026,
+      "mes": "Setembro",
+      "mesNumero": 9,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2026,
+      "mes": "Outubro",
+      "mesNumero": 10,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2026,
+      "mes": "Novembro",
+      "mesNumero": 11,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2026,
+      "mes": "Dezembro",
+      "mesNumero": 12,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2025,
+      "mes": "Janeiro",
+      "mesNumero": 1,
+      "meta": 400000,
+      "ritmo": 275647,
+      "aplicado": 275647
+    },
+    {
+      "ano": 2025,
+      "mes": "Fevereiro",
+      "mesNumero": 2,
+      "meta": 400000,
+      "ritmo": 312751,
+      "aplicado": 312751
+    },
+    {
+      "ano": 2025,
+      "mes": "Março",
+      "mesNumero": 3,
+      "meta": 400000,
+      "ritmo": 334573,
+      "aplicado": 334573
+    },
+    {
+      "ano": 2025,
+      "mes": "Abril",
+      "mesNumero": 4,
+      "meta": 400000,
+      "ritmo": 338807,
+      "aplicado": 338807
+    },
+    {
+      "ano": 2025,
+      "mes": "Maio",
+      "mesNumero": 5,
+      "meta": 400000,
+      "ritmo": 284094,
+      "aplicado": 284094
+    },
+    {
+      "ano": 2025,
+      "mes": "Junho",
+      "mesNumero": 6,
+      "meta": 400000,
+      "ritmo": 217945,
+      "aplicado": 217945
+    },
+    {
+      "ano": 2025,
+      "mes": "Julho",
+      "mesNumero": 7,
+      "meta": 400000,
+      "ritmo": 274329,
+      "aplicado": 274329
+    },
+    {
+      "ano": 2025,
+      "mes": "Agosto",
+      "mesNumero": 8,
+      "meta": 400000,
+      "ritmo": 389697,
+      "aplicado": 389697
+    },
+    {
+      "ano": 2025,
+      "mes": "Setembro",
+      "mesNumero": 9,
+      "meta": 400000,
+      "ritmo": 385072,
+      "aplicado": 385072
+    },
+    {
+      "ano": 2025,
+      "mes": "Outubro",
+      "mesNumero": 10,
+      "meta": 400000,
+      "ritmo": 497457,
+      "aplicado": 497457
+    },
+    {
+      "ano": 2025,
+      "mes": "Novembro",
+      "mesNumero": 11,
+      "meta": 400000,
+      "ritmo": 399022,
+      "aplicado": 399022
+    },
+    {
+      "ano": 2025,
+      "mes": "Dezembro",
+      "mesNumero": 12,
+      "meta": 400000,
+      "ritmo": 409131,
+      "aplicado": 409131
+    },
+    {
+      "ano": 2024,
+      "mes": "Janeiro",
+      "mesNumero": 1,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Fevereiro",
+      "mesNumero": 2,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Março",
+      "mesNumero": 3,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Abril",
+      "mesNumero": 4,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Maio",
+      "mesNumero": 5,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Junho",
+      "mesNumero": 6,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Julho",
+      "mesNumero": 7,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Agosto",
+      "mesNumero": 8,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Setembro",
+      "mesNumero": 9,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Outubro",
+      "mesNumero": 10,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Novembro",
+      "mesNumero": 11,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    },
+    {
+      "ano": 2024,
+      "mes": "Dezembro",
+      "mesNumero": 12,
+      "meta": 400000,
+      "ritmo": 0,
+      "aplicado": 0
+    }
+  ],
   "totals": {
-    "emulsao": 6521633,
-    "furos": 54065
+    "emulsao": 6539241,
+    "furos": 54196
   },
-  "updatedAt": "2026-06-10T17:20:30.183Z",
+  "updatedAt": "2026-06-16T11:34:55.754Z",
+  "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
