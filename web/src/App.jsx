@@ -271,9 +271,16 @@ function Dashboard({ cache, status, config }) {
               <CartesianGrid strokeDasharray="1 5" vertical={false} />
               <XAxis dataKey="dia" ticks={dailyTicks} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={8} />
               <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
-              <Tooltip formatter={(value) => formatKg(value)} labelFormatter={(_, items) => items?.[0]?.payload ? `Data: ${formatDate(items[0].payload.data)}` : ''} />
+              <Tooltip
+                content={
+                  <ChartTooltip
+                    valueFormatter={(value) => formatKg(value)}
+                    labelFormatter={(_, items) => items?.[0]?.payload ? `Data: ${formatDate(items[0].payload.data)}` : ''}
+                  />
+                }
+              />
               <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 12 }} />
-              <Area dataKey="aplicado" fill="url(#dailyEmulsaoFill)" stroke="none" />
+              <Area dataKey="aplicado" fill="url(#dailyEmulsaoFill)" stroke="none" legendType="none" />
               <Line type="monotone" dataKey="aplicado" name="Aplicado" stroke="#e30613" strokeWidth={2.6} dot={false} activeDot={{ r: 5 }} />
               <Line type="monotone" dataKey="mediaMovel" name="Média móvel 7d" stroke="#00A79D" strokeWidth={2.4} dot={false} activeDot={{ r: 4, fill: '#00A79D' }} />
               <Line type="monotone" dataKey="meta" name="Meta" stroke="#B8A53D" strokeWidth={2.2} strokeDasharray="7 5" dot={false} activeDot={{ r: 4, fill: '#B8A53D' }} connectNulls />
@@ -293,8 +300,15 @@ function Dashboard({ cache, status, config }) {
               <CartesianGrid strokeDasharray="1 5" vertical={false} />
               <XAxis dataKey="mes" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
-              <Tooltip formatter={(value) => formatKg(value)} labelFormatter={(label) => `Mês: ${label}`} />
-              <Area dataKey="aplicado" fill="url(#emulsaoFill)" stroke="none" />
+              <Tooltip
+                content={
+                  <ChartTooltip
+                    valueFormatter={(value) => formatKg(value)}
+                    labelFormatter={(label) => `Mês: ${label}`}
+                  />
+                }
+              />
+              <Area dataKey="aplicado" fill="url(#emulsaoFill)" stroke="none" legendType="none" />
               <Line type="monotone" dataKey="aplicado" stroke="#9b0016" strokeWidth={3} dot={{ r: 4, fill: '#9b0016' }} activeDot={{ r: 6 }} />
             </ComposedChart>
           </ResponsiveContainer>
@@ -306,7 +320,14 @@ function Dashboard({ cache, status, config }) {
               <CartesianGrid strokeDasharray="1 5" vertical={false} />
               <XAxis dataKey="umb" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
-              <Tooltip formatter={(value) => formatKg(value)} labelFormatter={(_, items) => items?.[0]?.payload ? `${items[0].payload.mes} | UMB ${items[0].payload.umb}` : ''} />
+              <Tooltip
+                content={
+                  <ChartTooltip
+                    valueFormatter={(value) => formatKg(value)}
+                    labelFormatter={(_, items) => items?.[0]?.payload ? `${items[0].payload.mes} | UMB ${items[0].payload.umb}` : ''}
+                  />
+                }
+              />
               <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="aplicado" name="Aplicado" fill="#e30613" radius={[2, 2, 0, 0]} maxBarSize={48} />
             </BarChart>
@@ -324,7 +345,7 @@ function Dashboard({ cache, status, config }) {
               <CartesianGrid strokeDasharray="1 5" horizontal={false} />
               <XAxis type="number" tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={70} />
-              <Tooltip formatter={(value) => formatKg(value)} />
+              <Tooltip content={<ChartTooltip valueFormatter={(value) => formatKg(value)} />} />
               <Bar dataKey="value" radius={[0, 2, 2, 0]} fill="#b00020" barSize={18} />
             </BarChart>
           </ResponsiveContainer>
@@ -448,6 +469,53 @@ function ChartCard({ title, children, className = '' }) {
     <div className={`panel chartCard ${className}`}>
       <div className="chartTitle">{title}</div>
       {children}
+    </div>
+  );
+}
+
+function ChartTooltip({ active, payload, label, labelFormatter, valueFormatter }) {
+  if (!active || !payload?.length) return null;
+
+  const uniqueMap = new Map();
+  for (const item of payload) {
+    const key = item?.dataKey ?? item?.name ?? JSON.stringify(item?.value);
+    const current = uniqueMap.get(key);
+    if (!current) {
+      uniqueMap.set(key, item);
+      continue;
+    }
+
+    const currentName = String(current?.name || '').trim();
+    const nextName = String(item?.name || '').trim();
+    const currentGeneric = !currentName || currentName === String(current?.dataKey ?? '').trim();
+    const nextGeneric = !nextName || nextName === String(item?.dataKey ?? '').trim();
+    if (currentGeneric && !nextGeneric) {
+      uniqueMap.set(key, item);
+    }
+  }
+  const uniqueItems = Array.from(uniqueMap.values());
+
+  const labelText = typeof labelFormatter === 'function'
+    ? labelFormatter(label, uniqueItems)
+    : (typeof label === 'string' ? label : uniqueItems[0]?.payload?.name || '');
+
+  return (
+    <div className="chartTooltip">
+      {labelText ? <div className="chartTooltipLabel">{labelText}</div> : null}
+      <div className="chartTooltipItems">
+        {uniqueItems.map((item) => {
+          const color = item?.color || item?.stroke || item?.fill || '#8a0015';
+          const name = item?.name || item?.dataKey || 'Valor';
+          const value = typeof valueFormatter === 'function' ? valueFormatter(item?.value, item) : String(item?.value ?? '');
+          return (
+            <div className="chartTooltipRow" key={`${String(item?.dataKey ?? name)}-${String(value)}`}>
+              <span className="chartTooltipSwatch" style={{ backgroundColor: color }} />
+              <span className="chartTooltipName">{name}</span>
+              <strong>{value}</strong>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
