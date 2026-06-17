@@ -6230,6 +6230,15 @@
       "umb": 1072,
       "operador": "THIAGO",
       "mediaKgFuro": 77.96536796536796
+    },
+    {
+      "data": "2026-06-16",
+      "poligono": "PP300626_B",
+      "emulsao": 18010,
+      "furos": 231,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 77.96536796536796
     }
   ],
   "ritmo": [
@@ -6278,8 +6287,8 @@
       "mes": "Junho",
       "mesNumero": 6,
       "meta": 400000,
-      "ritmo": 493151.25,
-      "aplicado": 263014
+      "ritmo": 495924.7059,
+      "aplicado": 281024
     },
     {
       "ano": 2026,
@@ -7381,10 +7390,10 @@
     }
   ],
   "totals": {
-    "emulsao": 6595265,
-    "furos": 54714
+    "emulsao": 6613275,
+    "furos": 54945
   },
-  "updatedAt": "2026-06-16T13:24:04.898Z",
+  "updatedAt": "2026-06-17T16:24:41.175Z",
   "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
