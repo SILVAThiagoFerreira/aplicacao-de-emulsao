@@ -6230,6 +6230,33 @@
       "umb": 1072,
       "operador": "THIAGO",
       "mediaKgFuro": 77.96536796536796
+    },
+    {
+      "data": "2026-06-16",
+      "poligono": "PP300626_B",
+      "emulsao": 10261,
+      "furos": 73,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 140.56164383561645
+    },
+    {
+      "data": "2026-06-16",
+      "poligono": "PP300626_B",
+      "emulsao": 13520,
+      "furos": 107,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 126.35514018691589
+    },
+    {
+      "data": "2026-06-17",
+      "poligono": "PP200626",
+      "emulsao": 6514,
+      "furos": 51,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 127.72549019607843
     }
   ],
   "ritmo": [
@@ -6278,8 +6305,8 @@
       "mes": "Junho",
       "mesNumero": 6,
       "meta": 400000,
-      "ritmo": 464142.3529,
-      "aplicado": 263014
+      "ritmo": 517604.1176,
+      "aplicado": 293309
     },
     {
       "ano": 2026,
@@ -6533,22 +6560,10 @@
     },
     {
       "data": "2026-06-03",
-      "meta": 35000
-    },
-    {
-      "data": "2026-06-04",
-      "meta": 35000
-    },
-    {
-      "data": "2026-06-05",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-06-06",
-      "meta": 35000
-    },
-    {
-      "data": "2026-06-07",
       "meta": 35000
     },
     {
@@ -6561,11 +6576,7 @@
     },
     {
       "data": "2026-06-10",
-      "meta": 35000
-    },
-    {
-      "data": "2026-06-11",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-06-12",
@@ -6573,11 +6584,7 @@
     },
     {
       "data": "2026-06-13",
-      "meta": 35000
-    },
-    {
-      "data": "2026-06-14",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-06-15",
@@ -6589,7 +6596,7 @@
     },
     {
       "data": "2026-06-17",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-06-18",
@@ -7381,10 +7388,10 @@
     }
   ],
   "totals": {
-    "emulsao": 6595265,
-    "furos": 54714
+    "emulsao": 6625560,
+    "furos": 54945
   },
-  "updatedAt": "2026-06-17T16:46:43.052Z",
+  "updatedAt": "2026-06-18T09:53:30.608Z",
   "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
