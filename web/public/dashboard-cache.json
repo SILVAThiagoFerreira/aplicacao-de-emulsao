@@ -6257,6 +6257,51 @@
       "umb": 1123,
       "operador": "GILMAR",
       "mediaKgFuro": 127.72549019607843
+    },
+    {
+      "data": "2026-06-18",
+      "poligono": "PP200626",
+      "emulsao": 10097,
+      "furos": 83,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 121.65060240963855
+    },
+    {
+      "data": "2026-06-18",
+      "poligono": "PP230626_B",
+      "emulsao": 9309,
+      "furos": 79,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 117.83544303797468
+    },
+    {
+      "data": "2026-06-18",
+      "poligono": "PPREG270626",
+      "emulsao": 1872,
+      "furos": 64,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 29.25
+    },
+    {
+      "data": "2026-05-19",
+      "poligono": "PP230626_B",
+      "emulsao": 167,
+      "furos": 4,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 41.75
+    },
+    {
+      "data": "2026-05-19",
+      "poligono": "PP230626_B",
+      "emulsao": 10000,
+      "furos": 200,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 50
     }
   ],
   "ritmo": [
@@ -6297,16 +6342,16 @@
       "mes": "Maio",
       "mesNumero": 5,
       "meta": 400000,
-      "ritmo": 432211,
-      "aplicado": 432211
+      "ritmo": 442378,
+      "aplicado": 442378
     },
     {
       "ano": 2026,
       "mes": "Junho",
       "mesNumero": 6,
       "meta": 400000,
-      "ritmo": 517604.1176,
-      "aplicado": 293309
+      "ritmo": 428982.2727,
+      "aplicado": 314587
     },
     {
       "ano": 2026,
@@ -7388,10 +7433,10 @@
     }
   ],
   "totals": {
-    "emulsao": 6625560,
-    "furos": 54945
+    "emulsao": 6657005,
+    "furos": 55375
   },
-  "updatedAt": "2026-06-18T09:53:30.608Z",
+  "updatedAt": "2026-06-22T13:54:48.288Z",
   "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
