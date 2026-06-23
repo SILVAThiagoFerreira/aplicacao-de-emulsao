@@ -6286,7 +6286,7 @@
       "mediaKgFuro": 29.25
     },
     {
-      "data": "2026-05-19",
+      "data": "2026-06-19",
       "poligono": "PP230626_B",
       "emulsao": 167,
       "furos": 4,
@@ -6295,13 +6295,22 @@
       "mediaKgFuro": 41.75
     },
     {
-      "data": "2026-05-19",
-      "poligono": "PP230626_B",
-      "emulsao": 10000,
-      "furos": 200,
+      "data": "2026-06-22",
+      "poligono": "PP300626_C",
+      "emulsao": 20087,
+      "furos": 177,
       "umb": 1072,
       "operador": "THIAGO",
-      "mediaKgFuro": 50
+      "mediaKgFuro": 113.48587570621469
+    },
+    {
+      "data": "2026-06-22",
+      "poligono": "PP300626_C",
+      "emulsao": 15667,
+      "furos": 118,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 132.77118644067798
     }
   ],
   "ritmo": [
@@ -6342,16 +6351,16 @@
       "mes": "Maio",
       "mesNumero": 5,
       "meta": 400000,
-      "ritmo": 442378,
-      "aplicado": 442378
+      "ritmo": 432211,
+      "aplicado": 432211
     },
     {
       "ano": 2026,
       "mes": "Junho",
       "mesNumero": 6,
       "meta": 400000,
-      "ritmo": 428982.2727,
-      "aplicado": 314587
+      "ritmo": 477965.4545,
+      "aplicado": 350508
     },
     {
       "ano": 2026,
@@ -6649,19 +6658,15 @@
     },
     {
       "data": "2026-06-19",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-06-20",
-      "meta": 35000
-    },
-    {
-      "data": "2026-06-21",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-06-22",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-06-23",
@@ -7433,10 +7438,10 @@
     }
   ],
   "totals": {
-    "emulsao": 6657005,
-    "furos": 55375
+    "emulsao": 6682759,
+    "furos": 55470
   },
-  "updatedAt": "2026-06-22T13:54:48.288Z",
+  "updatedAt": "2026-06-23T13:55:07.844Z",
   "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
