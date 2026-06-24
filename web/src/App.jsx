@@ -234,14 +234,14 @@ function Dashboard({ cache, status, config }) {
 
   const filtered = useMemo(() => applyFilters(records, filters), [records, filters]);
   const filteredMetas = useMemo(() => applyMetaFilters(metas, filters), [metas, filters]);
-  const dailyRows = useMemo(() => buildDailyTable(filtered), [filtered, filters.poligono, filters.umb, filters.operador, filters.year, filters.month, filters.startDate, filters.endDate]);
+  const dailyRows = useMemo(() => buildDailyTable(filtered), [filtered, filters.poligono, filters.poligonoSearch, filters.umb, filters.operador, filters.year, filters.month, filters.startDate, filters.endDate]);
   const dailyTrend = useMemo(() => buildDailyTrend(filtered, filteredMetas), [filtered, filteredMetas]);
   const dailyTicks = useMemo(() => getDateTicks(dailyTrend), [dailyTrend]);
   const latestApplication = dailyTrend.length ? dailyTrend[dailyTrend.length - 1].data : '';
   const monthly = useMemo(() => buildMonthly(filtered), [filtered]);
   const monthlyByUmb = useMemo(() => buildMonthlyByUmb(filtered), [filtered]);
   const projection = useMemo(() => buildProjection(filtered, cache.ritmo || []), [filtered, cache.ritmo]);
-  const total = useMemo(() => totals(filtered), [filtered, filters.poligono, filters.umb, filters.operador, filters.year, filters.month, filters.startDate, filters.endDate]);
+  const total = useMemo(() => totals(filtered), [filtered, filters.poligono, filters.poligonoSearch, filters.umb, filters.operador, filters.year, filters.month, filters.startDate, filters.endDate]);
 
   const options = useMemo(() => ({
     poligonos: uniqueValues(records, 'poligono'),
