@@ -8,18 +8,9 @@ function hasCalendarFilter(filters) {
   return filters.year !== 'Todos' || filters.month !== 'Todos';
 }
 
-function getEffectiveDateBounds(filters) {
-  if (hasCalendarFilter(filters)) {
-    return { start: '', end: '' };
-  }
-  return {
-    start: filters.startDate || '',
-    end: filters.endDate || ''
-  };
-}
-
 export function applyFilters(records, filters) {
-  const { start, end } = getEffectiveDateBounds(filters);
+  const start = filters.startDate || '';
+  const end = filters.endDate || '';
   const poligonoSearch = filters.poligonoSearch?.trim().toLowerCase() || '';
   return records.filter((item) => {
     const data = String(item.data || '').slice(0, 10);
@@ -36,7 +27,8 @@ export function applyFilters(records, filters) {
 }
 
 export function applyMetaFilters(metas, filters) {
-  const { start, end } = getEffectiveDateBounds(filters);
+  const start = filters.startDate || '';
+  const end = filters.endDate || '';
   return metas.filter((item) => {
     const data = String(item.data || '').slice(0, 10);
     if (!data) return false;

@@ -132,6 +132,18 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .filterBox select { margin-top: 10px; }
 .filterHint { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.35; }
 .dateRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.clearButton {
+  background: var(--ink);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.clearButton:hover { background: var(--enaex-red); }
 .statusStrip {
   display: grid;
   grid-template-columns: 150px 150px 220px 120px;

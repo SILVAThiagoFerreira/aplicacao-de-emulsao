@@ -223,6 +223,19 @@ function Dashboard({ cache, status, config }) {
     setFilters((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  const handleClearFilters = useCallback(() => {
+    setFilters({
+      poligonoSearch: '',
+      poligono: 'Todos',
+      umb: 'Todos',
+      operador: 'Todos',
+      year: 'Todos',
+      month: 'Todos',
+      startDate: dateRange.start,
+      endDate: dateRange.end
+    });
+  }, [dateRange.start, dateRange.end]);
+
   const dateRange = useMemo(() => {
     const dates = allRecords.map((r) => r.data).filter(Boolean).sort();
     return {
@@ -257,6 +270,7 @@ function Dashboard({ cache, status, config }) {
         <FilterPanel
           filters={filters}
           onFilterChange={handleFilterChange}
+          onClear={handleClearFilters}
           options={options}
           dateRange={dateRange}
         />
@@ -430,8 +444,8 @@ function DailyPanel({ rows, total }) {
   );
 }
 
-function FilterPanel({ filters, onFilterChange, options, dateRange }) {
-  const calendarFilterActive = filters.year !== 'Todos' || filters.month !== 'Todos';
+function FilterPanel({ filters, onFilterChange, onClear, options, dateRange }) {
+  const hasActiveFilter = filters.poligono !== 'Todos' || filters.umb !== 'Todos' || filters.operador !== 'Todos' || filters.year !== 'Todos' || filters.month !== 'Todos' || filters.poligonoSearch !== '';
 
   const handlePoligonoSearch = useCallback((e) => {
     onFilterChange('poligonoSearch', e.target.value);
@@ -481,20 +495,18 @@ function FilterPanel({ filters, onFilterChange, options, dateRange }) {
         </select>
       </div>
       <div className="panel filterBox">
-        <h3>DATA</h3>
+        <h3>ANO</h3>
         <select value={filters.year} onChange={handleYear}>
           <option value="Todos">Todos</option>
           {options.years.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
+      </div>
+      <div className="panel filterBox">
+        <h3>MES</h3>
         <select value={filters.month} onChange={handleMonth}>
           <option value="Todos">Todos</option>
           {monthNames.map((month, index) => <option value={String(index + 1)} key={month}>{month}</option>)}
         </select>
-        <p className="filterHint">
-          {calendarFilterActive
-            ? 'Ano/mes tem prioridade sobre o periodo manual abaixo.'
-            : 'Use o periodo manual abaixo para refinar a faixa de datas.'}
-        </p>
       </div>
       <div className="panel filterBox">
         <h3>UMB</h3>
@@ -511,7 +523,7 @@ function FilterPanel({ filters, onFilterChange, options, dateRange }) {
         </select>
       </div>
       <div className="panel filterBox span2">
-        <h3>DATA</h3>
+        <h3>PERIODO</h3>
         <div className="dateRow">
           <input
             type="date"
@@ -519,8 +531,7 @@ function FilterPanel({ filters, onFilterChange, options, dateRange }) {
             min={dateRange.start}
             max={dateRange.end}
             onChange={handleStartDate}
-            disabled={calendarFilterActive}
-            title={calendarFilterActive ? 'Limpe ano/mes para usar o periodo manual.' : 'Filtrar data inicial.'}
+            title="Filtrar data inicial."
           />
           <input
             type="date"
@@ -528,12 +539,16 @@ function FilterPanel({ filters, onFilterChange, options, dateRange }) {
             min={dateRange.start}
             max={dateRange.end}
             onChange={handleEndDate}
-            disabled={calendarFilterActive}
-            title={calendarFilterActive ? 'Limpe ano/mes para usar o periodo manual.' : 'Filtrar data final.'}
+            title="Filtrar data final."
           />
         </div>
-        <p className="filterHint">Periodo manual aplicado quando ano e mes estiverem em <strong>Todos</strong>.</p>
+        <p className="filterHint">Filtros de data e ano/mes funcionam juntos.</p>
       </div>
+      {hasActiveFilter && (
+        <div className="panel filterBox span2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button className="clearButton" onClick={onClear}>Limpar filtros</button>
+        </div>
+      )}
     </div>
   );
 }
