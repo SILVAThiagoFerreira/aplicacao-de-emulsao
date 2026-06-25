@@ -1,12 +1,25 @@
-import { formatDate, getMonthKey, getYear, monthLabelFromKey, toNumber } from './format';
+import { formatDate, getMonthKey, getYear, monthLabelFromKey, toNumber } from './format.js';
 
 export function uniqueValues(records, field) {
   return Array.from(new Set(records.map((item) => item[field]).filter(Boolean))).sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
 }
 
+function hasCalendarFilter(filters) {
+  return filters.year !== 'Todos' || filters.month !== 'Todos';
+}
+
+function getEffectiveDateBounds(filters) {
+  if (hasCalendarFilter(filters)) {
+    return { start: '', end: '' };
+  }
+  return {
+    start: filters.startDate || '',
+    end: filters.endDate || ''
+  };
+}
+
 export function applyFilters(records, filters) {
-  const start = filters.startDate || '';
-  const end = filters.endDate || '';
+  const { start, end } = getEffectiveDateBounds(filters);
   const poligonoSearch = filters.poligonoSearch?.trim().toLowerCase() || '';
   return records.filter((item) => {
     const data = String(item.data || '').slice(0, 10);
@@ -23,8 +36,7 @@ export function applyFilters(records, filters) {
 }
 
 export function applyMetaFilters(metas, filters) {
-  const start = filters.startDate || '';
-  const end = filters.endDate || '';
+  const { start, end } = getEffectiveDateBounds(filters);
   return metas.filter((item) => {
     const data = String(item.data || '').slice(0, 10);
     if (!data) return false;

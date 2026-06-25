@@ -23,8 +23,8 @@ import {
   buildProjection,
   totals,
   uniqueValues
-} from './lib/aggregate';
-import { formatDate, formatKg, formatMil, monthNames } from './lib/format';
+} from './lib/aggregate.js';
+import { formatDate, formatKg, formatMil, monthNames } from './lib/format.js';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true';
 const DEFAULT_REFRESH_SECONDS = 300;
@@ -232,16 +232,16 @@ function Dashboard({ cache, status, config }) {
     }));
   }, [dateRange.start, dateRange.end]);
 
-  const filtered = useMemo(() => applyFilters(records, filters), [records, filters]);
+  const filteredRecords = useMemo(() => applyFilters(records, filters), [records, filters]);
   const filteredMetas = useMemo(() => applyMetaFilters(metas, filters), [metas, filters]);
-  const dailyRows = useMemo(() => buildDailyTable(filtered), [filtered, filters.poligono, filters.poligonoSearch, filters.umb, filters.operador, filters.year, filters.month, filters.startDate, filters.endDate]);
-  const dailyTrend = useMemo(() => buildDailyTrend(filtered, filteredMetas), [filtered, filteredMetas]);
+  const dailyRows = useMemo(() => buildDailyTable(filteredRecords), [filteredRecords]);
+  const dailyTrend = useMemo(() => buildDailyTrend(filteredRecords, filteredMetas), [filteredRecords, filteredMetas]);
   const dailyTicks = useMemo(() => getDateTicks(dailyTrend), [dailyTrend]);
   const latestApplication = dailyTrend.length ? dailyTrend[dailyTrend.length - 1].data : '';
-  const monthly = useMemo(() => buildMonthly(filtered), [filtered]);
-  const monthlyByUmb = useMemo(() => buildMonthlyByUmb(filtered), [filtered]);
-  const projection = useMemo(() => buildProjection(filtered, cache.ritmo || []), [filtered, cache.ritmo]);
-  const total = useMemo(() => totals(filtered), [filtered, filters.poligono, filters.poligonoSearch, filters.umb, filters.operador, filters.year, filters.month, filters.startDate, filters.endDate]);
+  const monthly = useMemo(() => buildMonthly(filteredRecords), [filteredRecords]);
+  const monthlyByUmb = useMemo(() => buildMonthlyByUmb(filteredRecords), [filteredRecords]);
+  const projection = useMemo(() => buildProjection(filteredRecords, cache.ritmo || []), [filteredRecords, cache.ritmo]);
+  const total = useMemo(() => totals(filteredRecords), [filteredRecords]);
 
   const options = useMemo(() => ({
     poligonos: uniqueValues(records, 'poligono'),
@@ -382,7 +382,10 @@ function StatusStrip({ cache, status, config, total, latestApplication }) {
 function DailyPanel({ rows, total }) {
   return (
     <div className="panel dailyPanel">
-      <h2>DEMONSTRATIVO DIÁRIO</h2>
+      <div className="tableHeader">
+        <h2>DEMONSTRATIVO DIÁRIO</h2>
+        <span className="tableMeta">{rows.length.toLocaleString('pt-BR')} linhas</span>
+      </div>
       <div className="tableWrap">
         <table>
           <thead>
@@ -394,14 +397,20 @@ function DailyPanel({ rows, total }) {
             </tr>
           </thead>
           <tbody>
-            {rows.slice(0, 18).map((row) => (
-              <tr key={`${row.data}-${row.poligono}`}>
-                <td>{formatDate(row.data)}</td>
-                <td>{row.poligono}</td>
-                <td>{row.emulsao.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</td>
-                <td>{row.furos.toLocaleString('pt-BR')}</td>
+            {rows.length === 0 ? (
+              <tr>
+                <td className="tableEmptyState" colSpan="4">Nenhum registro encontrado para os filtros selecionados.</td>
               </tr>
-            ))}
+            ) : (
+              rows.slice(0, 18).map((row) => (
+                <tr key={`${row.data}-${row.poligono}`}>
+                  <td>{formatDate(row.data)}</td>
+                  <td>{row.poligono}</td>
+                  <td>{row.emulsao.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</td>
+                  <td>{row.furos.toLocaleString('pt-BR')}</td>
+                </tr>
+              ))
+            )}
           </tbody>
           <tfoot>
             <tr>
@@ -418,6 +427,7 @@ function DailyPanel({ rows, total }) {
 
 function FilterPanel({ filters, setFilters, options, dateRange }) {
   const update = (field, value) => setFilters((old) => ({ ...old, [field]: value }));
+  const calendarFilterActive = filters.year !== 'Todos' || filters.month !== 'Todos';
   return (
     <div className="filtersGrid">
       <div className="panel filterBox span2">
@@ -438,6 +448,11 @@ function FilterPanel({ filters, setFilters, options, dateRange }) {
           <option>Todos</option>
           {monthNames.map((month, index) => <option value={index + 1} key={month}>{month}</option>)}
         </select>
+        <p className="filterHint">
+          {calendarFilterActive
+            ? 'Ano/mês têm prioridade sobre o período manual abaixo.'
+            : 'Use o período manual abaixo para refinar a faixa de datas.'}
+        </p>
       </div>
       <div className="panel filterBox">
         <h3>UMB</h3>
@@ -456,9 +471,26 @@ function FilterPanel({ filters, setFilters, options, dateRange }) {
       <div className="panel filterBox span2">
         <h3>DATA</h3>
         <div className="dateRow">
-          <input type="date" value={filters.startDate || dateRange.start} min={dateRange.start} max={dateRange.end} onChange={(event) => update('startDate', event.target.value)} />
-          <input type="date" value={filters.endDate || dateRange.end} min={dateRange.start} max={dateRange.end} onChange={(event) => update('endDate', event.target.value)} />
+          <input
+            type="date"
+            value={filters.startDate || dateRange.start}
+            min={dateRange.start}
+            max={dateRange.end}
+            onChange={(event) => update('startDate', event.target.value)}
+            disabled={calendarFilterActive}
+            title={calendarFilterActive ? 'Limpe ano/mês para usar o período manual.' : 'Filtrar data inicial.'}
+          />
+          <input
+            type="date"
+            value={filters.endDate || dateRange.end}
+            min={dateRange.start}
+            max={dateRange.end}
+            onChange={(event) => update('endDate', event.target.value)}
+            disabled={calendarFilterActive}
+            title={calendarFilterActive ? 'Limpe ano/mês para usar o período manual.' : 'Filtrar data final.'}
+          />
         </div>
+        <p className="filterHint">Período manual aplicado quando ano e mês estiverem em <strong>Todos</strong>.</p>
       </div>
     </div>
   );
