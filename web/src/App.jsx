@@ -544,11 +544,9 @@ function FilterPanel({ filters, onFilterChange, onClear, options, dateRange }) {
         </div>
         <p className="filterHint">Filtros de data e ano/mes funcionam juntos.</p>
       </div>
-      {hasActiveFilter && (
-        <div className="panel filterBox span2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <button className="clearButton" onClick={onClear}>Limpar filtros</button>
-        </div>
-      )}
+      <div className="panel filterBox span2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button className="clearButton" onClick={onClear} disabled={!hasActiveFilter}>Limpar filtros</button>
+      </div>
     </div>
   );
 }
