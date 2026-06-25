@@ -219,6 +219,14 @@ function Dashboard({ cache, status, config }) {
     endDate: getCurrentMonthRange().end
   }));
 
+  const dateRange = useMemo(() => {
+    const dates = allRecords.map((r) => r.data).filter(Boolean).sort();
+    return {
+      start: dates[0] || '2026-01-01',
+      end: dates[dates.length - 1] || '2026-12-31'
+    };
+  }, [allRecords]);
+
   const handleFilterChange = useCallback((field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
   }, []);
@@ -235,14 +243,6 @@ function Dashboard({ cache, status, config }) {
       endDate: dateRange.end
     });
   }, [dateRange.start, dateRange.end]);
-
-  const dateRange = useMemo(() => {
-    const dates = allRecords.map((r) => r.data).filter(Boolean).sort();
-    return {
-      start: dates[0] || '2026-01-01',
-      end: dates[dates.length - 1] || '2026-12-31'
-    };
-  }, [allRecords]);
 
   const filteredRecords = useMemo(() => applyFilters(allRecords, filters), [allRecords, filters]);
   const filteredMetas = useMemo(() => applyMetaFilters(metas, filters), [metas, filters]);
