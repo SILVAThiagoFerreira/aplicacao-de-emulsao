@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
   Area,
   Bar,
@@ -26,7 +26,7 @@ import {
 } from './lib/aggregate.js';
 import { formatDate, formatKg, formatMil, monthNames } from './lib/format.js';
 
-const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true';
+const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true';
 const DEFAULT_REFRESH_SECONDS = 300;
 
 function normalizeRefreshMs(value) {
@@ -99,7 +99,7 @@ function getCurrentMonthRange() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const pad = (value) => String(value).padStart(2, '0');
+  const pad = (v) => String(v).padStart(2, '0');
   const start = `${year}-${month}-01`;
   const lastDay = new Date(year, now.getMonth() + 1, 0);
   const end = `${lastDay.getFullYear()}-${pad(lastDay.getMonth() + 1)}-${pad(lastDay.getDate())}`;
@@ -175,7 +175,7 @@ function Topbar() {
       <div className="brand">
         <img src="assets/Enaex Brasil - White.png" alt="Enaex Brasil" />
       </div>
-      <h1>Emulsão</h1>
+      <h1>Emulsao</h1>
     </header>
   );
 }
@@ -191,70 +191,75 @@ function Sidebar({ route, online }) {
 
 function getDateTicks(rows) {
   if (rows.length <= 6) return rows.map((item) => item.dia);
-
   const lastIndex = rows.length - 1;
   const indexes = new Set([0, lastIndex]);
-
-  for (let item = 1; item <= 4; item += 1) {
-    indexes.add(Math.round((item * lastIndex) / 5));
+  for (let i = 1; i <= 4; i += 1) {
+    indexes.add(Math.round((i * lastIndex) / 5));
   }
-
   return Array.from(indexes)
     .sort((a, b) => a - b)
-    .map((index) => rows[index]?.dia)
+    .map((idx) => rows[idx]?.dia)
     .filter(Boolean);
 }
 
 function Dashboard({ cache, status, config }) {
-  const records = useMemo(() => cache?.records || [], [cache]);
-  const metas = useMemo(() => cache?.metas || [], [cache]);
-  const dateRange = useMemo(() => {
-    const dates = records.map((item) => item.data).filter(Boolean).sort();
-    return { start: dates[0] || '2026-01-01', end: dates[dates.length - 1] || '2026-04-24' };
-  }, [records]);
+  const allRecords = cache?.records || [];
+  const metas = cache?.metas || [];
+
   const currentMonth = useMemo(() => getCurrentMonthRange(), []);
-  const [filters, setFilters] = useState({
+
+  const [filters, setFilters] = useState(() => ({
     poligonoSearch: '',
     poligono: 'Todos',
     umb: 'Todos',
     operador: 'Todos',
     year: 'Todos',
     month: 'Todos',
-    startDate: currentMonth.start,
-    endDate: currentMonth.end
-  });
+    startDate: getCurrentMonthRange().start,
+    endDate: getCurrentMonthRange().end
+  }));
 
-  useEffect(() => {
-    setFilters((old) => ({
-      ...old,
-      startDate: old.startDate || getCurrentMonthRange().start,
-      endDate: old.endDate || getCurrentMonthRange().end
-    }));
-  }, [dateRange.start, dateRange.end]);
+  const handleFilterChange = useCallback((field, value) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
-  const filteredRecords = useMemo(() => applyFilters(records, filters), [records, filters]);
+  const dateRange = useMemo(() => {
+    const dates = allRecords.map((r) => r.data).filter(Boolean).sort();
+    return {
+      start: dates[0] || '2026-01-01',
+      end: dates[dates.length - 1] || '2026-12-31'
+    };
+  }, [allRecords]);
+
+  const filteredRecords = useMemo(() => applyFilters(allRecords, filters), [allRecords, filters]);
   const filteredMetas = useMemo(() => applyMetaFilters(metas, filters), [metas, filters]);
+
   const dailyRows = useMemo(() => buildDailyTable(filteredRecords), [filteredRecords]);
   const dailyTrend = useMemo(() => buildDailyTrend(filteredRecords, filteredMetas), [filteredRecords, filteredMetas]);
   const dailyTicks = useMemo(() => getDateTicks(dailyTrend), [dailyTrend]);
   const latestApplication = dailyTrend.length ? dailyTrend[dailyTrend.length - 1].data : '';
   const monthly = useMemo(() => buildMonthly(filteredRecords), [filteredRecords]);
   const monthlyByUmb = useMemo(() => buildMonthlyByUmb(filteredRecords), [filteredRecords]);
-  const projection = useMemo(() => buildProjection(filteredRecords, cache.ritmo || []), [filteredRecords, cache.ritmo]);
+  const projection = useMemo(() => buildProjection(filteredRecords, cache?.ritmo || []), [filteredRecords, cache?.ritmo]);
   const total = useMemo(() => totals(filteredRecords), [filteredRecords]);
 
   const options = useMemo(() => ({
-    poligonos: uniqueValues(records, 'poligono'),
-    umbs: uniqueValues(records, 'umb'),
-    operadores: uniqueValues(records, 'operador'),
-    years: Array.from(new Set(records.map((item) => String(item.data || '').slice(0, 4)).filter(Boolean))).sort()
-  }), [records]);
+    poligonos: uniqueValues(allRecords, 'poligono'),
+    umbs: uniqueValues(allRecords, 'umb'),
+    operadores: uniqueValues(allRecords, 'operador'),
+    years: Array.from(new Set(allRecords.map((r) => String(r.data || '').slice(0, 4)).filter(Boolean))).sort()
+  }), [allRecords]);
 
   return (
     <div className="dashboardGrid">
       <section className="leftPanel">
         <DailyPanel rows={dailyRows} total={total} />
-        <FilterPanel filters={filters} setFilters={setFilters} options={options} dateRange={dateRange} />
+        <FilterPanel
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          options={options}
+          dateRange={dateRange}
+        />
       </section>
       <section className="rightPanel">
         <StatusStrip cache={cache} status={status} config={config} total={total} latestApplication={latestApplication} />
@@ -274,7 +279,7 @@ function Dashboard({ cache, status, config }) {
               <Tooltip
                 content={
                   <ChartTooltip
-                    valueFormatter={(value) => formatKg(value)}
+                    valueFormatter={(v) => formatKg(v)}
                     labelFormatter={(_, items) => items?.[0]?.payload ? `Data: ${formatDate(items[0].payload.data)}` : ''}
                   />
                 }
@@ -282,7 +287,7 @@ function Dashboard({ cache, status, config }) {
               <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 12 }} />
               <Area dataKey="aplicado" fill="url(#dailyEmulsaoFill)" stroke="none" legendType="none" />
               <Line type="monotone" dataKey="aplicado" name="Aplicado" stroke="#e30613" strokeWidth={2.6} dot={false} activeDot={{ r: 5 }} />
-              <Line type="monotone" dataKey="mediaMovel" name="Média móvel 7d" stroke="#00A79D" strokeWidth={2.4} dot={false} activeDot={{ r: 4, fill: '#00A79D' }} />
+              <Line type="monotone" dataKey="mediaMovel" name="Media movel 7d" stroke="#00A79D" strokeWidth={2.4} dot={false} activeDot={{ r: 4, fill: '#00A79D' }} />
               <Line type="monotone" dataKey="meta" name="Meta" stroke="#B8A53D" strokeWidth={2.2} strokeDasharray="7 5" dot={false} activeDot={{ r: 4, fill: '#B8A53D' }} connectNulls />
             </ComposedChart>
           </ResponsiveContainer>
@@ -303,8 +308,8 @@ function Dashboard({ cache, status, config }) {
               <Tooltip
                 content={
                   <ChartTooltip
-                    valueFormatter={(value) => formatKg(value)}
-                    labelFormatter={(label) => `Mês: ${label}`}
+                    valueFormatter={(v) => formatKg(v)}
+                    labelFormatter={(label) => `Mes: ${label}`}
                   />
                 }
               />
@@ -323,7 +328,7 @@ function Dashboard({ cache, status, config }) {
               <Tooltip
                 content={
                   <ChartTooltip
-                    valueFormatter={(value) => formatKg(value)}
+                    valueFormatter={(v) => formatKg(v)}
                     labelFormatter={(_, items) => items?.[0]?.payload ? `${items[0].payload.mes} | UMB ${items[0].payload.umb}` : ''}
                   />
                 }
@@ -345,7 +350,7 @@ function Dashboard({ cache, status, config }) {
               <CartesianGrid strokeDasharray="1 5" horizontal={false} />
               <XAxis type="number" tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={70} />
-              <Tooltip content={<ChartTooltip valueFormatter={(value) => formatKg(value)} />} />
+              <Tooltip content={<ChartTooltip valueFormatter={(v) => formatKg(v)} />} />
               <Bar dataKey="value" radius={[0, 2, 2, 0]} fill="#b00020" barSize={18} />
             </BarChart>
           </ResponsiveContainer>
@@ -364,15 +369,15 @@ function StatusStrip({ cache, status, config, total, latestApplication }) {
         <strong>{total.registros.toLocaleString('pt-BR')}</strong>
       </div>
       <div>
-        <span className="label">Última aplicação</span>
+        <span className="label">Ultima aplicacao</span>
         <strong>{formatDate(latestApplication) || '-'}</strong>
       </div>
       <div>
-        <span className="label">Última atualização</span>
+        <span className="label">Ultima atualizacao</span>
         <strong>{readTimestamp(cache?.updatedAt) || readTimestamp(status?.lastSuccessAt) || 'Aguardando refresh'}</strong>
       </div>
       <div>
-        <span className="label">Ciclo automático</span>
+        <span className="label">Ciclo automatico</span>
         <strong>{Math.round((config?.refreshSeconds || DEFAULT_REFRESH_SECONDS) / 60)} min</strong>
       </div>
     </div>
@@ -383,7 +388,7 @@ function DailyPanel({ rows, total }) {
   return (
     <div className="panel dailyPanel">
       <div className="tableHeader">
-        <h2>DEMONSTRATIVO DIÁRIO</h2>
+        <h2>DEMONSTRATIVO DIARIO</h2>
         <span className="tableMeta">{rows.length.toLocaleString('pt-BR')} linhas</span>
       </div>
       <div className="tableWrap">
@@ -391,8 +396,8 @@ function DailyPanel({ rows, total }) {
           <thead>
             <tr>
               <th>Data</th>
-              <th>Polígono</th>
-              <th>Soma de Emulsão</th>
+              <th>Poligono</th>
+              <th>Soma de Emulsao</th>
               <th>Soma de Furos</th>
             </tr>
           </thead>
@@ -425,47 +430,84 @@ function DailyPanel({ rows, total }) {
   );
 }
 
-function FilterPanel({ filters, setFilters, options, dateRange }) {
-  const update = (field, value) => setFilters((old) => ({ ...old, [field]: value }));
+function FilterPanel({ filters, onFilterChange, options, dateRange }) {
   const calendarFilterActive = filters.year !== 'Todos' || filters.month !== 'Todos';
+
+  const handlePoligonoSearch = useCallback((e) => {
+    onFilterChange('poligonoSearch', e.target.value);
+  }, [onFilterChange]);
+
+  const handlePoligono = useCallback((e) => {
+    onFilterChange('poligono', e.target.value);
+  }, [onFilterChange]);
+
+  const handleYear = useCallback((e) => {
+    onFilterChange('year', e.target.value);
+  }, [onFilterChange]);
+
+  const handleMonth = useCallback((e) => {
+    onFilterChange('month', e.target.value);
+  }, [onFilterChange]);
+
+  const handleUmb = useCallback((e) => {
+    onFilterChange('umb', e.target.value);
+  }, [onFilterChange]);
+
+  const handleOperador = useCallback((e) => {
+    onFilterChange('operador', e.target.value);
+  }, [onFilterChange]);
+
+  const handleStartDate = useCallback((e) => {
+    onFilterChange('startDate', e.target.value);
+  }, [onFilterChange]);
+
+  const handleEndDate = useCallback((e) => {
+    onFilterChange('endDate', e.target.value);
+  }, [onFilterChange]);
+
   return (
     <div className="filtersGrid">
       <div className="panel filterBox span2">
-        <h3>POLÍGONO</h3>
-        <input value={filters.poligonoSearch} onChange={(event) => update('poligonoSearch', event.target.value)} placeholder="Search" />
-        <select value={filters.poligono} onChange={(event) => update('poligono', event.target.value)}>
-          <option>Todos</option>
-          {options.poligonos.map((item) => <option key={item}>{item}</option>)}
+        <h3>POLIGONO</h3>
+        <input
+          type="text"
+          value={filters.poligonoSearch}
+          onChange={handlePoligonoSearch}
+          placeholder="Search"
+        />
+        <select value={filters.poligono} onChange={handlePoligono}>
+          <option value="Todos">Todos</option>
+          {options.poligonos.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
       </div>
       <div className="panel filterBox">
         <h3>DATA</h3>
-        <select value={filters.year} onChange={(event) => update('year', event.target.value)}>
-          <option>Todos</option>
-          {options.years.map((item) => <option key={item}>{item}</option>)}
+        <select value={filters.year} onChange={handleYear}>
+          <option value="Todos">Todos</option>
+          {options.years.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
-        <select value={filters.month} onChange={(event) => update('month', event.target.value)}>
-          <option>Todos</option>
-          {monthNames.map((month, index) => <option value={index + 1} key={month}>{month}</option>)}
+        <select value={filters.month} onChange={handleMonth}>
+          <option value="Todos">Todos</option>
+          {monthNames.map((month, index) => <option value={String(index + 1)} key={month}>{month}</option>)}
         </select>
         <p className="filterHint">
           {calendarFilterActive
-            ? 'Ano/mês têm prioridade sobre o período manual abaixo.'
-            : 'Use o período manual abaixo para refinar a faixa de datas.'}
+            ? 'Ano/mes tem prioridade sobre o periodo manual abaixo.'
+            : 'Use o periodo manual abaixo para refinar a faixa de datas.'}
         </p>
       </div>
       <div className="panel filterBox">
         <h3>UMB</h3>
-        <select value={filters.umb} onChange={(event) => update('umb', event.target.value)}>
-          <option>Todos</option>
-          {options.umbs.map((item) => <option key={item}>{item}</option>)}
+        <select value={filters.umb} onChange={handleUmb}>
+          <option value="Todos">Todos</option>
+          {options.umbs.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
       </div>
       <div className="panel filterBox">
         <h3>OPERADOR</h3>
-        <select value={filters.operador} onChange={(event) => update('operador', event.target.value)}>
-          <option>Todos</option>
-          {options.operadores.map((item) => <option key={item}>{item}</option>)}
+        <select value={filters.operador} onChange={handleOperador}>
+          <option value="Todos">Todos</option>
+          {options.operadores.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
       </div>
       <div className="panel filterBox span2">
@@ -476,21 +518,21 @@ function FilterPanel({ filters, setFilters, options, dateRange }) {
             value={filters.startDate || dateRange.start}
             min={dateRange.start}
             max={dateRange.end}
-            onChange={(event) => update('startDate', event.target.value)}
+            onChange={handleStartDate}
             disabled={calendarFilterActive}
-            title={calendarFilterActive ? 'Limpe ano/mês para usar o período manual.' : 'Filtrar data inicial.'}
+            title={calendarFilterActive ? 'Limpe ano/mes para usar o periodo manual.' : 'Filtrar data inicial.'}
           />
           <input
             type="date"
             value={filters.endDate || dateRange.end}
             min={dateRange.start}
             max={dateRange.end}
-            onChange={(event) => update('endDate', event.target.value)}
+            onChange={handleEndDate}
             disabled={calendarFilterActive}
-            title={calendarFilterActive ? 'Limpe ano/mês para usar o período manual.' : 'Filtrar data final.'}
+            title={calendarFilterActive ? 'Limpe ano/mes para usar o periodo manual.' : 'Filtrar data final.'}
           />
         </div>
-        <p className="filterHint">Período manual aplicado quando ano e mês estiverem em <strong>Todos</strong>.</p>
+        <p className="filterHint">Periodo manual aplicado quando ano e mes estiverem em <strong>Todos</strong>.</p>
       </div>
     </div>
   );
@@ -516,7 +558,6 @@ function ChartTooltip({ active, payload, label, labelFormatter, valueFormatter }
       uniqueMap.set(key, item);
       continue;
     }
-
     const currentName = String(current?.name || '').trim();
     const nextName = String(item?.name || '').trim();
     const currentGeneric = !currentName || currentName === String(current?.dataKey ?? '').trim();
