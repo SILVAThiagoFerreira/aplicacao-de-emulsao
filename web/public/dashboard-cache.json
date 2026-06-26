@@ -6311,6 +6311,24 @@
       "umb": 1123,
       "operador": "GILMAR",
       "mediaKgFuro": 132.77118644067798
+    },
+    {
+      "data": "2026-06-25",
+      "poligono": "PP330626",
+      "emulsao": 0,
+      "furos": 0,
+      "umb": "",
+      "operador": "",
+      "mediaKgFuro": 0
+    },
+    {
+      "data": "2026-06-25",
+      "poligono": "PP330626",
+      "emulsao": 0,
+      "furos": 0,
+      "umb": "",
+      "operador": "",
+      "mediaKgFuro": 0
     }
   ],
   "ritmo": [
@@ -6682,11 +6700,7 @@
     },
     {
       "data": "2026-06-27",
-      "meta": 35000
-    },
-    {
-      "data": "2026-06-28",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-06-29",
@@ -7437,7 +7451,7 @@
     "emulsao": 6682759,
     "furos": 55470
   },
-  "updatedAt": "2026-06-26T02:09:38.437Z",
+  "updatedAt": "2026-06-26T02:10:42.816Z",
   "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
