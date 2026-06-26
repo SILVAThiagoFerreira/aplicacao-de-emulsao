@@ -6317,18 +6317,18 @@
       "poligono": "PP330626",
       "emulsao": 6321,
       "furos": 46,
-      "umb": "",
-      "operador": "",
+      "umb": 1123,
+      "operador": "GILMAR",
       "mediaKgFuro": 137.41304347826087
     },
     {
       "data": "2026-06-25",
       "poligono": "PP330626",
       "emulsao": 7441,
-      "furos": 0,
-      "umb": "",
-      "operador": "",
-      "mediaKgFuro": 0
+      "furos": 59,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 126.11864406779661
     }
   ],
   "ritmo": [
@@ -7449,9 +7449,9 @@
   ],
   "totals": {
     "emulsao": 6696521,
-    "furos": 55516
+    "furos": 55575
   },
-  "updatedAt": "2026-06-26T02:11:46.595Z",
+  "updatedAt": "2026-06-26T02:24:48.209Z",
   "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
