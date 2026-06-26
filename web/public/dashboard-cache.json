@@ -6315,16 +6315,16 @@
     {
       "data": "2026-06-25",
       "poligono": "PP330626",
-      "emulsao": 0,
-      "furos": 0,
+      "emulsao": 6321,
+      "furos": 46,
       "umb": "",
       "operador": "",
-      "mediaKgFuro": 0
+      "mediaKgFuro": 137.41304347826087
     },
     {
       "data": "2026-06-25",
       "poligono": "PP330626",
-      "emulsao": 0,
+      "emulsao": 7441,
       "furos": 0,
       "umb": "",
       "operador": "",
@@ -6377,8 +6377,8 @@
       "mes": "Junho",
       "mesNumero": 6,
       "meta": 400000,
-      "ritmo": 420609.6,
-      "aplicado": 350508
+      "ritmo": 437124,
+      "aplicado": 364270
     },
     {
       "ano": 2026,
@@ -7448,10 +7448,10 @@
     }
   ],
   "totals": {
-    "emulsao": 6682759,
-    "furos": 55470
+    "emulsao": 6696521,
+    "furos": 55516
   },
-  "updatedAt": "2026-06-26T02:10:42.816Z",
+  "updatedAt": "2026-06-26T02:11:46.595Z",
   "updatedBy": "n8n-sync",
   "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
 }
