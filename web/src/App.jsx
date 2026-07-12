@@ -175,7 +175,7 @@ function Topbar() {
       <div className="brand">
         <img src="assets/Enaex Brasil - White.png" alt="Enaex Brasil" />
       </div>
-      <h1>Emulsao</h1>
+      <h1>Emulsão</h1>
     </header>
   );
 }
