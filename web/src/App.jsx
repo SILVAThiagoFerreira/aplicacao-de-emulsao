@@ -176,6 +176,7 @@ function Topbar() {
         <img src="assets/Enaex Brasil - White.png" alt="Enaex Brasil" />
       </div>
       <h1>Emulsão</h1>
+      <span className="topbarUnit">US VALE VERDE</span>
     </header>
   );
 }
