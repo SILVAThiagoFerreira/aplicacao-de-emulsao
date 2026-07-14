@@ -492,7 +492,7 @@ function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onCl
           <input type="date" value={selectedDate} min={dateBounds.start} max={dateBounds.end} onChange={(event) => onDateChange(event.target.value)} />
         </label>
         <div className="reportPreview" ref={reportRef}>
-          <div className="reportBrandLine"><span>ENAEX</span><span>US VALE VERDE · APLICAÇÃO DE EMULSÃO</span></div>
+          <div className="reportBrandLine"><img className="reportLogo" src="./assets/Enaex Brasil.png" alt="Enaex Brasil" /><span>US VALE VERDE · APLICAÇÃO DE EMULSÃO</span></div>
           <div className="reportHeading">
             <div><span className="reportKicker">Resumo operacional</span><h3>Aplicação de Emulsão</h3><p>{monthName}</p></div>
             <div className="reportDateBadge"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
