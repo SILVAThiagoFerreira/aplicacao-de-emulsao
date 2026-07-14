@@ -467,7 +467,7 @@ function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onCl
         <div className="reportDialogHeader">
           <div>
             <span className="eyebrow">Exportação rápida</span>
-            <h2 id="report-title">Relatório one page</h2>
+            <h2 id="report-title">Relatório One Page</h2>
             <p>Escolha a data de referência para consolidar o mês até aquele dia.</p>
           </div>
           <button className="iconButton" type="button" onClick={onClose} aria-label="Fechar relatório"><X size={20} /></button>
