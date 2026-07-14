@@ -446,12 +446,27 @@ function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onCl
     if (!reportRef.current || !selectedDate) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(reportRef.current, {
+      const FULL_HD_WIDTH = 1920;
+      const FULL_HD_HEIGHT = 1080;
+      const previewBounds = reportRef.current.getBoundingClientRect();
+      const previewCanvas = await html2canvas(reportRef.current, {
         backgroundColor: '#f7f8f9',
-        scale: Math.min(2, window.devicePixelRatio || 1.5),
+        scale: Math.max(2, FULL_HD_WIDTH / previewBounds.width),
         useCORS: true,
         logging: false
       });
+      const canvas = document.createElement('canvas');
+      canvas.width = FULL_HD_WIDTH;
+      canvas.height = FULL_HD_HEIGHT;
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#f7f8f9';
+      context.fillRect(0, 0, FULL_HD_WIDTH, FULL_HD_HEIGHT);
+      const fitScale = Math.min(FULL_HD_WIDTH / previewCanvas.width, FULL_HD_HEIGHT / previewCanvas.height);
+      const drawWidth = previewCanvas.width * fitScale;
+      const drawHeight = previewCanvas.height * fitScale;
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(previewCanvas, (FULL_HD_WIDTH - drawWidth) / 2, (FULL_HD_HEIGHT - drawHeight) / 2, drawWidth, drawHeight);
       const link = document.createElement('a');
       link.download = `relatorio-emulsao-${selectedDate}.png`;
       link.href = canvas.toDataURL('image/png');
