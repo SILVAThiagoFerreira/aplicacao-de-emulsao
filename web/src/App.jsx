@@ -461,7 +461,7 @@ function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onCl
       const context = canvas.getContext('2d');
       context.fillStyle = '#f7f8f9';
       context.fillRect(0, 0, FULL_HD_WIDTH, FULL_HD_HEIGHT);
-      const fitScale = Math.min(FULL_HD_WIDTH / previewCanvas.width, FULL_HD_HEIGHT / previewCanvas.height);
+      const fitScale = Math.max(FULL_HD_WIDTH / previewCanvas.width, FULL_HD_HEIGHT / previewCanvas.height);
       const drawWidth = previewCanvas.width * fitScale;
       const drawHeight = previewCanvas.height * fitScale;
       context.imageSmoothingEnabled = true;
@@ -498,13 +498,13 @@ function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onCl
             <div className="reportDateBadge"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
           </div>
           <div className="reportKpis">
-            <ReportKpi label="Aplicado no mês até a data" value={formatKg(monthTotal.emulsao)} tone="red" />
-            <ReportKpi label="Aplicado no dia" value={formatKg(dayTotal.emulsao)} tone="teal" />
-            <ReportKpi label="Furos no dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
+            <ReportKpi label="Aplicado (Month to date)" value={formatKg(monthTotal.emulsao)} tone="red" />
+            <ReportKpi label="Aplicado/Dia" value={formatKg(dayTotal.emulsao)} tone="gray" />
+            <ReportKpi label="Furos Carregados/Dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
           </div>
           <div className="reportDetailGrid">
             <div><span className="reportSectionLabel">Acumulado mensal</span><strong>{monthTotal.registros.toLocaleString('pt-BR')} registros</strong><small>De {formatDate(monthStart)} até {formatDate(selectedDate)}</small></div>
-            <div><span className="reportSectionLabel">Detalhe do dia</span>{dayByPolygon.length ? dayByPolygon.map((row) => <p key={`${row.data}-${row.poligono}`}><span>{row.poligono || 'Sem polígono'}</span><strong>{formatKg(row.emulsao)}</strong></p>) : <small>Nenhuma aplicação encontrada nesta data.</small>}</div>
+            <div><span className="reportSectionLabel">Aplicação Detalhada/Dia</span>{dayByPolygon.length ? dayByPolygon.map((row) => <p key={`${row.data}-${row.poligono}`}><span>{row.poligono || 'Sem polígono'}</span><strong>{formatKg(row.emulsao)}</strong></p>) : <small>Nenhuma aplicação encontrada nesta data.</small>}</div>
           </div>
           <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
         </div>
