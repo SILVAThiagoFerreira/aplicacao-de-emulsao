@@ -13,6 +13,8 @@ import {
   YAxis
 } from 'recharts';
 import { Home } from 'lucide-react';
+import { CalendarDays, Download, ImageDown, X } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import {
   applyMetaFilters,
   applyFilters,
@@ -219,6 +221,8 @@ function Dashboard({ cache, status, config }) {
     startDate: getCurrentMonthRange().start,
     endDate: getCurrentMonthRange().end
   }));
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportDate, setReportDate] = useState('');
 
   const dateRange = useMemo(() => {
     const dates = allRecords.map((r) => r.data).filter(Boolean).sort();
@@ -256,6 +260,17 @@ function Dashboard({ cache, status, config }) {
   const monthlyByUmb = useMemo(() => buildMonthlyByUmb(filteredRecords), [filteredRecords]);
   const projection = useMemo(() => buildProjection(filteredRecords, cache?.ritmo || []), [filteredRecords, cache?.ritmo]);
   const total = useMemo(() => totals(filteredRecords), [filteredRecords]);
+  const latestRecordDate = useMemo(() => allRecords.map((record) => String(record.data || '').slice(0, 10)).filter(Boolean).sort().at(-1) || '', [allRecords]);
+
+  const reportDateBounds = useMemo(() => ({
+    start: dateRange.start,
+    end: dateRange.end
+  }), [dateRange.start, dateRange.end]);
+
+  const openReport = useCallback(() => {
+    setReportDate(latestRecordDate || dateRange.end);
+    setReportOpen(true);
+  }, [dateRange.end, latestRecordDate]);
 
   const options = useMemo(() => ({
     poligonos: uniqueValues(allRecords, 'poligono'),
@@ -277,7 +292,7 @@ function Dashboard({ cache, status, config }) {
         />
       </section>
       <section className="rightPanel">
-        <StatusStrip cache={cache} status={status} config={config} total={total} latestApplication={latestApplication} />
+        <StatusStrip cache={cache} status={status} config={config} total={total} latestApplication={latestApplication} onOpenReport={openReport} />
 
         <ChartCard title="EMULSÃO: Aplicação Dia a Dia" className="chartDailyTrend">
           <ResponsiveContainer width="100%" height={190}>
@@ -371,11 +386,21 @@ function Dashboard({ cache, status, config }) {
           </ResponsiveContainer>
         </ChartCard>
       </section>
+      {reportOpen ? (
+        <ReportModal
+          allRecords={allRecords}
+          filters={filters}
+          date={reportDate}
+          dateBounds={reportDateBounds}
+          onDateChange={setReportDate}
+          onClose={() => setReportOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
 
-function StatusStrip({ cache, status, config, total, latestApplication }) {
+function StatusStrip({ cache, status, config, total, latestApplication, onOpenReport }) {
   const failed = status?.state === 'error';
   return (
     <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
@@ -395,8 +420,90 @@ function StatusStrip({ cache, status, config, total, latestApplication }) {
         <span className="label">Ciclo automatico</span>
         <strong>{Math.round((config?.refreshSeconds || DEFAULT_REFRESH_SECONDS) / 60)} min</strong>
       </div>
+      <button className="reportButton" onClick={onOpenReport} type="button">
+        <ImageDown size={16} />
+        Exportar relatório
+      </button>
     </div>
   );
+}
+
+function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onClose }) {
+  const reportRef = useRef(null);
+  const [exporting, setExporting] = useState(false);
+  const selectedDate = String(date || '').slice(0, 10);
+  const monthStart = selectedDate ? `${selectedDate.slice(0, 7)}-01` : '';
+  const baseFilters = { ...filters, startDate: monthStart, endDate: selectedDate };
+  const dayFilters = { ...filters, startDate: selectedDate, endDate: selectedDate };
+  const monthRecords = applyFilters(allRecords, baseFilters);
+  const dayRecords = applyFilters(allRecords, dayFilters);
+  const monthTotal = totals(monthRecords);
+  const dayTotal = totals(dayRecords);
+  const dayByPolygon = buildDailyTable(dayRecords);
+  const monthName = selectedDate ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-';
+
+  const exportImage = async () => {
+    if (!reportRef.current || !selectedDate) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: '#f7f8f9',
+        scale: Math.min(2, window.devicePixelRatio || 1.5),
+        useCORS: true,
+        logging: false
+      });
+      const link = document.createElement('a');
+      link.download = `relatorio-emulsao-${selectedDate}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="report-title">
+      <div className="reportDialog">
+        <div className="reportDialogHeader">
+          <div>
+            <span className="eyebrow">Exportação rápida</span>
+            <h2 id="report-title">Relatório one page</h2>
+            <p>Escolha a data de referência para consolidar o mês até aquele dia.</p>
+          </div>
+          <button className="iconButton" type="button" onClick={onClose} aria-label="Fechar relatório"><X size={20} /></button>
+        </div>
+        <label className="reportDateField">
+          <span><CalendarDays size={16} /> Data da aplicação</span>
+          <input type="date" value={selectedDate} min={dateBounds.start} max={dateBounds.end} onChange={(event) => onDateChange(event.target.value)} />
+        </label>
+        <div className="reportPreview" ref={reportRef}>
+          <div className="reportBrandLine"><span>ENAEX</span><span>US VALE VERDE · APLICAÇÃO DE EMULSÃO</span></div>
+          <div className="reportHeading">
+            <div><span className="reportKicker">Resumo operacional</span><h3>Aplicação de emulsão</h3><p>{monthName}</p></div>
+            <div className="reportDateBadge"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
+          </div>
+          <div className="reportKpis">
+            <ReportKpi label="Aplicado no mês até a data" value={formatKg(monthTotal.emulsao)} tone="red" />
+            <ReportKpi label="Aplicado no dia" value={formatKg(dayTotal.emulsao)} tone="teal" />
+            <ReportKpi label="Furos no dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
+          </div>
+          <div className="reportDetailGrid">
+            <div><span className="reportSectionLabel">Acumulado mensal</span><strong>{monthTotal.registros.toLocaleString('pt-BR')} registros</strong><small>De {formatDate(monthStart)} até {formatDate(selectedDate)}</small></div>
+            <div><span className="reportSectionLabel">Detalhe do dia</span>{dayByPolygon.length ? dayByPolygon.map((row) => <p key={`${row.data}-${row.poligono}`}><span>{row.poligono || 'Sem polígono'}</span><strong>{formatKg(row.emulsao)}</strong></p>) : <small>Nenhuma aplicação encontrada nesta data.</small>}</div>
+          </div>
+          <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
+        </div>
+        <div className="reportActions">
+          <button className="secondaryButton" type="button" onClick={onClose}>Cancelar</button>
+          <button className="primaryButton" type="button" onClick={exportImage} disabled={!selectedDate || exporting}><Download size={17} /> {exporting ? 'Gerando imagem...' : 'Baixar imagem PNG'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReportKpi({ label, value, tone }) {
+  return <div className={`reportKpi ${tone}`}><span>{label}</span><strong>{value}</strong></div>;
 }
 
 function DailyPanel({ rows, total }) {
