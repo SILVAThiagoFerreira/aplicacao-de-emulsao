@@ -13,7 +13,7 @@ import {
   YAxis
 } from 'recharts';
 import { Home } from 'lucide-react';
-import { CalendarDays, Download, ImageDown, X } from 'lucide-react';
+import { CalendarDays, Download, FileSpreadsheet, ImageDown, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
   applyMetaFilters,
@@ -400,8 +400,29 @@ function Dashboard({ cache, status, config }) {
   );
 }
 
+function getWorkbookDownloadUrl(sourceUrl) {
+  const fallback = DEFAULT_SOURCE;
+  try {
+    const url = new URL(sourceUrl || fallback);
+    const sheetsMatch = url.pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (url.hostname.includes('docs.google.com') && sheetsMatch) {
+      return `https://docs.google.com/spreadsheets/d/${sheetsMatch[1]}/export?format=xlsx`;
+    }
+
+    const driveMatch = url.pathname.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (url.hostname.includes('drive.google.com') && driveMatch) {
+      return `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+    }
+
+    return url.toString();
+  } catch {
+    return fallback;
+  }
+}
+
 function StatusStrip({ cache, status, config, total, latestApplication, onOpenReport }) {
   const failed = status?.state === 'error';
+  const workbookDownloadUrl = getWorkbookDownloadUrl(config?.sourceUrl);
   return (
     <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
       <div>
@@ -424,6 +445,17 @@ function StatusStrip({ cache, status, config, total, latestApplication, onOpenRe
         <ImageDown size={16} />
         Exportar relatório
       </button>
+      <a
+        className="dataButton"
+        href={workbookDownloadUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        download="base-dados-emulsao.xlsx"
+        aria-label="Baixar Base de Dados em Excel"
+      >
+        <FileSpreadsheet size={16} />
+        Baixar Base de Dados
+      </a>
     </div>
   );
 }
