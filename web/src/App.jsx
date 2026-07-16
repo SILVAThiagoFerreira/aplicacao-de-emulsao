@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   ComposedChart,
   Legend,
+  LabelList,
   Line,
   ResponsiveContainer,
   Tooltip,
@@ -382,7 +383,17 @@ function Dashboard({ cache, status, config }) {
                 }
               />
               <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="aplicado" name="Aplicado" fill="#e30613" radius={[2, 2, 0, 0]} maxBarSize={48} />
+              <Bar dataKey="aplicado" name="Aplicado" fill="#e30613" radius={[2, 2, 0, 0]} maxBarSize={48}>
+                <LabelList
+                  dataKey="aplicado"
+                  position="inside"
+                  formatter={formatMil}
+                  fill="#fff"
+                  fontSize={10}
+                  fontWeight={700}
+                  textAnchor="middle"
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -399,7 +410,17 @@ function Dashboard({ cache, status, config }) {
               <XAxis type="number" tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={70} />
               <Tooltip content={<ChartTooltip valueFormatter={(v) => formatKg(v)} />} />
-              <Bar dataKey="value" radius={[0, 2, 2, 0]} fill="#b00020" barSize={18} />
+              <Bar dataKey="value" radius={[0, 2, 2, 0]} fill="#b00020" barSize={18}>
+                <LabelList
+                  dataKey="value"
+                  position="inside"
+                  formatter={formatMil}
+                  fill="#fff"
+                  fontSize={11}
+                  fontWeight={700}
+                  textAnchor="middle"
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
