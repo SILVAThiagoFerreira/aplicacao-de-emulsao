@@ -1,6 +1,6 @@
 {
-  "sourceUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true",
-  "finalUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true",
+  "sourceUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx",
+  "finalUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx",
   "sourceState": "live",
   "records": [
     {
@@ -6547,7 +6547,7 @@
       "mediaKgFuro": 99.64351851851852
     },
     {
-      "data": "2025-07-15",
+      "data": "2026-07-15",
       "poligono": "PP290726_D",
       "emulsao": 4262,
       "furos": 49,
@@ -6556,7 +6556,7 @@
       "mediaKgFuro": 86.9795918367347
     },
     {
-      "data": "2025-07-15",
+      "data": "2026-07-15",
       "poligono": "PP400726",
       "emulsao": 16619,
       "furos": 157,
@@ -6565,7 +6565,7 @@
       "mediaKgFuro": 105.85350318471338
     },
     {
-      "data": "2025-07-15",
+      "data": "2026-07-15",
       "poligono": "PP400726",
       "emulsao": 6174,
       "furos": 56,
@@ -6628,8 +6628,8 @@
       "mes": "Julho",
       "mesNumero": 7,
       "meta": 400000,
-      "ritmo": 329490.1428571429,
-      "aplicado": 148802
+      "ritmo": 363437.8,
+      "aplicado": 175857
     },
     {
       "ano": 2026,
@@ -6724,8 +6724,8 @@
       "mes": "Julho",
       "mesNumero": 7,
       "meta": 400000,
-      "ritmo": 301384,
-      "aplicado": 301384
+      "ritmo": 274329,
+      "aplicado": 274329
     },
     {
       "ano": 2025,
@@ -7846,7 +7846,7 @@
       "motivo": "Iniciamos o carregamento PP29D mas ficamos aguardando área para caregamento devido ter repés para serem perfurados e perfilagem da face."
     },
     {
-      "data": "2026-07-14",
+      "data": "2026-07-15",
       "poligono": "PP290726_D, PP400726",
       "motivo": "Finalizamos os carregamentos do PP29D, PP40 , carregamos regularização e iniciamos as programação."
     }
@@ -7855,6 +7855,6 @@
     "emulsao": 6933584,
     "furos": 57795
   },
-  "updatedAt": "2026-07-16T00:07:36.521Z",
-  "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true"
+  "updatedAt": "2026-07-16T01:14:51.547Z",
+  "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx"
 }
