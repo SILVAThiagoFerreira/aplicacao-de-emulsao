@@ -344,7 +344,7 @@ function Dashboard({ cache, status, config }) {
 
         <ChartCard title="EMULSÃO: Aplicação Mensal" className="chartLarge">
           <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={monthly} margin={{ top: 10, right: 22, bottom: 8, left: 0 }}>
+            <ComposedChart data={monthly} margin={{ top: 24, right: 22, bottom: 8, left: 24 }}>
               <defs>
                 <linearGradient id="emulsaoFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#b00020" stopOpacity={0.12} />
@@ -352,8 +352,8 @@ function Dashboard({ cache, status, config }) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="1 5" vertical={false} />
-              <XAxis dataKey="mes" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
+              <XAxis dataKey="mes" padding={{ left: 12, right: 12 }} minTickGap={14} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} padding={{ top: 12, bottom: 0 }} />
               <Tooltip
                 content={
                   <ChartTooltip

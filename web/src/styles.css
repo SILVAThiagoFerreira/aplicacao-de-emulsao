@@ -86,7 +86,7 @@ button { cursor: pointer; }
 .leftPanel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .leftPanel > .periodSummary { flex: 0 1 auto; min-height: 0; }
 .rightPanel { display: grid; grid-template-rows: auto 0.9fr 1fr 1fr 0.82fr; gap: 13px; min-width: 0; }
-.rightPanel > * { min-width: 0; }
+.rightPanel > * { min-width: 0; min-height: 0; }
 .panel {
   background: var(--panel);
   border: 1px solid var(--soft-line);
@@ -352,4 +352,9 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .reportKpis, .reportDetailGrid { grid-template-columns: 1fr; }
   .reportDetailGrid > div:first-child { border-right: 0; border-bottom: 1px solid #d8dde1; padding: 0 0 14px; }
   .reportDateField input { width: 100%; }
+}
+@media (max-width: 360px) {
+  .topbar { grid-template-columns: 104px minmax(0, 1fr) 86px; }
+  .topbar h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; }
+  .topbarUnit { min-width: 0; padding-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 7px; }
 }
