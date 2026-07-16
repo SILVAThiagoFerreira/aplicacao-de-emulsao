@@ -298,6 +298,14 @@ function Dashboard({ cache, status, config }) {
           options={options}
           dateRange={dateRange}
         />
+        <PeriodSummary
+          total={total}
+          recordCount={filteredRecords.length}
+          dayCount={dailyTrend.length}
+          justificationCount={filteredJustifications.length}
+          latestApplication={latestApplication}
+          dateRange={filters}
+        />
       </section>
       <section className="rightPanel">
         <StatusStrip cache={cache} status={status} config={config} total={total} latestApplication={latestApplication} onOpenReport={openReport} />
@@ -739,10 +747,50 @@ function FilterPanel({ filters, onFilterChange, onClear, options, dateRange }) {
         </div>
         <p className="filterHint">Filtros de data e ano/mes funcionam juntos.</p>
       </div>
-      <div className="panel filterBox span2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="panel filterBox clearFilterBox span2">
         <button className="clearButton" onClick={onClear} disabled={!hasActiveFilter}>Limpar filtros</button>
       </div>
     </div>
+  );
+}
+
+function PeriodSummary({ total, recordCount, dayCount, justificationCount, latestApplication, dateRange }) {
+  return (
+    <section className="panel periodSummary" aria-label="Resumo do período">
+      <div className="periodSummaryHeader">
+        <div>
+          <span className="eyebrow">Leitura rápida</span>
+          <h2>RESUMO DO PERÍODO</h2>
+        </div>
+        <span className="periodSummaryMark" aria-hidden="true">◎</span>
+      </div>
+      <div className="periodSummaryGrid">
+        <div className="summaryMetric summaryMetricAccent">
+          <span>Emulsão aplicada</span>
+          <strong>{formatKg(total.emulsao)}</strong>
+          <small>kg no período selecionado</small>
+        </div>
+        <div className="summaryMetric">
+          <span>Furos realizados</span>
+          <strong>{total.furos.toLocaleString('pt-BR')}</strong>
+          <small>{recordCount.toLocaleString('pt-BR')} registros de aplicação</small>
+        </div>
+        <div className="summaryMetric">
+          <span>Dias com aplicação</span>
+          <strong>{dayCount.toLocaleString('pt-BR')}</strong>
+          <small>última: {formatDate(latestApplication) || '-'}</small>
+        </div>
+        <div className="summaryMetric">
+          <span>Justificativas</span>
+          <strong>{justificationCount.toLocaleString('pt-BR')}</strong>
+          <small>registros associados ao período</small>
+        </div>
+      </div>
+      <div className="periodSummaryFooter">
+        <span>Janela analisada</span>
+        <strong>{formatDate(dateRange.startDate) || '-'} — {formatDate(dateRange.endDate) || '-'}</strong>
+      </div>
+    </section>
   );
 }
 
