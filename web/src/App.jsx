@@ -298,6 +298,7 @@ function Dashboard({ cache, status, config }) {
           options={options}
           dateRange={dateRange}
         />
+        <JustificationsPanel justifications={filteredJustifications} />
         <PeriodSummary
           total={total}
           recordCount={filteredRecords.length}
@@ -403,7 +404,6 @@ function Dashboard({ cache, status, config }) {
           </ResponsiveContainer>
         </ChartCard>
 
-        <JustificationsPanel justifications={filteredJustifications} />
       </section>
       {reportOpen ? (
         <ReportModal

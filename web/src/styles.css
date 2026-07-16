@@ -78,14 +78,15 @@ button { cursor: pointer; }
 }
 .dashboardGrid {
   display: grid;
-  grid-template-columns: 36% 64%;
+  grid-template-columns: minmax(0, 36fr) minmax(0, 64fr);
   min-height: calc(100vh - 54px);
   padding: 14px 20px 18px 22px;
   gap: 16px;
 }
 .leftPanel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.leftPanel > .periodSummary { flex: 1 1 auto; min-height: 250px; }
+.leftPanel > .periodSummary { flex: 0 1 auto; min-height: 0; }
 .rightPanel { display: grid; grid-template-rows: auto 0.9fr 1fr 1fr 0.82fr; gap: 13px; min-width: 0; }
+.rightPanel > * { min-width: 0; }
 .panel {
   background: var(--panel);
   border: 1px solid var(--soft-line);
@@ -180,7 +181,7 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .periodSummaryFooter strong { color: var(--ink); font-size: 11px; text-align: right; }
 .statusStrip {
   display: grid;
-  grid-template-columns: 150px 150px 220px 120px auto auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) max-content max-content;
   gap: 12px;
   align-items: center;
   background: white;
@@ -188,8 +189,9 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
   padding: 10px 12px;
   font-size: 12px;
 }
+.statusStrip > div { min-width: 0; }
 .statusStrip .label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 2px; }
-.statusStrip strong { font-size: 13px; }
+.statusStrip strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
 .statusStrip.hasError { border-left: 4px solid var(--enaex-red); }
 .reportButton, .primaryButton, .secondaryButton, .iconButton { border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .reportButton { justify-self: end; min-height: 34px; padding: 8px 13px; background: var(--enaex-red); color: #fff; font-size: 12px; font-weight: 750; border-radius: 3px; white-space: nowrap; }
@@ -325,6 +327,10 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .rightPanel { grid-template-rows: auto; }
   .topbar { grid-template-columns: 180px 1fr 150px; }
   .statusStrip { grid-template-columns: 1fr 1fr; }
+  .reportButton, .dataButton { justify-self: start; }
+}
+@media (max-width: 1280px) and (min-width: 1081px) {
+  .statusStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .reportButton, .dataButton { justify-self: start; }
 }
 @media (max-width: 720px) {
