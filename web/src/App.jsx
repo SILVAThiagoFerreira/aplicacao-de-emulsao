@@ -300,14 +300,6 @@ function Dashboard({ cache, status, config }) {
           dateRange={dateRange}
         />
         <JustificationsPanel justifications={filteredJustifications} />
-        <PeriodSummary
-          total={total}
-          recordCount={filteredRecords.length}
-          dayCount={dailyTrend.length}
-          justificationCount={filteredJustifications.length}
-          latestApplication={latestApplication}
-          dateRange={filters}
-        />
       </section>
       <section className="rightPanel">
         <StatusStrip cache={cache} status={status} config={config} total={total} latestApplication={latestApplication} onOpenReport={openReport} />
@@ -444,6 +436,14 @@ function Dashboard({ cache, status, config }) {
         </ChartCard>
 
       </section>
+      <PeriodSummary
+        total={total}
+        recordCount={filteredRecords.length}
+        dayCount={dailyTrend.length}
+        justificationCount={filteredJustifications.length}
+        latestApplication={latestApplication}
+        dateRange={filters}
+      />
       {reportOpen ? (
         <ReportModal
           allRecords={allRecords}

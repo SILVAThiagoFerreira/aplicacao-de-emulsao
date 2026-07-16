@@ -84,7 +84,7 @@ button { cursor: pointer; }
   gap: 16px;
 }
 .leftPanel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.leftPanel > .periodSummary { flex: 0 1 auto; min-height: 0; }
+.periodSummary { grid-column: 1 / -1; }
 .rightPanel {
   display: grid;
   grid-template-rows: auto;
@@ -343,7 +343,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
 @media (max-width: 1080px) {
   .dashboardGrid { grid-template-columns: 1fr; }
-  .leftPanel > .periodSummary { min-height: 0; }
+  .periodSummary { grid-column: 1 / -1; }
   .rightPanel { grid-template-rows: auto; }
   .topbar { grid-template-columns: 180px 1fr 150px; }
   .statusStrip { grid-template-columns: 1fr 1fr; }
