@@ -198,6 +198,10 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .chartTooltipSwatch { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
 .chartTooltipName { flex: 1 1 auto; min-width: 0; }
 .chartTooltipRow strong { font-size: 12px; color: #26323d; }
+.chartTooltipJustification { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e1e5e8; color: #4f5c66; font-size: 11px; line-height: 1.4; }
+.chartTooltipJustification > span { display: block; margin-bottom: 4px; color: var(--enaex-red); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.chartTooltipJustification p { margin: 4px 0 0; }
+.chartTooltipJustification strong { color: #26323d; }
 .recharts-text { fill: #5d6872; }
 .recharts-tooltip-wrapper { font-size: 12px; }
 .projectionHeader { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #333; padding-top: 4px; }
@@ -239,6 +243,15 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .reportDetailGrid small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; }
 .reportDetailGrid p { display: flex; justify-content: space-between; gap: 16px; margin: 7px 0 0; padding-bottom: 5px; border-bottom: 1px solid #e6e9eb; font-size: 12px; }
 .reportDetailGrid p strong { margin: 0; font-size: 12px; }
+.reportJustificationBlock { margin-top: 18px; padding: 14px 0 0; border-top: 1px solid #d8dde1; }
+.reportJustificationBlock .justificationList { margin-top: 8px; max-height: none; }
+.justificationsPanel { padding: 12px 14px 14px; min-height: 190px; }
+.justificationList { display: grid; gap: 8px; margin-top: 8px; max-height: 230px; overflow: auto; }
+.justificationItem { padding: 9px 10px; border-left: 3px solid var(--enaex-red); background: #f5f6f7; }
+.justificationMeta { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; color: var(--muted); font-size: 11px; }
+.justificationMeta strong { color: #26323d; font-size: 12px; }
+.justificationItem p { margin: 5px 0 0; color: #3c4752; font-size: 12px; line-height: 1.4; }
+.justificationEmpty { margin: 14px 0 4px; color: var(--muted); font-size: 12px; }
 .reportFooter { margin-top: 16px; padding-top: 9px; border-top: 1px solid #d8dde1; color: var(--muted); font-size: 10px; }
 .reportActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 .primaryButton, .secondaryButton { min-height: 40px; padding: 10px 15px; font-size: 12px; font-weight: 750; }

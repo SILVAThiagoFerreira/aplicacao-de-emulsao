@@ -40,6 +40,36 @@ export function applyMetaFilters(metas, filters) {
   });
 }
 
+export function applyJustificationFilters(justifications, filters) {
+  const start = filters.startDate || '';
+  const end = filters.endDate || '';
+  const poligonoSearch = filters.poligonoSearch?.trim().toLowerCase() || '';
+  return justifications.filter((item) => {
+    const data = String(item.data || '').slice(0, 10);
+    if (!data) return false;
+    if (start && data < start) return false;
+    if (end && data > end) return false;
+    if (filters.year !== 'Todos' && getYear(data) !== Number(filters.year)) return false;
+    if (filters.month !== 'Todos' && Number(data.slice(5, 7)) !== Number(filters.month)) return false;
+    if (filters.poligono !== 'Todos' && item.poligono && item.poligono !== filters.poligono) return false;
+    if (poligonoSearch && item.poligono && !item.poligono.toLowerCase().includes(poligonoSearch)) return false;
+    return true;
+  });
+}
+
+export function groupJustificationsByDate(justifications) {
+  const map = new Map();
+  justifications.forEach((item) => {
+    const data = String(item.data || '').slice(0, 10);
+    if (!data || !item.motivo) return;
+    const entries = map.get(data) || [];
+    const key = `${item.poligono}|${item.motivo}`;
+    if (!entries.some((entry) => `${entry.poligono}|${entry.motivo}` === key)) entries.push({ ...item, data });
+    map.set(data, entries);
+  });
+  return map;
+}
+
 export function buildDailyTable(records) {
   const map = new Map();
   records.forEach((item) => {

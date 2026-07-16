@@ -31,6 +31,7 @@ try {
     sourceState: 'fallback',
     records: Array.isArray(sampleDashboard.records) ? sampleDashboard.records : [],
     ritmo: Array.isArray(sampleDashboard.ritmo) ? sampleDashboard.ritmo : [],
+    justificativas: Array.isArray(sampleDashboard.justificativas) ? sampleDashboard.justificativas : [],
     totals: sampleDashboard.totals || { emulsao: 0, furos: 0 }
   };
   console.warn(`Falha ao ler a planilha; usando fallback local porque ALLOW_FALLBACK_SAMPLE=true: ${error.message}`);

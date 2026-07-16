@@ -5,6 +5,7 @@ function parseWorkbookToDashboard(buffer, { sourceUrl = '', finalUrl = '' } = {}
   const records = parseWorkbook(workbook);
   const ritmo = parseRitmo(workbook);
   const metas = parseMetas(workbook);
+  const justificativas = parseJustificativas(workbook);
   return {
     sourceUrl,
     finalUrl,
@@ -12,12 +13,35 @@ function parseWorkbookToDashboard(buffer, { sourceUrl = '', finalUrl = '' } = {}
     records,
     ritmo,
     metas,
+    justificativas,
     totals: records.reduce((acc, item) => {
       acc.emulsao += toNumber(item.emulsao);
       acc.furos += toNumber(item.furos);
       return acc;
     }, { emulsao: 0, furos: 0 })
   };
+}
+
+function parseJustificativas(workbook) {
+  const sheetName = findSheetNameWithHeaders(workbook, ['justificativa', 'justificativas'], ['data', 'motivo']);
+  if (!sheetName) return [];
+  const rows = readSheetRows(workbook, sheetName);
+  const headerIndex = findHeaderRow(rows, ['data', 'motivo']);
+  if (headerIndex < 0) return [];
+
+  const headers = rows[headerIndex].map(normalizeHeader);
+  const lookup = (names) => headers.findIndex((header) => names.some((name) => header.includes(normalizeHeader(name))));
+  const indexes = {
+    data: lookup(['data', 'dia', 'date']),
+    poligono: lookup(['poligono', 'bloco', 'nomepoligono']),
+    motivo: lookup(['motivo', 'justificativa', 'justificativas', 'razao', 'observacao', 'observacoes'])
+  };
+
+  return rows.slice(headerIndex + 1).map((row) => ({
+    data: normalizeDate(readCell(row, indexes.data)),
+    poligono: String(readCell(row, indexes.poligono) || '').trim(),
+    motivo: String(readCell(row, indexes.motivo) || '').trim()
+  })).filter((item) => item.data && item.motivo);
 }
 
 function parseWorkbook(workbook) {

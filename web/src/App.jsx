@@ -17,12 +17,14 @@ import { CalendarDays, Download, FileSpreadsheet, ImageDown, X } from 'lucide-re
 import html2canvas from 'html2canvas';
 import {
   applyMetaFilters,
+  applyJustificationFilters,
   applyFilters,
   buildDailyTable,
   buildDailyTrend,
   buildMonthly,
   buildMonthlyByUmb,
   buildProjection,
+  groupJustificationsByDate,
   totals,
   uniqueValues
 } from './lib/aggregate.js';
@@ -208,6 +210,7 @@ function getDateTicks(rows) {
 function Dashboard({ cache, status, config }) {
   const allRecords = cache?.records || [];
   const metas = cache?.metas || [];
+  const allJustifications = cache?.justificativas || [];
 
   const currentMonth = useMemo(() => getCurrentMonthRange(), []);
 
@@ -251,9 +254,14 @@ function Dashboard({ cache, status, config }) {
 
   const filteredRecords = useMemo(() => applyFilters(allRecords, filters), [allRecords, filters]);
   const filteredMetas = useMemo(() => applyMetaFilters(metas, filters), [metas, filters]);
+  const filteredJustifications = useMemo(() => applyJustificationFilters(allJustifications, filters), [allJustifications, filters]);
+  const justificationsByDate = useMemo(() => groupJustificationsByDate(filteredJustifications), [filteredJustifications]);
 
   const dailyRows = useMemo(() => buildDailyTable(filteredRecords), [filteredRecords]);
-  const dailyTrend = useMemo(() => buildDailyTrend(filteredRecords, filteredMetas), [filteredRecords, filteredMetas]);
+  const dailyTrend = useMemo(() => buildDailyTrend(filteredRecords, filteredMetas).map((row) => ({
+    ...row,
+    justificativas: justificationsByDate.get(row.data) || []
+  })), [filteredRecords, filteredMetas, justificationsByDate]);
   const dailyTicks = useMemo(() => getDateTicks(dailyTrend), [dailyTrend]);
   const latestApplication = dailyTrend.length ? dailyTrend[dailyTrend.length - 1].data : '';
   const monthly = useMemo(() => buildMonthly(filteredRecords), [filteredRecords]);
@@ -311,6 +319,7 @@ function Dashboard({ cache, status, config }) {
                   <ChartTooltip
                     valueFormatter={(v) => formatKg(v)}
                     labelFormatter={(_, items) => items?.[0]?.payload ? `Data: ${formatDate(items[0].payload.data)}` : ''}
+                    extraContent={(items) => <TooltipJustifications items={items?.[0]?.payload?.justificativas || []} />}
                   />
                 }
               />
@@ -385,10 +394,13 @@ function Dashboard({ cache, status, config }) {
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
+
+        <JustificationsPanel justifications={filteredJustifications} />
       </section>
       {reportOpen ? (
         <ReportModal
           allRecords={allRecords}
+          justifications={allJustifications}
           filters={filters}
           date={reportDate}
           dateBounds={reportDateBounds}
@@ -460,7 +472,7 @@ function StatusStrip({ cache, status, config, total, latestApplication, onOpenRe
   );
 }
 
-function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onClose }) {
+function ReportModal({ allRecords, justifications, filters, date, dateBounds, onDateChange, onClose }) {
   const reportRef = useRef(null);
   const [exporting, setExporting] = useState(false);
   const selectedDate = String(date || '').slice(0, 10);
@@ -469,6 +481,7 @@ function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onCl
   const dayFilters = { ...filters, startDate: selectedDate, endDate: selectedDate };
   const monthRecords = applyFilters(allRecords, baseFilters);
   const dayRecords = applyFilters(allRecords, dayFilters);
+  const dayJustifications = applyJustificationFilters(justifications, dayFilters);
   const monthTotal = totals(monthRecords);
   const dayTotal = totals(dayRecords);
   const dayByPolygon = buildDailyTable(dayRecords);
@@ -534,11 +547,12 @@ function ReportModal({ allRecords, filters, date, dateBounds, onDateChange, onCl
             <ReportKpi label="Aplicado/Dia" value={formatKg(dayTotal.emulsao)} tone="gray" />
             <ReportKpi label="Furos Carregados/Dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
           </div>
-          <div className="reportDetailGrid">
+           <div className="reportDetailGrid">
             <div><span className="reportSectionLabel">Acumulado mensal</span><strong>{monthTotal.registros.toLocaleString('pt-BR')} registros</strong><small>De {formatDate(monthStart)} até {formatDate(selectedDate)}</small></div>
-            <div><span className="reportSectionLabel">Aplicação Detalhada/Dia</span>{dayByPolygon.length ? dayByPolygon.map((row) => <p key={`${row.data}-${row.poligono}`}><span>{row.poligono || 'Sem polígono'}</span><strong>{formatKg(row.emulsao)}</strong></p>) : <small>Nenhuma aplicação encontrada nesta data.</small>}</div>
-          </div>
-          <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
+             <div><span className="reportSectionLabel">Aplicação Detalhada/Dia</span>{dayByPolygon.length ? dayByPolygon.map((row) => <p key={`${row.data}-${row.poligono}`}><span>{row.poligono || 'Sem polígono'}</span><strong>{formatKg(row.emulsao)}</strong></p>) : <small>Nenhuma aplicação encontrada nesta data.</small>}</div>
+           </div>
+           <div className="reportJustificationBlock"><span className="reportSectionLabel">Justificativas da data</span><JustificationList justifications={dayJustifications} emptyText="Nenhuma justificativa registrada para esta data." /></div>
+           <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
         </div>
         <div className="reportActions">
           <button className="secondaryButton" type="button" onClick={onClose}>Cancelar</button>
@@ -595,6 +609,32 @@ function DailyPanel({ rows, total }) {
           </tfoot>
         </table>
       </div>
+    </div>
+  );
+}
+
+function JustificationsPanel({ justifications }) {
+  return (
+    <div className="panel justificationsPanel">
+      <div className="tableHeader">
+        <h2>JUSTIFICATIVAS</h2>
+        <span className="tableMeta">{justifications.length.toLocaleString('pt-BR')} registros</span>
+      </div>
+      <JustificationList justifications={justifications} emptyText="Nenhuma justificativa registrada para os filtros selecionados." />
+    </div>
+  );
+}
+
+function JustificationList({ justifications, emptyText }) {
+  if (!justifications.length) return <p className="justificationEmpty">{emptyText}</p>;
+  return (
+    <div className="justificationList">
+      {justifications.map((item, index) => (
+        <div className="justificationItem" key={`${item.data}-${item.poligono}-${item.motivo}-${index}`}>
+          <div className="justificationMeta"><strong>{formatDate(item.data)}</strong><span>{item.poligono || 'Geral'}</span></div>
+          <p>{item.motivo}</p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -715,7 +755,12 @@ function ChartCard({ title, children, className = '' }) {
   );
 }
 
-function ChartTooltip({ active, payload, label, labelFormatter, valueFormatter }) {
+function TooltipJustifications({ items }) {
+  if (!items?.length) return null;
+  return <div className="chartTooltipJustification"><span>Justificativa</span>{items.map((item, index) => <p key={`${item.poligono}-${item.motivo}-${index}`}><strong>{item.poligono || 'Geral'}:</strong> {item.motivo}</p>)}</div>;
+}
+
+function ChartTooltip({ active, payload, label, labelFormatter, valueFormatter, extraContent }) {
   if (!active || !payload?.length) return null;
 
   const uniqueMap = new Map();
@@ -757,6 +802,7 @@ function ChartTooltip({ active, payload, label, labelFormatter, valueFormatter }
           );
         })}
       </div>
+      {typeof extraContent === 'function' ? extraContent(uniqueItems) : null}
     </div>
   );
 }
