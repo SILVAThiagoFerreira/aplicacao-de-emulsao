@@ -363,7 +363,17 @@ function Dashboard({ cache, status, config }) {
                 }
               />
               <Area dataKey="aplicado" fill="url(#emulsaoFill)" stroke="none" legendType="none" />
-              <Line type="monotone" dataKey="aplicado" stroke="#9b0016" strokeWidth={3} dot={{ r: 4, fill: '#9b0016' }} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="aplicado" stroke="#9b0016" strokeWidth={3} dot={{ r: 4, fill: '#9b0016' }} activeDot={{ r: 6 }}>
+                <LabelList
+                  dataKey="aplicado"
+                  position="top"
+                  offset={8}
+                  formatter={formatMil}
+                  fill="#9b0016"
+                  fontSize={9}
+                  fontWeight={700}
+                />
+              </Line>
             </ComposedChart>
           </ResponsiveContainer>
         </ChartCard>
