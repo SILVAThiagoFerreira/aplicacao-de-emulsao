@@ -313,7 +313,8 @@ function Dashboard({ cache, status, config }) {
         <StatusStrip cache={cache} status={status} config={config} total={total} latestApplication={latestApplication} onOpenReport={openReport} />
 
         <ChartCard title="EMULSÃO: Aplicação Dia a Dia" className="chartDailyTrend">
-          <ResponsiveContainer width="100%" height={190}>
+          <div className="chartViewport chartViewportDaily">
+          <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={dailyTrend} margin={{ top: 10, right: 22, bottom: 8, left: 0 }}>
               <defs>
                 <linearGradient id="dailyEmulsaoFill" x1="0" y1="0" x2="0" y2="1">
@@ -340,10 +341,12 @@ function Dashboard({ cache, status, config }) {
               <Line type="monotone" dataKey="meta" name="Meta" stroke="#B8A53D" strokeWidth={2.2} strokeDasharray="7 5" dot={false} activeDot={{ r: 4, fill: '#B8A53D' }} connectNulls />
             </ComposedChart>
           </ResponsiveContainer>
+          </div>
         </ChartCard>
 
         <ChartCard title="EMULSÃO: Aplicação Mensal" className="chartLarge">
-          <ResponsiveContainer width="100%" height={220}>
+          <div className="chartViewport chartViewportMonthly">
+          <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={monthly} margin={{ top: 24, right: 22, bottom: 8, left: 24 }}>
               <defs>
                 <linearGradient id="emulsaoFill" x1="0" y1="0" x2="0" y2="1">
@@ -376,10 +379,12 @@ function Dashboard({ cache, status, config }) {
               </Line>
             </ComposedChart>
           </ResponsiveContainer>
+          </div>
         </ChartCard>
 
         <ChartCard title="EMULSÃO: Aplicação Mensal/UMB" className="chartMedium">
-          <ResponsiveContainer width="100%" height={210}>
+          <div className="chartViewport chartViewportUmb">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyByUmb} margin={{ top: 12, right: 20, bottom: 12, left: 0 }}>
               <CartesianGrid strokeDasharray="1 5" vertical={false} />
               <XAxis dataKey="umb" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -406,6 +411,7 @@ function Dashboard({ cache, status, config }) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </ChartCard>
 
         <ChartCard title="PROJEÇÃO: Aplicação Mensal de Emulsão" className="chartProjection">
@@ -414,7 +420,8 @@ function Dashboard({ cache, status, config }) {
             <span className="dot dark" /> Ritmo
             <span className="dot red" /> Aplicado
           </div>
-          <ResponsiveContainer width="100%" height={160}>
+          <div className="chartViewport chartViewportProjection">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart layout="vertical" data={projection} margin={{ top: 10, right: 58, bottom: 10, left: 12 }}>
               <CartesianGrid strokeDasharray="1 5" horizontal={false} />
               <XAxis type="number" tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -433,6 +440,7 @@ function Dashboard({ cache, status, config }) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </ChartCard>
 
       </section>

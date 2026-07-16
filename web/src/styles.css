@@ -85,7 +85,13 @@ button { cursor: pointer; }
 }
 .leftPanel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .leftPanel > .periodSummary { flex: 0 1 auto; min-height: 0; }
-.rightPanel { display: grid; grid-template-rows: auto 0.9fr 1fr 1fr 0.82fr; gap: 13px; min-width: 0; }
+.rightPanel {
+  display: grid;
+  grid-template-rows: auto;
+  align-content: start;
+  gap: 13px;
+  min-width: 0;
+}
 .rightPanel > * { min-width: 0; min-height: 0; }
 .panel {
   background: var(--panel);
@@ -199,7 +205,19 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .reportButton:hover, .primaryButton:hover { background: var(--enaex-dark-red); }
 .dataButton:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
 .reportButton:focus-visible, .dataButton:focus-visible, .primaryButton:focus-visible, .secondaryButton:focus-visible, .iconButton:focus-visible { outline: 3px solid rgba(226, 6, 19, .28); outline-offset: 2px; }
-.chartCard { padding: 10px 18px 8px; min-width: 0; }
+.chartCard {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 18px 8px;
+  min-width: 0;
+  overflow: visible;
+}
+.chartViewport { width: 100%; min-width: 0; flex: 0 0 auto; }
+.chartViewportDaily { height: 190px; }
+.chartViewportMonthly { height: 220px; }
+.chartViewportUmb { height: 210px; }
+.chartViewportProjection { height: 160px; }
+.chartCard .recharts-responsive-container { min-width: 0; }
 .chartTitle { margin-bottom: 8px; color: #26323d; }
 .chartTooltip {
   background: rgba(255, 255, 255, 0.98);
@@ -347,6 +365,13 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .periodSummaryGrid { grid-template-columns: 1fr; }
   .periodSummaryFooter { align-items: flex-start; flex-direction: column; }
   .statusStrip { grid-template-columns: 1fr; }
+  .chartCard { padding-inline: 10px; }
+  .chartViewportDaily { height: 220px; }
+  .chartViewportMonthly { height: 235px; }
+  .chartViewportUmb { height: 220px; }
+  .chartViewportProjection { height: 176px; }
+  .chartCard .recharts-text { font-size: 10px; }
+  .chartLarge .recharts-label-list text { font-size: 8px !important; }
   .reportPreview { padding: 16px; }
   .reportBrandLine, .reportHeading { align-items: flex-start; flex-direction: column; }
   .reportKpis, .reportDetailGrid { grid-template-columns: 1fr; }
