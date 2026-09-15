@@ -9,8 +9,9 @@ A aplicação foi montada a partir do material zipado, mantendo a lógica do pai
 - **Front-end:** React + Vite + Recharts, pronto para GitHub Pages.
 - **Banco:** Firestore com `dashboard/cache` como JSON online.
 - **Login admin:** token secreto validado nas Cloud Functions.
-- **Monitoramento da planilha:** Cloud Functions a cada 2 minutos, na nuvem.
-- **Atualização do navegador:** Firestore em tempo real, sem novo deploy do Pages.
+- **Monitoramento da planilha:** Cloud Functions a cada 2 minutos quando o backend Firebase está no Blaze; o GitHub Actions hospedado mantém a sincronização de contingência a cada 5 minutos.
+- **Atualização manual:** botão **Atualizar Dados**, protegido por `ADMIN_PANEL_TOKEN`, lê a planilha na nuvem e confirma a gravação no Firestore.
+- **Atualização do navegador:** Firestore em tempo real, sem novo deploy do Pages para cada alteração de dados.
 - **n8n:** integração opcional por endpoint protegido; não é necessário manter um PC ligado.
 - **Email de falha:** SendGrid via Cloud Functions, opcional.
 - **Planilha original:** OneDrive/SharePoint, configurável no painel admin.
@@ -85,21 +86,23 @@ firebase deploy --only functions,firestore:rules,firestore:indexes
 
 No fluxo online, a Cloud Function agendada baixa a planilha, interpreta os dados e grava `dashboard/cache` no Firestore. O front-end publicado mantém um listener em tempo real nesse documento, portanto uma alteração de dados não exige novo build ou novo deploy do GitHub Pages.
 
+O botão **Atualizar Dados** chama a função `refreshWorkbook`, envia o token somente por HTTPS e aguarda a confirmação de `monitor/status`. O token nunca é salvo no navegador, no código ou no GitHub. Como o projeto Firebase está no plano Spark, a publicação das Functions fica bloqueada pelo próprio Firebase; para habilitar o botão manual e o monitoramento de 2 minutos, é necessário ativar o plano Blaze. Até essa ativação, o workflow hospedado continua atualizando o Firestore e o cache do Pages sem depender do PC ou do n8n.
+
 ## Atualização automática sem depender do PC
 
 O fluxo de dados em produção é:
 
 ```text
 Planilha Google Sheets
-        ↓ a cada 2 minutos
-Cloud Function scheduledWorkbookMonitor
+        ↓ a cada 5 minutos
+GitHub Actions hospedado
         ↓
-dashboard/cache no Firestore
-        ↓ listener onSnapshot
+dashboard/cache no Firestore + dashboard-cache.json
+        ↓ listener onSnapshot / fallback Pages
 Dashboard no GitHub Pages
 ```
 
-O GitHub Pages hospeda somente o código da interface e um cache estático de fallback. O processamento da planilha e a atualização online são executados pelos serviços do Firebase. O n8n pode chamar o endpoint protegido `syncDashboard` para uma atualização manual ou para uma automação externa, mas não é mais um requisito do site.
+O GitHub Pages hospeda somente o código da interface e um cache estático de fallback. O workflow não precisa de um computador ligado: ele baixa a planilha, processa os dados, grava o Firestore e publica o cache estático. Depois que o Blaze estiver ativo e as Functions forem publicadas, o monitoramento nativo de 2 minutos e o botão manual passam a operar pelo Firebase. O n8n pode chamar o endpoint protegido `syncDashboard`, mas não é requisito do site.
 
 ## Email de alerta
 
@@ -144,12 +147,12 @@ VITE_FIREBASE_APP_ID
 VITE_DASHBOARD_API_URL
 ```
 
-4. Cadastre também `FIREBASE_SERVICE_ACCOUNT_JSON` para que o workflow consiga publicar o backend/regras e gerar o cache inicial no ambiente hospedado.
-5. Faça push na branch `main`. O workflow `.github/workflows/deploy-pages.yml` publica o backend Firebase, atualiza o cache de fallback e faz o deploy do Pages.
+4. Cadastre também `FIREBASE_SERVICE_ACCOUNT_JSON` para que o workflow consiga gerar o cache e gravar `dashboard/cache` no ambiente hospedado. O deploy das Functions é uma etapa administrativa separada.
+5. Faça push na branch `main`. O workflow `.github/workflows/deploy-pages.yml` baixa a planilha, grava o cache do Firestore, atualiza o fallback estático e faz o deploy do Pages.
 
 ## Observação importante
 
-GitHub Pages hospeda só a interface. O estado real do dashboard fica no Firestore em `dashboard/cache`, atualizado pela Cloud Function a cada 2 minutos. O navegador recebe alterações por listener em tempo real, sem depender do computador do administrador.
+GitHub Pages hospeda só a interface. O estado real do dashboard fica no Firestore em `dashboard/cache`, atualizado pelo workflow hospedado a cada 5 minutos enquanto o projeto estiver no Spark ou pela Cloud Function a cada 2 minutos após a ativação do Blaze. O navegador recebe alterações por listener em tempo real, sem depender do computador do administrador.
 
 ## Atualização adicionada
 
@@ -200,7 +203,7 @@ firebase deploy --only functions,firestore:rules,firestore:indexes
 
 ## Secret usado pelo workflow hospedado
 
-O workflow usa a credencial abaixo para publicar as Functions/regras e gerar o cache inicial no GitHub Actions. O arquivo temporário existe somente durante a execução hospedada; ele não precisa ficar no seu PC nem no Git:
+O workflow usa a credencial abaixo para gravar o cache no Firestore e gerar o cache inicial no GitHub Actions. O arquivo temporário existe somente durante a execução hospedada; ele não precisa ficar no seu PC nem no Git:
 
 ```text
 FIREBASE_SERVICE_ACCOUNT_JSON

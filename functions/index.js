@@ -17,11 +17,15 @@ const SENDGRID_FROM = defineSecret('SENDGRID_FROM');
 const ADMIN_PANEL_TOKEN = defineSecret('ADMIN_PANEL_TOKEN');
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true';
 const DEFAULT_ALERT_EMAIL = 'thiago.ferreira@enaex.com';
+const MANUAL_REFRESH_COOLDOWN_MS = 15 * 1000;
+
+let activeRefreshPromise = null;
 
 exports.refreshWorkbook = onCall({ secrets: [SENDGRID_API_KEY, SENDGRID_FROM, ADMIN_PANEL_TOKEN] }, async (request) => {
   assertAdminToken(request.data?.adminToken);
+  await assertManualCooldown();
   const result = await runRefresh({ manualBy: 'admin-token' });
-  return { ok: true, records: result.records, updatedAt: result.updatedAt };
+  return { ok: true, ...result };
 });
 
 exports.updateConfig = onCall({ secrets: [ADMIN_PANEL_TOKEN] }, async (request) => {
@@ -64,6 +68,7 @@ exports.syncDashboard = onRequest({
     const bearerToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1] || '';
     const token = request.get('x-admin-token') || bearerToken || request.body?.adminToken;
     assertAdminToken(token);
+    await assertManualCooldown();
 
     const result = await runRefresh({ manualBy: 'n8n-http' });
     response.json({ ok: true, ...result });
@@ -72,6 +77,8 @@ exports.syncDashboard = onRequest({
       ? 403
       : error?.code === 'failed-precondition'
         ? 503
+        : error?.code === 'resource-exhausted'
+          ? 429
         : 500;
     response.status(statusCode).json({ ok: false, error: error.message });
   }
@@ -105,6 +112,15 @@ exports.getDashboard = onRequest({ cors: true }, async (_request, response) => {
   }
 });
 
+async function assertManualCooldown() {
+  const snapshot = await db.doc('monitor/status').get();
+  const lastStartedAt = snapshot.data()?.lastStartedAt;
+  const lastStartedMs = lastStartedAt ? Date.parse(lastStartedAt) : NaN;
+  if (Number.isFinite(lastStartedMs) && Date.now() - lastStartedMs < MANUAL_REFRESH_COOLDOWN_MS) {
+    throw new HttpsError('resource-exhausted', 'Outra atualização foi iniciada há poucos segundos. Aguarde e tente novamente.');
+  }
+}
+
 function assertAdminToken(token) {
   const expected = ADMIN_PANEL_TOKEN.value();
   if (!expected) {
@@ -127,6 +143,14 @@ async function getConfig() {
 }
 
 async function runRefresh({ manualBy }) {
+  if (activeRefreshPromise) return activeRefreshPromise;
+  activeRefreshPromise = performRefresh({ manualBy }).finally(() => {
+    activeRefreshPromise = null;
+  });
+  return activeRefreshPromise;
+}
+
+async function performRefresh({ manualBy }) {
   const config = await getConfig();
   const startedAt = new Date();
   try {
@@ -164,6 +188,7 @@ async function runRefresh({ manualBy }) {
     return {
       records: dashboard.records.length,
       updatedAt: new Date().toISOString(),
+      startedAt: startedAt.toISOString(),
       changed: dataChanged,
       dataHash
     };

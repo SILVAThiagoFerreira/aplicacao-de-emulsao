@@ -14,7 +14,7 @@ import {
   YAxis
 } from 'recharts';
 import { Home } from 'lucide-react';
-import { CalendarDays, Download, FileSpreadsheet, ImageDown, X } from 'lucide-react';
+import { CalendarDays, Download, FileSpreadsheet, ImageDown, RefreshCw, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
   applyMetaFilters,
@@ -30,8 +30,9 @@ import {
   uniqueValues
 } from './lib/aggregate.js';
 import { formatDate, formatKg, formatMil, monthNames } from './lib/format.js';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db, firebaseReady } from './lib/firebase.js';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { db, firebaseReady, functions } from './lib/firebase.js';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true';
 const DEFAULT_REFRESH_SECONDS = 300;
@@ -80,6 +81,26 @@ function withCacheBuster(url) {
   return `${url}${separator}t=${Date.now()}`;
 }
 
+async function waitForRefreshConfirmation(result) {
+  if (!db || !result?.startedAt) return;
+
+  let lastError = null;
+  for (const delayMs of [0, 500, 1200, 2200]) {
+    if (delayMs) await new Promise((resolve) => window.setTimeout(resolve, delayMs));
+    try {
+      const snapshot = await getDoc(doc(db, 'monitor', 'status'));
+      const current = snapshot.exists() ? snapshot.data() : null;
+      if (current?.state === 'ok' && current.lastStartedAt === result.startedAt) return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw new Error(lastError
+    ? 'A planilha foi processada, mas o navegador não conseguiu confirmar a gravação no Firestore.'
+    : 'A planilha foi processada, mas o Firestore ainda não confirmou a atualização. Tente novamente em alguns segundos.');
+}
+
 function normalizeDashboardPayload(payload, sourceKind) {
   const rawCache = payload?.cache && typeof payload.cache === 'object' ? payload.cache : payload;
   if (!rawCache || typeof rawCache !== 'object') {
@@ -126,6 +147,39 @@ function App() {
   const [online, setOnline] = useState(!firebaseReady);
   const [dataSource, setDataSource] = useState(firebaseReady ? 'connecting' : 'static');
   const [liveConnected, setLiveConnected] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refreshDashboard = useCallback(async (adminToken) => {
+    if (!functions) {
+      throw new Error('A atualização na nuvem está indisponível nesta versão do dashboard.');
+    }
+
+    setRefreshing(true);
+    try {
+      const refreshWorkbook = httpsCallable(functions, 'refreshWorkbook');
+      const response = await refreshWorkbook({ adminToken });
+      const result = response.data || {};
+      await waitForRefreshConfirmation(result);
+      return result;
+    } catch (error) {
+      const code = String(error?.code || '');
+      if (code.includes('permission-denied')) {
+        throw new Error('Token administrativo inválido.');
+      }
+      if (code.includes('failed-precondition')) {
+        throw new Error(error.message || 'O serviço de atualização ainda não está configurado.');
+      }
+      if (code.includes('resource-exhausted')) {
+        throw new Error(error.message || 'Outra atualização está em andamento. Aguarde alguns segundos.');
+      }
+      if (code.includes('not-found') || code.includes('unavailable')) {
+        throw new Error('O serviço de atualização na nuvem está temporariamente indisponível.');
+      }
+      throw new Error(error.message || 'Não foi possível atualizar os dados.');
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const applyDashboardPayload = useCallback((payload) => {
     setCache(payload.cache);
@@ -273,7 +327,7 @@ function App() {
       <Topbar />
       <Sidebar route={route} online={online} dataSource={dataSource} />
       <main className="mainCanvas">
-        <Dashboard cache={cache} status={status} config={config} dataSource={dataSource} />
+        <Dashboard cache={cache} status={status} config={config} dataSource={dataSource} onRefresh={refreshDashboard} refreshing={refreshing} />
       </main>
     </div>
   );
@@ -321,7 +375,7 @@ function getDateTicks(rows) {
     .filter(Boolean);
 }
 
-function Dashboard({ cache, status, config, dataSource }) {
+function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing }) {
   const allRecords = cache?.records || [];
   const metas = cache?.metas || [];
   const allJustifications = cache?.justificativas || [];
@@ -422,7 +476,17 @@ function Dashboard({ cache, status, config, dataSource }) {
         <JustificationsPanel justifications={filteredJustifications} />
       </section>
       <section className="rightPanel">
-        <StatusStrip cache={cache} status={status} config={config} dataSource={dataSource} total={total} latestApplication={latestApplication} onOpenReport={openReport} />
+        <StatusStrip
+          cache={cache}
+          status={status}
+          config={config}
+          dataSource={dataSource}
+          total={total}
+          latestApplication={latestApplication}
+          onOpenReport={openReport}
+          onRefresh={onRefresh}
+          refreshing={refreshing}
+        />
 
         <ChartCard title="EMULSÃO: Aplicação Dia a Dia" className="chartDailyTrend">
           <div className="chartViewport chartViewportDaily">
@@ -599,9 +663,65 @@ function getWorkbookDownloadUrl(sourceUrl) {
   }
 }
 
-function StatusStrip({ cache, status, config, dataSource, total, latestApplication, onOpenReport }) {
+function StatusStrip({ cache, status, config, dataSource, total, latestApplication, onOpenReport, onRefresh, refreshing }) {
+  const [refreshOpen, setRefreshOpen] = useState(false);
+  const [adminToken, setAdminToken] = useState('');
+  const [refreshError, setRefreshError] = useState('');
+  const [refreshSuccess, setRefreshSuccess] = useState('');
+  const tokenInputRef = useRef(null);
   const failed = status?.state === 'error';
   const workbookDownloadUrl = getWorkbookDownloadUrl(config?.sourceUrl);
+
+  useEffect(() => {
+    if (!refreshOpen) return undefined;
+    const focusTimer = window.setTimeout(() => tokenInputRef.current?.focus(), 0);
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape' && !refreshing) setRefreshOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [refreshOpen, refreshing]);
+
+  const openRefresh = () => {
+    setAdminToken('');
+    setRefreshError('');
+    setRefreshSuccess('');
+    setRefreshOpen(true);
+  };
+
+  const closeRefresh = () => {
+    if (refreshing) return;
+    setRefreshOpen(false);
+    setAdminToken('');
+    setRefreshError('');
+  };
+
+  const submitRefresh = async (event) => {
+    event.preventDefault();
+    const token = adminToken.trim();
+    if (!token) {
+      setRefreshError('Informe o token administrativo para iniciar a atualização.');
+      return;
+    }
+
+    setRefreshError('');
+    setRefreshSuccess('');
+    try {
+      const result = await onRefresh(token);
+      const records = Number(result?.records);
+      const recordLabel = Number.isFinite(records) && records > 0 ? ` ${records.toLocaleString('pt-BR')} registros foram processados.` : '';
+      setRefreshSuccess(result?.changed === false
+        ? `A planilha já estava atualizada.${recordLabel}`
+        : `Dados atualizados na nuvem.${recordLabel}`);
+      setAdminToken('');
+    } catch (error) {
+      setRefreshError(error.message || 'Não foi possível atualizar os dados.');
+    }
+  };
+
   const syncLabel = dataSource === 'firestore'
     ? 'Nuvem · ao vivo'
     : dataSource === 'connecting'
@@ -637,6 +757,16 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
         <strong title={syncTitle}>{syncLabel}</strong>
         {failed && status?.lastError ? <small className="statusError" title={status.lastError}>Falha na última verificação</small> : null}
       </div>
+      <button
+        className="refreshButton"
+        onClick={openRefresh}
+        type="button"
+        disabled={refreshing}
+        title="Ler a planilha na nuvem e atualizar o dashboard"
+      >
+        <RefreshCw size={16} className={refreshing ? 'refreshIcon spin' : 'refreshIcon'} />
+        {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
+      </button>
       <button className="reportButton" onClick={onOpenReport} type="button">
         <ImageDown size={16} />
         Exportar relatório
@@ -652,6 +782,59 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
         <FileSpreadsheet size={16} />
         Baixar Base de Dados
       </a>
+      {refreshOpen ? (
+        <div
+          className="refreshOverlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="refresh-title"
+          onClick={(event) => {
+            if (event.target === event.currentTarget && !refreshing) closeRefresh();
+          }}
+        >
+          <form className="refreshDialog" onSubmit={submitRefresh}>
+            <div className="refreshDialogHeader">
+              <div>
+                <span className="eyebrow">Sincronização na nuvem</span>
+                <h2 id="refresh-title">Atualizar Dados</h2>
+              </div>
+              <button className="iconButton" type="button" onClick={closeRefresh} disabled={refreshing} aria-label="Fechar atualização">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="refreshLead">
+              A planilha será lida diretamente na nuvem. Depois da confirmação, o cache do dashboard é atualizado e o Pages recebe os dados sem depender do seu computador.
+            </p>
+            <label className="refreshTokenField">
+              <span>Token administrativo</span>
+              <input
+                ref={tokenInputRef}
+                type="password"
+                value={adminToken}
+                onChange={(event) => setAdminToken(event.target.value)}
+                autoComplete="off"
+                spellCheck="false"
+                placeholder="Digite o token configurado no Firebase"
+                disabled={refreshing || Boolean(refreshSuccess)}
+              />
+            </label>
+            <p className="refreshHint">O token é usado somente nesta solicitação e não é salvo no navegador, no código ou no GitHub.</p>
+            {refreshError ? <div className="refreshFeedback error" role="alert">{refreshError}</div> : null}
+            {refreshSuccess ? <div className="refreshFeedback success" role="status">{refreshSuccess} O painel será atualizado automaticamente quando o Firestore confirmar a nova leitura.</div> : null}
+            <div className="refreshActions">
+              <button className="secondaryButton" type="button" onClick={closeRefresh} disabled={refreshing}>
+                {refreshSuccess ? 'Fechar' : 'Cancelar'}
+              </button>
+              {!refreshSuccess ? (
+                <button className="primaryButton" type="submit" disabled={refreshing}>
+                  <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
+                  {refreshing ? 'Lendo planilha...' : 'Confirmar atualização'}
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }

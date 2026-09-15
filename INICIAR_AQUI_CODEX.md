@@ -51,6 +51,8 @@ npm run seed
 firebase deploy --only functions,firestore:rules,firestore:indexes
 ```
 
+O projeto Firebase atualmente está no plano Spark. O Firebase bloqueia o deploy de Cloud Functions nesse plano; para ativar o botão **Atualizar Dados** e o monitoramento de 2 minutos, ative o Blaze e então execute o comando acima com uma identidade autorizada. Enquanto isso, o workflow hospedado do GitHub Actions sincroniza a planilha a cada 5 minutos, atualiza o Firestore e publica o cache do Pages sem depender do PC.
+
 ## Como acessar o admin
 
 Abra:
@@ -73,8 +75,8 @@ O front-end apenas pede o token no painel. A validação acontece no backend, de
 
 ## O que o painel faz
 
-- A Cloud Function lê a planilha configurada e atualiza o cache do dashboard no Firestore.
-- O monitoramento automático ocorre a cada 2 minutos na nuvem, sem depender do computador local.
+- O botão **Atualizar Dados** chama a Cloud Function protegida, lê a planilha configurada e aguarda a confirmação do cache no Firestore.
+- O monitoramento automático ocorre a cada 2 minutos pela Cloud Function quando o Blaze está ativo; no Spark, o GitHub Actions hospedado executa a sincronização a cada 5 minutos.
 - O front-end publicado escuta `dashboard/cache` em tempo real e usa o JSON do Pages como fallback.
 - O n8n pode chamar o endpoint protegido `syncDashboard`, mas é opcional.
 - Permite alterar o link da planilha no painel admin.

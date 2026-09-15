@@ -3,6 +3,8 @@ name: Deploy Dashboard and Firebase
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -38,9 +40,6 @@ jobs:
             throw "Firebase service account secret is missing or invalid."
           }
           "GOOGLE_APPLICATION_CREDENTIALS=$credentialPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: Deploy Firebase backend and rules
-        shell: pwsh
-        run: npx --yes firebase-tools@15.22.1 deploy --project aplicacao-de-emulsao --only functions,firestore:rules,firestore:indexes --non-interactive
       - name: Download current workbook
         shell: pwsh
         run: |

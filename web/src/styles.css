@@ -188,7 +188,7 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .periodSummaryFooter strong { color: var(--ink); font-size: 11px; text-align: right; }
 .statusStrip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) max-content max-content;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) max-content max-content max-content;
   gap: 12px;
   align-items: center;
   background: white;
@@ -202,11 +202,15 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .statusStrip .statusError { display: block; margin-top: 3px; color: var(--enaex-red); font-size: 10px; line-height: 1.2; }
 .statusStrip.hasError { border-left: 4px solid var(--enaex-red); }
 .reportButton, .primaryButton, .secondaryButton, .iconButton { border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.refreshButton { justify-self: end; min-height: 34px; padding: 8px 13px; background: #fff; color: var(--enaex-red); border: 1px solid var(--enaex-red); font-size: 12px; font-weight: 800; border-radius: 3px; white-space: nowrap; }
+.refreshButton:hover { background: #fff0f1; }
 .reportButton { justify-self: end; min-height: 34px; padding: 8px 13px; background: var(--enaex-red); color: #fff; font-size: 12px; font-weight: 750; border-radius: 3px; white-space: nowrap; }
 .dataButton { justify-self: end; min-height: 34px; padding: 8px 13px; background: #eef0f2; color: var(--ink); border: 1px solid #d7dce0; font-size: 12px; font-weight: 750; border-radius: 3px; white-space: nowrap; }
 .reportButton:hover, .primaryButton:hover { background: var(--enaex-dark-red); }
 .dataButton:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
-.reportButton:focus-visible, .dataButton:focus-visible, .primaryButton:focus-visible, .secondaryButton:focus-visible, .iconButton:focus-visible { outline: 3px solid rgba(226, 6, 19, .28); outline-offset: 2px; }
+.refreshButton:focus-visible, .reportButton:focus-visible, .dataButton:focus-visible, .primaryButton:focus-visible, .secondaryButton:focus-visible, .iconButton:focus-visible { outline: 3px solid rgba(226, 6, 19, .28); outline-offset: 2px; }
+.refreshIcon.spin, .spin { animation: refreshSpin .9s linear infinite; }
+@keyframes refreshSpin { to { transform: rotate(360deg); } }
 .chartCard {
   display: flex;
   flex-direction: column;
@@ -260,6 +264,19 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .dot.red { background: var(--enaex-red); }
 .reportOverlay { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 24px; background: rgba(18, 26, 33, .58); overflow: auto; }
 .reportDialog { width: min(820px, 100%); max-height: calc(100vh - 48px); overflow: auto; padding: 24px; background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.24); }
+.refreshOverlay { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(18, 26, 33, .58); }
+.refreshDialog { width: min(480px, 100%); padding: 24px; background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.24); }
+.refreshDialogHeader { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; border-bottom: 1px solid var(--soft-line); padding-bottom: 16px; }
+.refreshDialogHeader h2 { margin: 5px 0 0; font-size: 23px; }
+.refreshLead { margin: 17px 0 18px; color: #3c4752; font-size: 13px; line-height: 1.5; }
+.refreshTokenField { display: grid; gap: 7px; color: #3c4752; font-size: 13px; font-weight: 700; }
+.refreshTokenField input { width: 100%; border: 1px solid #d7dce0; background: #fff; padding: 10px; color: var(--ink); outline: none; }
+.refreshTokenField input:focus { border-color: var(--enaex-red); box-shadow: 0 0 0 3px rgba(226, 6, 19, .1); }
+.refreshHint { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
+.refreshFeedback { margin-top: 14px; padding: 10px 11px; border-left: 3px solid; font-size: 12px; line-height: 1.4; }
+.refreshFeedback.error { color: #8d0010; background: #fff0f1; border-color: var(--enaex-red); }
+.refreshFeedback.success { color: #175d37; background: #eef9f2; border-color: #35b36b; }
+.refreshActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .reportDialogHeader { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; border-bottom: 1px solid var(--soft-line); padding-bottom: 16px; }
 .reportDialogHeader h2 { margin: 5px 0 4px; font-size: 23px; }
 .reportDialogHeader p { margin: 0; color: var(--muted); font-size: 13px; }
@@ -349,11 +366,11 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .rightPanel { grid-template-rows: auto; }
   .topbar { grid-template-columns: 180px 1fr 150px; }
   .statusStrip { grid-template-columns: 1fr 1fr; }
-  .reportButton, .dataButton { justify-self: start; }
+  .refreshButton, .reportButton, .dataButton { justify-self: start; }
 }
 @media (max-width: 1280px) and (min-width: 1081px) {
   .statusStrip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .reportButton, .dataButton { justify-self: start; }
+  .refreshButton, .reportButton, .dataButton { justify-self: start; }
 }
 @media (max-width: 720px) {
   .dashboardGrid { padding: 12px; }
@@ -367,6 +384,7 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .periodSummaryGrid { grid-template-columns: 1fr; }
   .periodSummaryFooter { align-items: flex-start; flex-direction: column; }
   .statusStrip { grid-template-columns: 1fr; }
+  .refreshButton, .reportButton, .dataButton { justify-self: stretch; }
   .chartCard { padding-inline: 10px; }
   .chartViewportDaily { height: 220px; }
   .chartViewportMonthly { height: 235px; }
