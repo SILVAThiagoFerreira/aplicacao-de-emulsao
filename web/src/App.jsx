@@ -149,7 +149,7 @@ function App() {
   const [liveConnected, setLiveConnected] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const refreshDashboard = useCallback(async (adminToken) => {
+  const refreshDashboard = useCallback(async (adminPassword) => {
     if (!functions) {
       throw new Error('A atualização na nuvem está indisponível nesta versão do dashboard.');
     }
@@ -157,14 +157,14 @@ function App() {
     setRefreshing(true);
     try {
       const refreshWorkbook = httpsCallable(functions, 'refreshWorkbook');
-      const response = await refreshWorkbook({ adminToken });
+      const response = await refreshWorkbook({ adminToken: adminPassword });
       const result = response.data || {};
       await waitForRefreshConfirmation(result);
       return result;
     } catch (error) {
       const code = String(error?.code || '');
       if (code.includes('permission-denied')) {
-        throw new Error('Token administrativo inválido.');
+        throw new Error('Senha administrativa inválida.');
       }
       if (code.includes('failed-precondition')) {
         throw new Error(error.message || 'O serviço de atualização ainda não está configurado.');
@@ -665,7 +665,7 @@ function getWorkbookDownloadUrl(sourceUrl) {
 
 function StatusStrip({ cache, status, config, dataSource, total, latestApplication, onOpenReport, onRefresh, refreshing }) {
   const [refreshOpen, setRefreshOpen] = useState(false);
-  const [adminToken, setAdminToken] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [refreshError, setRefreshError] = useState('');
   const [refreshSuccess, setRefreshSuccess] = useState('');
   const tokenInputRef = useRef(null);
@@ -686,7 +686,7 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
   }, [refreshOpen, refreshing]);
 
   const openRefresh = () => {
-    setAdminToken('');
+    setAdminPassword('');
     setRefreshError('');
     setRefreshSuccess('');
     setRefreshOpen(true);
@@ -695,28 +695,28 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
   const closeRefresh = () => {
     if (refreshing) return;
     setRefreshOpen(false);
-    setAdminToken('');
+    setAdminPassword('');
     setRefreshError('');
   };
 
   const submitRefresh = async (event) => {
     event.preventDefault();
-    const token = adminToken.trim();
-    if (!token) {
-      setRefreshError('Informe o token administrativo para iniciar a atualização.');
+    const password = adminPassword.trim();
+    if (!password) {
+      setRefreshError('Informe a senha administrativa para iniciar a atualização.');
       return;
     }
 
     setRefreshError('');
     setRefreshSuccess('');
     try {
-      const result = await onRefresh(token);
+      const result = await onRefresh(password);
       const records = Number(result?.records);
       const recordLabel = Number.isFinite(records) && records > 0 ? ` ${records.toLocaleString('pt-BR')} registros foram processados.` : '';
       setRefreshSuccess(result?.changed === false
         ? `A planilha já estava atualizada.${recordLabel}`
         : `Dados atualizados na nuvem.${recordLabel}`);
-      setAdminToken('');
+      setAdminPassword('');
     } catch (error) {
       setRefreshError(error.message || 'Não foi possível atualizar os dados.');
     }
@@ -806,19 +806,19 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
               A planilha será lida diretamente na nuvem. Depois da confirmação, o cache do dashboard é atualizado e o Pages recebe os dados sem depender do seu computador.
             </p>
             <label className="refreshTokenField">
-              <span>Token administrativo</span>
+              <span>Senha administrativa</span>
               <input
                 ref={tokenInputRef}
                 type="password"
-                value={adminToken}
-                onChange={(event) => setAdminToken(event.target.value)}
+                value={adminPassword}
+                onChange={(event) => setAdminPassword(event.target.value)}
                 autoComplete="off"
                 spellCheck="false"
-                placeholder="Digite o token configurado no Firebase"
+                placeholder="Digite a senha configurada no Firebase"
                 disabled={refreshing || Boolean(refreshSuccess)}
               />
             </label>
-            <p className="refreshHint">O token é usado somente nesta solicitação e não é salvo no navegador, no código ou no GitHub.</p>
+            <p className="refreshHint">A senha é usada somente nesta solicitação e não é salva no navegador, no código ou no GitHub.</p>
             {refreshError ? <div className="refreshFeedback error" role="alert">{refreshError}</div> : null}
             {refreshSuccess ? <div className="refreshFeedback success" role="status">{refreshSuccess} O painel será atualizado automaticamente quando o Firestore confirmar a nova leitura.</div> : null}
             <div className="refreshActions">
