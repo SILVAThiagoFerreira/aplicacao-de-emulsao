@@ -14,6 +14,7 @@ Melhore e mantenha este dashboard seguindo estes critérios:
    - baixar a planilha OneDrive/SharePoint;
    - atualizar o cache a cada 2 minutos;
    - disparar email via SendGrid quando houver falha.
-6. Manter o painel visual parecido com `docs/dashboard-referencia.png`.
+6. Fazer o front-end ouvir `dashboard/cache` em tempo real pelo Firestore, mantendo o cache estático do Pages como fallback.
+7. Manter o painel visual parecido com `docs/dashboard-referencia.png`.
 
 Antes de alterar o código, execute `npm run build` para validar a versão atual.

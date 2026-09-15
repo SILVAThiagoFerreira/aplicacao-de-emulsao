@@ -1,3 +1,4 @@
+const { createHash } = require('node:crypto');
 const admin = require('firebase-admin');
 const sgMail = require('@sendgrid/mail');
 const { setGlobalOptions } = require('firebase-functions/v2');
@@ -47,10 +48,40 @@ exports.updateConfig = onCall({ secrets: [ADMIN_PANEL_TOKEN] }, async (request) 
   return { ok: true };
 });
 
+exports.syncDashboard = onRequest({
+  cors: true,
+  secrets: [SENDGRID_API_KEY, SENDGRID_FROM, ADMIN_PANEL_TOKEN]
+}, async (request, response) => {
+  response.set('Cache-Control', 'no-store, max-age=0');
+
+  if (request.method !== 'POST') {
+    response.status(405).json({ ok: false, error: 'Use POST para sincronizar o dashboard.' });
+    return;
+  }
+
+  try {
+    const authorization = String(request.get('authorization') || '');
+    const bearerToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1] || '';
+    const token = request.get('x-admin-token') || bearerToken || request.body?.adminToken;
+    assertAdminToken(token);
+
+    const result = await runRefresh({ manualBy: 'n8n-http' });
+    response.json({ ok: true, ...result });
+  } catch (error) {
+    const statusCode = error?.code === 'permission-denied'
+      ? 403
+      : error?.code === 'failed-precondition'
+        ? 503
+        : 500;
+    response.status(statusCode).json({ ok: false, error: error.message });
+  }
+});
+
 
 exports.scheduledWorkbookMonitor = onSchedule({
   schedule: 'every 2 minutes',
   timeZone: 'America/Sao_Paulo',
+  maxInstances: 1,
   secrets: [SENDGRID_API_KEY, SENDGRID_FROM]
 }, async () => {
   await runRefresh({ manualBy: 'scheduler' });
@@ -101,26 +132,60 @@ async function runRefresh({ manualBy }) {
   try {
     const { buffer, finalUrl } = await fetchWorkbookBuffer(config.sourceUrl);
     const dashboard = parseWorkbookToDashboard(buffer, { sourceUrl: config.sourceUrl, finalUrl });
-    await db.doc('dashboard/cache').set({
-      ...dashboard,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedBy: manualBy,
-      sourceUrl: config.sourceUrl,
-      finalUrl
-    }, { merge: false });
+    const cacheRef = db.doc('dashboard/cache');
+    const previousCache = await cacheRef.get();
+    const previousData = previousCache.exists ? previousCache.data() : {};
+    const dataHash = hashDashboard(dashboard);
+    const dataChanged = !previousCache.exists || previousData.dataHash !== dataHash;
+
+    if (dataChanged) {
+      await cacheRef.set({
+        ...dashboard,
+        dataHash,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedBy: manualBy,
+        sourceUrl: config.sourceUrl,
+        finalUrl
+      }, { merge: false });
+    }
+
     await db.doc('monitor/status').set({
       state: 'ok',
       lastSuccessAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastCheckedAt: admin.firestore.FieldValue.serverTimestamp(),
       lastStartedAt: startedAt.toISOString(),
       lastError: null,
       consecutiveFailures: 0,
-      checkedBy: manualBy
+      checkedBy: manualBy,
+      dataChanged,
+      dataHash,
+      ...(dataChanged ? { lastChangedAt: admin.firestore.FieldValue.serverTimestamp() } : {})
     }, { merge: true });
-    return { records: dashboard.records.length, updatedAt: new Date().toISOString() };
+    return {
+      records: dashboard.records.length,
+      updatedAt: new Date().toISOString(),
+      changed: dataChanged,
+      dataHash
+    };
   } catch (error) {
     await recordFailureAndAlert(config, error, manualBy);
     throw error;
   }
+}
+
+function hashDashboard(dashboard) {
+  const stableDashboard = {
+    sourceUrl: dashboard.sourceUrl || '',
+    finalUrl: dashboard.finalUrl || '',
+    sourceState: dashboard.sourceState || '',
+    records: dashboard.records || [],
+    ritmo: dashboard.ritmo || [],
+    metas: dashboard.metas || [],
+    justificativas: dashboard.justificativas || [],
+    totals: dashboard.totals || {}
+  };
+
+  return createHash('sha256').update(JSON.stringify(stableDashboard)).digest('hex');
 }
 
 async function fetchWorkbookBuffer(sourceUrl) {

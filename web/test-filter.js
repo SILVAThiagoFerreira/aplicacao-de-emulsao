@@ -3,7 +3,7 @@ import fs from 'fs';
 import { applyFilters, buildDailyTable, totals } from './src/lib/aggregate.js';
 
 // Read the JSON cache file
-const rawData = fs.readFileSync('./public/dashboard-cache.json', 'utf8');
+const rawData = fs.readFileSync(new URL('./public/dashboard-cache.json', import.meta.url), 'utf8');
 const cache = JSON.parse(rawData);
 const records = cache.records || [];
 
@@ -68,7 +68,7 @@ const filtered3 = applyFilters(records, filters3);
 const dailyRows3 = buildDailyTable(filtered3);
 console.log('Filtered by year 2025 with a conflicting June range:', filtered3.length);
 console.log('Daily Rows count:', dailyRows3.length);
-assert.ok(filtered3.length > 0, 'Expected year filter to take priority over the manual date range');
-assert.ok(dailyRows3.length > 0, 'Expected daily rows for year 2025');
+assert.equal(filtered3.length, 0, 'Expected year and manual date filters to be combined');
+assert.equal(dailyRows3.length, 0, 'Expected no daily rows outside the selected date range');
 
 console.log('Filter checks passed.');

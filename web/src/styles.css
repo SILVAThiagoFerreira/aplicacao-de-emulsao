@@ -69,6 +69,7 @@ button { cursor: pointer; }
 .sidebar a.active, .sidebar a:hover { background: white; color: #111; opacity: 1; }
 .connectionDot { margin-top: auto; margin-bottom: 18px; width: 9px; height: 9px; border-radius: 50%; background: #aaa; }
 .connectionDot.isOnline { background: #35b36b; }
+.connectionDot.isConnecting { background: #aab2b8; box-shadow: 0 0 0 3px rgba(170,178,184,.18); }
 .connectionDot.isOffline { background: #e0a800; }
 .mainCanvas {
   margin-left: 40px;
@@ -198,6 +199,7 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .statusStrip > div { min-width: 0; }
 .statusStrip .label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 2px; }
 .statusStrip strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
+.statusStrip .statusError { display: block; margin-top: 3px; color: var(--enaex-red); font-size: 10px; line-height: 1.2; }
 .statusStrip.hasError { border-left: 4px solid var(--enaex-red); }
 .reportButton, .primaryButton, .secondaryButton, .iconButton { border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .reportButton { justify-self: end; min-height: 34px; padding: 8px 13px; background: var(--enaex-red); color: #fff; font-size: 12px; font-weight: 750; border-radius: 3px; white-space: nowrap; }

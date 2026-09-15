@@ -30,11 +30,7 @@ firebase use aplicacao-de-emulsao
 firebase functions:secrets:set ADMIN_PANEL_TOKEN
 ```
 
-Escolha uma senha/token forte. Exemplo de padrão:
-
-```text
-Emulsao@2026#TroqueEsteToken
-```
+Escolha um token forte e mantenha o valor somente no Firebase Functions Secret Manager. Não registre o token em documentação, código, GitHub ou arquivos `.env`.
 
 3. Configurar email de alerta por SendGrid:
 
@@ -77,9 +73,10 @@ O front-end apenas pede o token no painel. A validação acontece no backend, de
 
 ## O que o painel faz
 
-- Lê a planilha OneDrive/SharePoint.
-- Atualiza cache do dashboard no Firestore.
-- Atualiza automaticamente a cada 2 minutos.
+- A Cloud Function lê a planilha configurada e atualiza o cache do dashboard no Firestore.
+- O monitoramento automático ocorre a cada 2 minutos na nuvem, sem depender do computador local.
+- O front-end publicado escuta `dashboard/cache` em tempo real e usa o JSON do Pages como fallback.
+- O n8n pode chamar o endpoint protegido `syncDashboard`, mas é opcional.
 - Permite alterar o link da planilha no painel admin.
 - Envia email para `thiago.ferreira@enaex.com` se a planilha falhar.
 - Exibe gráfico de linhas da aplicação dia a dia.

@@ -9,7 +9,9 @@ A aplicação foi montada a partir do material zipado, mantendo a lógica do pai
 - **Front-end:** React + Vite + Recharts, pronto para GitHub Pages.
 - **Banco:** Firestore com `dashboard/cache` como JSON online.
 - **Login admin:** token secreto validado nas Cloud Functions.
-- **Monitoramento da planilha:** GitHub Actions a cada 5 minutos.
+- **Monitoramento da planilha:** Cloud Functions a cada 2 minutos, na nuvem.
+- **Atualização do navegador:** Firestore em tempo real, sem novo deploy do Pages.
+- **n8n:** integração opcional por endpoint protegido; não é necessário manter um PC ligado.
 - **Email de falha:** SendGrid via Cloud Functions, opcional.
 - **Planilha original:** OneDrive/SharePoint, configurável no painel admin.
 
@@ -81,7 +83,23 @@ firebase use seu-projeto
 firebase deploy --only functions,firestore:rules,firestore:indexes
 ```
 
-No fluxo online, o GitHub Actions baixa a planilha, grava `dashboard/cache` no Firestore e o front lê esse documento em tempo real.
+No fluxo online, a Cloud Function agendada baixa a planilha, interpreta os dados e grava `dashboard/cache` no Firestore. O front-end publicado mantém um listener em tempo real nesse documento, portanto uma alteração de dados não exige novo build ou novo deploy do GitHub Pages.
+
+## Atualização automática sem depender do PC
+
+O fluxo de dados em produção é:
+
+```text
+Planilha Google Sheets
+        ↓ a cada 2 minutos
+Cloud Function scheduledWorkbookMonitor
+        ↓
+dashboard/cache no Firestore
+        ↓ listener onSnapshot
+Dashboard no GitHub Pages
+```
+
+O GitHub Pages hospeda somente o código da interface e um cache estático de fallback. O processamento da planilha e a atualização online são executados pelos serviços do Firebase. O n8n pode chamar o endpoint protegido `syncDashboard` para uma atualização manual ou para uma automação externa, mas não é mais um requisito do site.
 
 ## Email de alerta
 
@@ -108,7 +126,7 @@ O link inicial configurado é:
 https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true
 ```
 
-O sistema tenta baixar o arquivo no formato `xlsx` usando exportação do Google Sheets. Se a planilha exigir login ou restringir o download, o workflow do GitHub Actions falhará e o Pages continuará servindo o último cache publicado.
+O sistema tenta baixar o arquivo no formato `xlsx` usando exportação do Google Sheets. Se a planilha exigir login ou restringir o download, a Cloud Function registra a falha em `monitor/status`, envia o alerta configurado e preserva o último cache válido no Firestore.
 
 ## Publicar no GitHub Pages
 
@@ -123,13 +141,15 @@ VITE_FIREBASE_PROJECT_ID
 VITE_FIREBASE_STORAGE_BUCKET
 VITE_FIREBASE_MESSAGING_SENDER_ID
 VITE_FIREBASE_APP_ID
+VITE_DASHBOARD_API_URL
 ```
 
-4. Faça push na branch `main`. O workflow `.github/workflows/deploy-pages.yml` fará o build e publicará o painel.
+4. Cadastre também `FIREBASE_SERVICE_ACCOUNT_JSON` para que o workflow consiga publicar o backend/regras e gerar o cache inicial no ambiente hospedado.
+5. Faça push na branch `main`. O workflow `.github/workflows/deploy-pages.yml` publica o backend Firebase, atualiza o cache de fallback e faz o deploy do Pages.
 
 ## Observação importante
 
-GitHub Pages hospeda só a interface. O estado real do dashboard fica no Firestore em `dashboard/cache`. O workflow do GitHub Actions atualiza esse documento online a cada 5 minutos.
+GitHub Pages hospeda só a interface. O estado real do dashboard fica no Firestore em `dashboard/cache`, atualizado pela Cloud Function a cada 2 minutos. O navegador recebe alterações por listener em tempo real, sem depender do computador do administrador.
 
 ## Atualização adicionada
 
@@ -178,15 +198,15 @@ firebase use aplicacao-de-emulsao
 firebase deploy --only functions,firestore:rules,firestore:indexes
 ```
 
-## Secret do GitHub Actions
+## Secret usado pelo workflow hospedado
 
-Para o workflow gravar no Firestore, cadastre em **Settings > Secrets and variables > Actions**:
+O workflow usa a credencial abaixo para publicar as Functions/regras e gerar o cache inicial no GitHub Actions. O arquivo temporário existe somente durante a execução hospedada; ele não precisa ficar no seu PC nem no Git:
 
 ```text
 FIREBASE_SERVICE_ACCOUNT_JSON
 ```
 
-Esse secret deve conter o JSON completo de uma service account com permissão de escrita no Firestore do projeto `aplicacao-de-emulsao`.
+Esse valor deve conter o JSON completo de uma service account com permissão de deploy no projeto `aplicacao-de-emulsao`. Nunca grave o JSON em código, Git ou arquivo público. Para executar `npm run refresh:cache` manualmente, use a mesma variável de ambiente.
 
 ## Pacote pronto para Codex
 

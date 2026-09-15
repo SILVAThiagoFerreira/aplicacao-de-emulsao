@@ -1,10 +1,8 @@
-name: Refresh and Deploy Dashboard
+name: Deploy Dashboard and Firebase
 
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,21 +26,35 @@ jobs:
           node-version: 20
           cache: npm
       - name: Install dependencies
-        run: npm install
-      - name: Download workbook
+        run: npm ci
+      - name: Configure Firebase service account
+        shell: pwsh
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          $credentialPath = Join-Path $env:RUNNER_TEMP "firebase-service-account.json"
+          [System.IO.File]::WriteAllText($credentialPath, $env:FIREBASE_SERVICE_ACCOUNT_JSON)
+          if (-not (Test-Path $credentialPath) -or (Get-Item $credentialPath).Length -lt 100) {
+            throw "Firebase service account secret is missing or invalid."
+          }
+          "GOOGLE_APPLICATION_CREDENTIALS=$credentialPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Deploy Firebase backend and rules
+        shell: pwsh
+        run: npx --yes firebase-tools@15.22.1 deploy --project aplicacao-de-emulsao --only functions,firestore:rules,firestore:indexes --non-interactive
+      - name: Download current workbook
         shell: pwsh
         run: |
-          $url = "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true"
-          $out = "workbook.xlsx"
-          Invoke-WebRequest -Uri "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx" -MaximumRedirection 5 -TimeoutSec 120 -OutFile $out -UseBasicParsing
-          if (-not (Test-Path $out)) { throw "Workbook download failed." }
-      - name: Refresh workbook cache
-        run: node scripts/update-dashboard-cache.mjs
+          $sourceUrl = "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true"
+          Invoke-WebRequest -Uri "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx" -MaximumRedirection 5 -TimeoutSec 120 -OutFile "workbook.xlsx" -UseBasicParsing
+          if (-not (Test-Path "workbook.xlsx")) { throw "Workbook download failed." }
+      - name: Seed current dashboard cache
+        shell: pwsh
         env:
           SOURCE_FILE: workbook.xlsx
-          SOURCE_URL: https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=106130974941027428781&rtpof=true&sd=true
+          SOURCE_URL: https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           FIREBASE_PROJECT_ID: aplicacao-de-emulsao
+        run: node scripts/update-dashboard-cache.mjs
       - name: Build web app
         run: npm --workspace web run build
       - name: Setup Pages

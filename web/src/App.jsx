@@ -30,9 +30,12 @@ import {
   uniqueValues
 } from './lib/aggregate.js';
 import { formatDate, formatKg, formatMil, monthNames } from './lib/format.js';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db, firebaseReady } from './lib/firebase.js';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true';
 const DEFAULT_REFRESH_SECONDS = 300;
+const LIVE_RETRY_DELAYS_MS = [5000, 15000, 30000, 60000];
 
 function normalizeRefreshMs(value) {
   const seconds = Number(value);
@@ -120,7 +123,23 @@ function App() {
     alertEmail: 'thiago.ferreira@enaex.com',
     refreshSeconds: DEFAULT_REFRESH_SECONDS
   });
-  const [online, setOnline] = useState(true);
+  const [online, setOnline] = useState(!firebaseReady);
+  const [dataSource, setDataSource] = useState(firebaseReady ? 'connecting' : 'static');
+  const [liveConnected, setLiveConnected] = useState(false);
+
+  const applyDashboardPayload = useCallback((payload) => {
+    setCache(payload.cache);
+    setStatus(payload.status || (payload.updatedAt ? {
+      state: 'ok',
+      lastSuccessAt: payload.updatedAt
+    } : null));
+    setConfig((old) => ({
+      ...old,
+      sourceUrl: payload.config?.sourceUrl || old.sourceUrl || DEFAULT_SOURCE,
+      alertEmail: payload.config?.alertEmail || old.alertEmail,
+      refreshSeconds: payload.config?.refreshSeconds || old.refreshSeconds || DEFAULT_REFRESH_SECONDS
+    }));
+  }, []);
 
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || '#/');
@@ -129,6 +148,97 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!firebaseReady || !db) {
+      setDataSource('static');
+      return undefined;
+    }
+
+    let cancelled = false;
+    let retryTimerId = null;
+    let retryIndex = 0;
+    let unsubscribeCache = null;
+    let unsubscribeStatus = null;
+    let unsubscribeConfig = null;
+    const cacheRef = doc(db, 'dashboard', 'cache');
+    const statusRef = doc(db, 'monitor', 'status');
+    const configRef = doc(db, 'app', 'config');
+
+    const clearSubscriptions = () => {
+      unsubscribeCache?.();
+      unsubscribeStatus?.();
+      unsubscribeConfig?.();
+      unsubscribeCache = null;
+      unsubscribeStatus = null;
+      unsubscribeConfig = null;
+    };
+
+    const scheduleRetry = (error) => {
+      if (cancelled) return;
+      clearSubscriptions();
+      setLiveConnected(false);
+      setDataSource('static-fallback');
+      setOnline(false);
+      setStatus((old) => ({
+        ...(old || {}),
+        state: 'error',
+        lastError: `Firestore: ${error.message}`
+      }));
+      const delay = LIVE_RETRY_DELAYS_MS[retryIndex];
+      retryIndex = Math.min(retryIndex + 1, LIVE_RETRY_DELAYS_MS.length - 1);
+      retryTimerId = window.setTimeout(() => {
+        retryTimerId = null;
+        subscribe();
+      }, delay);
+    };
+
+    const subscribe = () => {
+      if (cancelled) return;
+      clearSubscriptions();
+      setDataSource('connecting');
+      setOnline(false);
+
+      unsubscribeCache = onSnapshot(cacheRef, (snapshot) => {
+        if (cancelled) return;
+        if (!snapshot.exists()) {
+          scheduleRetry(new Error('Documento dashboard/cache ainda não foi publicado.'));
+          return;
+        }
+
+        retryIndex = 0;
+        applyDashboardPayload(normalizeDashboardPayload({ cache: snapshot.data() }, 'firestore'));
+        setLiveConnected(true);
+        setDataSource('firestore');
+        setOnline(true);
+      }, scheduleRetry);
+
+      unsubscribeStatus = onSnapshot(statusRef, (snapshot) => {
+        if (cancelled || !snapshot.exists()) return;
+        setStatus((old) => ({ ...(old || {}), ...snapshot.data() }));
+      }, () => {});
+
+      unsubscribeConfig = onSnapshot(configRef, (snapshot) => {
+        if (cancelled || !snapshot.exists()) return;
+        const next = snapshot.data();
+        setConfig((old) => ({
+          ...old,
+          sourceUrl: next.sourceUrl || old.sourceUrl || DEFAULT_SOURCE,
+          alertEmail: next.alertEmail || old.alertEmail,
+          refreshSeconds: next.refreshSeconds || old.refreshSeconds || DEFAULT_REFRESH_SECONDS
+        }));
+      }, () => {});
+    };
+
+    subscribe();
+    return () => {
+      cancelled = true;
+      if (retryTimerId) window.clearTimeout(retryTimerId);
+      clearSubscriptions();
+    };
+  }, [applyDashboardPayload]);
+
+  useEffect(() => {
+    if (liveConnected) return undefined;
+
     let cancelled = false;
     let timerId = null;
     const pollIntervalMs = normalizeRefreshMs(config?.refreshSeconds);
@@ -137,18 +247,13 @@ function App() {
       try {
         const payload = await fetchDashboardPayload();
         if (cancelled) return;
-        setCache(payload.cache);
-        setStatus(payload.status || { state: 'ok', lastSuccessAt: payload.updatedAt || new Date().toISOString() });
-        setConfig((old) => ({
-          ...old,
-          sourceUrl: payload.config?.sourceUrl || old.sourceUrl || DEFAULT_SOURCE,
-          alertEmail: payload.config?.alertEmail || old.alertEmail,
-          refreshSeconds: payload.config?.refreshSeconds || old.refreshSeconds || DEFAULT_REFRESH_SECONDS
-        }));
+        applyDashboardPayload(payload);
+        setDataSource(payload.cache?.sourceKind === 'function' ? 'api' : 'static');
         setOnline(true);
       } catch (error) {
         if (!cancelled) {
           setOnline(false);
+          setDataSource('static-error');
           setStatus({ state: 'error', lastError: error.message });
         }
       } finally {
@@ -161,14 +266,14 @@ function App() {
       cancelled = true;
       if (timerId) window.clearTimeout(timerId);
     };
-  }, [config?.refreshSeconds]);
+  }, [applyDashboardPayload, config?.refreshSeconds, liveConnected]);
 
   return (
     <div className="appShell">
       <Topbar />
-      <Sidebar route={route} online={online} />
+      <Sidebar route={route} online={online} dataSource={dataSource} />
       <main className="mainCanvas">
-        <Dashboard cache={cache} status={status} config={config} />
+        <Dashboard cache={cache} status={status} config={config} dataSource={dataSource} />
       </main>
     </div>
   );
@@ -186,11 +291,19 @@ function Topbar() {
   );
 }
 
-function Sidebar({ route, online }) {
+function Sidebar({ route, online, dataSource }) {
+  const connectionState = dataSource === 'connecting' ? 'isConnecting' : online ? 'isOnline' : 'isOffline';
+  const connectionTitle = dataSource === 'firestore'
+    ? 'Dados em tempo real'
+    : dataSource === 'connecting'
+      ? 'Conectando à fonte em nuvem'
+      : online
+        ? 'Cache online'
+        : 'Falha ao ler cache';
   return (
     <aside className="sidebar">
       <a className={route === '#/' ? 'active' : ''} href="#/" title="Dashboard"><Home size={23} /></a>
-      <span className={`connectionDot ${online ? 'isOnline' : 'isOffline'}`} title={online ? 'Cache online' : 'Falha ao ler cache'} />
+      <span className={`connectionDot ${connectionState}`} title={connectionTitle} aria-label={connectionTitle} role="status" />
     </aside>
   );
 }
@@ -208,7 +321,7 @@ function getDateTicks(rows) {
     .filter(Boolean);
 }
 
-function Dashboard({ cache, status, config }) {
+function Dashboard({ cache, status, config, dataSource }) {
   const allRecords = cache?.records || [];
   const metas = cache?.metas || [];
   const allJustifications = cache?.justificativas || [];
@@ -264,7 +377,14 @@ function Dashboard({ cache, status, config }) {
     justificativas: justificationsByDate.get(row.data) || []
   })), [filteredRecords, filteredMetas, justificationsByDate]);
   const dailyTicks = useMemo(() => getDateTicks(dailyTrend), [dailyTrend]);
-  const latestApplication = dailyTrend.length ? dailyTrend[dailyTrend.length - 1].data : '';
+  const applicationDays = useMemo(() => new Set(
+    filteredRecords.map((record) => String(record.data || '').slice(0, 10)).filter(Boolean)
+  ).size, [filteredRecords]);
+  const latestApplication = useMemo(() => filteredRecords
+    .map((record) => String(record.data || '').slice(0, 10))
+    .filter(Boolean)
+    .sort()
+    .at(-1) || '', [filteredRecords]);
   const monthly = useMemo(() => buildMonthly(filteredRecords), [filteredRecords]);
   const monthlyByUmb = useMemo(() => buildMonthlyByUmb(filteredRecords), [filteredRecords]);
   const projection = useMemo(() => buildProjection(filteredRecords, cache?.ritmo || []), [filteredRecords, cache?.ritmo]);
@@ -302,7 +422,7 @@ function Dashboard({ cache, status, config }) {
         <JustificationsPanel justifications={filteredJustifications} />
       </section>
       <section className="rightPanel">
-        <StatusStrip cache={cache} status={status} config={config} total={total} latestApplication={latestApplication} onOpenReport={openReport} />
+        <StatusStrip cache={cache} status={status} config={config} dataSource={dataSource} total={total} latestApplication={latestApplication} onOpenReport={openReport} />
 
         <ChartCard title="EMULSÃO: Aplicação Dia a Dia" className="chartDailyTrend">
           <div className="chartViewport chartViewportDaily">
@@ -439,7 +559,7 @@ function Dashboard({ cache, status, config }) {
       <PeriodSummary
         total={total}
         recordCount={filteredRecords.length}
-        dayCount={dailyTrend.length}
+        dayCount={applicationDays}
         justificationCount={filteredJustifications.length}
         latestApplication={latestApplication}
         dateRange={filters}
@@ -479,9 +599,25 @@ function getWorkbookDownloadUrl(sourceUrl) {
   }
 }
 
-function StatusStrip({ cache, status, config, total, latestApplication, onOpenReport }) {
+function StatusStrip({ cache, status, config, dataSource, total, latestApplication, onOpenReport }) {
   const failed = status?.state === 'error';
   const workbookDownloadUrl = getWorkbookDownloadUrl(config?.sourceUrl);
+  const syncLabel = dataSource === 'firestore'
+    ? 'Nuvem · ao vivo'
+    : dataSource === 'connecting'
+      ? 'Conectando...'
+      : dataSource === 'static-fallback'
+        ? 'Fallback Pages'
+      : dataSource === 'static-error'
+        ? 'Indisponível'
+        : dataSource === 'api'
+          ? 'API online'
+          : 'Cache Pages';
+  const syncTitle = dataSource === 'firestore'
+    ? 'Dados recebidos em tempo real do Firestore; a planilha é sincronizada automaticamente na nuvem.'
+    : dataSource === 'api'
+      ? 'Dados recebidos pela API do backend.'
+      : 'O dashboard está usando o cache estático do GitHub Pages enquanto a fonte online não responde.';
   return (
     <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
       <div>
@@ -497,8 +633,9 @@ function StatusStrip({ cache, status, config, total, latestApplication, onOpenRe
         <strong>{readTimestamp(cache?.updatedAt) || readTimestamp(status?.lastSuccessAt) || 'Aguardando refresh'}</strong>
       </div>
       <div>
-        <span className="label">Ciclo automatico</span>
-        <strong>{Math.round((config?.refreshSeconds || DEFAULT_REFRESH_SECONDS) / 60)} min</strong>
+        <span className="label">Fonte de dados</span>
+        <strong title={syncTitle}>{syncLabel}</strong>
+        {failed && status?.lastError ? <small className="statusError" title={status.lastError}>Falha na última verificação</small> : null}
       </div>
       <button className="reportButton" onClick={onOpenReport} type="button">
         <ImageDown size={16} />
