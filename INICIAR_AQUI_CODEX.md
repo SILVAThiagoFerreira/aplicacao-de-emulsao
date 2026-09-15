@@ -1,84 +1,60 @@
-# INICIAR AQUI NO CODEX
+# Iniciar o Dashboard de Emulsão
 
-Este pacote já está configurado para o Firebase `aplicacao-de-emulsao`, mas **não depende de Firebase Authentication**.
+## Caminho recomendado, sem custo
 
-Como você não tem acesso ao Authentication, o painel administrativo foi ajustado para funcionar com um **token secreto** guardado no Firebase Functions Secret Manager.
+Este projeto roda com GitHub Pages + GitHub Actions + Google Sheets. Não depende de Firebase Blaze, Cloud Functions, n8n ou do computador do administrador.
 
-## Rodar no computador
+O GitHub Actions atualiza o cache hospedado a cada 5 minutos. O botão **Atualizar Dados** lê a planilha XLSX diretamente no navegador e atualiza a tela imediatamente.
+
+## Rodar localmente
 
 ```bash
 npm install
 npm run dev
 ```
 
-No Windows, também pode usar:
-
-```text
-scripts/iniciar-windows.bat
-```
-
-## Configurar Firebase sem Authentication
-
-Você precisa ter acesso a Firestore e Cloud Functions.
-
-1. Criar o banco Firestore no Firebase Console.
-2. Configurar o token administrativo:
+Para validar:
 
 ```bash
-firebase login
-firebase use aplicacao-de-emulsao
-firebase functions:secrets:set ADMIN_PANEL_TOKEN
+npm run build
+node web/test-filter.js
 ```
 
-Escolha um token forte e mantenha o valor somente no Firebase Functions Secret Manager. Não registre o token em documentação, código, GitHub ou arquivos `.env`.
+## Publicar
 
-3. Configurar email de alerta por SendGrid:
+1. Faça push na branch `main`.
+2. No GitHub, abra **Settings > Pages**.
+3. Selecione **GitHub Actions**.
+4. Aguarde a execução de `.github/workflows/deploy-pages.yml`.
 
-```bash
-firebase functions:secrets:set SENDGRID_API_KEY
-firebase functions:secrets:set SENDGRID_FROM
-```
+O workflow baixa a planilha configurada, gera `web/public/dashboard-cache.json`, compila a aplicação e publica o GitHub Pages. Não é necessário cadastrar token de Firebase, service account, token GitHub ou segredo de cobrança.
 
-4. Criar a configuração inicial no Firestore:
+## Atualização manual
 
-```bash
-npm run seed
-```
+No dashboard:
 
-5. Publicar Functions e regras:
+1. Clique em **Atualizar Dados**.
+2. Digite a senha de confirmação, por exemplo `admin`.
+3. Clique em **Confirmar atualização**.
 
-```bash
-firebase deploy --only functions,firestore:rules,firestore:indexes
-```
+A planilha é baixada diretamente do Google Sheets, interpretada no navegador e aplicada à tela atual. O texto digitado não é salvo nem enviado para nenhum serviço.
 
-O projeto Firebase atualmente está no plano Spark. O Firebase bloqueia o deploy de Cloud Functions nesse plano; para ativar o botão **Atualizar Dados** e o monitoramento de 2 minutos, ative o Blaze e então execute o comando acima com uma identidade autorizada. Enquanto isso, o workflow hospedado do GitHub Actions sincroniza a planilha a cada 5 minutos, atualiza o Firestore e publica o cache do Pages sem depender do PC.
+Esta senha é somente uma confirmação local. Sites estáticos não conseguem validar uma senha secreta sem um backend; por isso, ela não deve ser tratada como controle de segurança para dados que não sejam públicos.
 
-## Como acessar o admin
+## Limites intencionais do desenho gratuito
 
-Abra:
+- O clique atualiza a tela aberta imediatamente.
+- O cache público para novos acessos é atualizado pela próxima execução do GitHub Actions, em até aproximadamente 5 minutos.
+- A exportação XLSX da planilha precisa estar acessível sem login no navegador.
+- Não é necessário deixar o PC ligado.
+- Não é necessário iniciar o n8n.
 
-```text
-#/admin
-```
+## Arquivos importantes
 
-Digite o mesmo token configurado em:
+- `web/src/App.jsx`: leitura manual direta e interface.
+- `web/src/lib/parseWorkbook.js`: parser XLSX executado no navegador.
+- `scripts/update-dashboard-cache.mjs`: geração do cache para o workflow.
+- `.github/workflows/deploy-pages.yml`: sincronização automática e publicação.
+- `web/public/dashboard-cache.json`: fallback estático.
 
-```bash
-firebase functions:secrets:set ADMIN_PANEL_TOKEN
-```
-
-## Importante
-
-Não coloque o token dentro do código, GitHub ou arquivos `.env`.
-
-O front-end apenas pede o token no painel. A validação acontece no backend, dentro das Cloud Functions.
-
-## O que o painel faz
-
-- O botão **Atualizar Dados** chama a Cloud Function protegida, lê a planilha configurada e aguarda a confirmação do cache no Firestore.
-- O monitoramento automático ocorre a cada 2 minutos pela Cloud Function quando o Blaze está ativo; no Spark, o GitHub Actions hospedado executa a sincronização a cada 5 minutos.
-- O front-end publicado escuta `dashboard/cache` em tempo real e usa o JSON do Pages como fallback.
-- O n8n pode chamar o endpoint protegido `syncDashboard`, mas é opcional.
-- Permite alterar o link da planilha no painel admin.
-- Envia email para `thiago.ferreira@enaex.com` se a planilha falhar.
-- Exibe gráfico de linhas da aplicação dia a dia.
+Os arquivos de Firebase/Cloud Functions foram mantidos por compatibilidade histórica, mas não são necessários para o fluxo publicado e gratuito.

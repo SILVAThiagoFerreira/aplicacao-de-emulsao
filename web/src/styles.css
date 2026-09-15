@@ -269,9 +269,9 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .refreshDialogHeader { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; border-bottom: 1px solid var(--soft-line); padding-bottom: 16px; }
 .refreshDialogHeader h2 { margin: 5px 0 0; font-size: 23px; }
 .refreshLead { margin: 17px 0 18px; color: #3c4752; font-size: 13px; line-height: 1.5; }
-.refreshTokenField { display: grid; gap: 7px; color: #3c4752; font-size: 13px; font-weight: 700; }
-.refreshTokenField input { width: 100%; border: 1px solid #d7dce0; background: #fff; padding: 10px; color: var(--ink); outline: none; }
-.refreshTokenField input:focus { border-color: var(--enaex-red); box-shadow: 0 0 0 3px rgba(226, 6, 19, .1); }
+.refreshPasswordField { display: grid; gap: 7px; color: #3c4752; font-size: 13px; font-weight: 700; }
+.refreshPasswordField input { width: 100%; border: 1px solid #d7dce0; background: #fff; padding: 10px; color: var(--ink); outline: none; }
+.refreshPasswordField input:focus { border-color: var(--enaex-red); box-shadow: 0 0 0 3px rgba(226, 6, 19, .1); }
 .refreshHint { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
 .refreshFeedback { margin-top: 14px; padding: 10px 11px; border-left: 3px solid; font-size: 12px; line-height: 1.4; }
 .refreshFeedback.error { color: #8d0010; background: #fff0f1; border-color: var(--enaex-red); }

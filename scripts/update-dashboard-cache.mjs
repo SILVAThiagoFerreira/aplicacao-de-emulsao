@@ -11,6 +11,7 @@ const SOURCE_URL = process.env.SOURCE_URL || 'https://docs.google.com/spreadshee
 const SOURCE_FILE = process.env.SOURCE_FILE || '';
 const outputPath = path.resolve('web/public/dashboard-cache.json');
 const firestoreOutputPath = process.env.FIRESTORE_OUTPUT_PATH || 'dashboard/cache';
+const enableFirestoreSync = String(process.env.ENABLE_FIRESTORE_SYNC || '').toLowerCase() === 'true';
 
 const allowFallback = String(process.env.ALLOW_FALLBACK_SAMPLE || '').toLowerCase() === 'true';
 let dashboard;
@@ -40,7 +41,11 @@ try {
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await fs.writeFile(outputPath, `${JSON.stringify(dashboard, null, 2)}\n`, 'utf8');
 
-await writeToFirestore(dashboard, firestoreOutputPath);
+if (enableFirestoreSync) {
+  await writeToFirestore(dashboard, firestoreOutputPath);
+} else {
+  console.log('Sincronização Firebase desativada; somente o cache do GitHub Pages será publicado.');
+}
 
 console.log(`Dashboard cache atualizado: ${dashboard.records.length} registros em ${outputPath}`);
 

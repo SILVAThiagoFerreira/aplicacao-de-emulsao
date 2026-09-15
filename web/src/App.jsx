@@ -30,13 +30,10 @@ import {
   uniqueValues
 } from './lib/aggregate.js';
 import { formatDate, formatKg, formatMil, monthNames } from './lib/format.js';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, firebaseReady, functions } from './lib/firebase.js';
+import { parseWorkbookToDashboard } from './lib/parseWorkbook.js';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true';
 const DEFAULT_REFRESH_SECONDS = 300;
-const LIVE_RETRY_DELAYS_MS = [5000, 15000, 30000, 60000];
 
 function normalizeRefreshMs(value) {
   const seconds = Number(value);
@@ -45,20 +42,9 @@ function normalizeRefreshMs(value) {
 }
 
 async function fetchDashboardPayload() {
-  const liveUrl = import.meta.env.VITE_DASHBOARD_API_URL || '';
   const staticUrl = getStaticCacheUrl();
-  const errors = [];
-
-  for (const candidate of [liveUrl, staticUrl].filter(Boolean)) {
-    try {
-      const payload = await fetchJson(candidate);
-      return normalizeDashboardPayload(payload, candidate === liveUrl ? 'function' : 'static-cache');
-    } catch (error) {
-      errors.push(`${candidate}: ${error.message}`);
-    }
-  }
-
-  throw new Error(errors.join(' | ') || 'Nenhuma fonte de dashboard configurada.');
+  const payload = await fetchJson(staticUrl);
+  return normalizeDashboardPayload(payload, 'static-cache');
 }
 
 function getStaticCacheUrl() {
@@ -81,24 +67,39 @@ function withCacheBuster(url) {
   return `${url}${separator}t=${Date.now()}`;
 }
 
-async function waitForRefreshConfirmation(result) {
-  if (!db || !result?.startedAt) return;
-
-  let lastError = null;
-  for (const delayMs of [0, 500, 1200, 2200]) {
-    if (delayMs) await new Promise((resolve) => window.setTimeout(resolve, delayMs));
-    try {
-      const snapshot = await getDoc(doc(db, 'monitor', 'status'));
-      const current = snapshot.exists() ? snapshot.data() : null;
-      if (current?.state === 'ok' && current.lastStartedAt === result.startedAt) return;
-    } catch (error) {
-      lastError = error;
+async function fetchLiveDashboardPayload(sourceUrl) {
+  const workbookUrl = getWorkbookDownloadUrl(sourceUrl);
+  const response = await fetch(withCacheBuster(workbookUrl), {
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache'
     }
+  });
+
+  if (!response.ok) {
+    throw new Error(`A planilha respondeu com HTTP ${response.status}.`);
   }
 
-  throw new Error(lastError
-    ? 'A planilha foi processada, mas o navegador não conseguiu confirmar a gravação no Firestore.'
-    : 'A planilha foi processada, mas o Firestore ainda não confirmou a atualização. Tente novamente em alguns segundos.');
+  const buffer = await response.arrayBuffer();
+  const signature = new Uint8Array(buffer.slice(0, 2));
+  if (signature[0] !== 0x50 || signature[1] !== 0x4b) {
+    throw new Error('A resposta da planilha não está no formato XLSX esperado.');
+  }
+
+  const dashboard = parseWorkbookToDashboard(buffer, {
+    sourceUrl,
+    finalUrl: response.url || workbookUrl
+  });
+  if (!dashboard.records.length) {
+    throw new Error('A planilha foi lida, mas nenhuma linha de aplicação foi encontrada.');
+  }
+
+  dashboard.updatedAt = new Date().toISOString();
+  dashboard.updatedBy = 'browser-direct';
+  dashboard.source = sourceUrl;
+  return normalizeDashboardPayload({ cache: dashboard }, 'direct-sheet');
 }
 
 function normalizeDashboardPayload(payload, sourceKind) {
@@ -144,42 +145,10 @@ function App() {
     alertEmail: 'thiago.ferreira@enaex.com',
     refreshSeconds: DEFAULT_REFRESH_SECONDS
   });
-  const [online, setOnline] = useState(!firebaseReady);
-  const [dataSource, setDataSource] = useState(firebaseReady ? 'connecting' : 'static');
-  const [liveConnected, setLiveConnected] = useState(false);
+  const [online, setOnline] = useState(false);
+  const [dataSource, setDataSource] = useState('static');
   const [refreshing, setRefreshing] = useState(false);
-
-  const refreshDashboard = useCallback(async (adminPassword) => {
-    if (!functions) {
-      throw new Error('A atualização na nuvem está indisponível nesta versão do dashboard.');
-    }
-
-    setRefreshing(true);
-    try {
-      const refreshWorkbook = httpsCallable(functions, 'refreshWorkbook');
-      const response = await refreshWorkbook({ adminToken: adminPassword });
-      const result = response.data || {};
-      await waitForRefreshConfirmation(result);
-      return result;
-    } catch (error) {
-      const code = String(error?.code || '');
-      if (code.includes('permission-denied')) {
-        throw new Error('Senha administrativa inválida.');
-      }
-      if (code.includes('failed-precondition')) {
-        throw new Error(error.message || 'O serviço de atualização ainda não está configurado.');
-      }
-      if (code.includes('resource-exhausted')) {
-        throw new Error(error.message || 'Outra atualização está em andamento. Aguarde alguns segundos.');
-      }
-      if (code.includes('not-found') || code.includes('unavailable')) {
-        throw new Error('O serviço de atualização na nuvem está temporariamente indisponível.');
-      }
-      throw new Error(error.message || 'Não foi possível atualizar os dados.');
-    } finally {
-      setRefreshing(false);
-    }
-  }, []);
+  const directRefreshAtRef = useRef(0);
 
   const applyDashboardPayload = useCallback((payload) => {
     setCache(payload.cache);
@@ -195,6 +164,38 @@ function App() {
     }));
   }, []);
 
+  const refreshDashboard = useCallback(async (adminPassword) => {
+    if (!adminPassword?.trim()) {
+      throw new Error('Informe a senha administrativa para iniciar a atualização.');
+    }
+
+    setRefreshing(true);
+    try {
+      const payload = await fetchLiveDashboardPayload(config?.sourceUrl || DEFAULT_SOURCE);
+      directRefreshAtRef.current = Date.parse(payload.updatedAt || '') || Date.now();
+      applyDashboardPayload(payload);
+      setDataSource('direct-sheet');
+      setOnline(true);
+      setStatus((old) => ({
+        ...(old || {}),
+        state: 'ok',
+        lastSuccessAt: payload.updatedAt,
+        lastError: null,
+        checkedBy: 'browser-direct'
+      }));
+      return {
+        ok: true,
+        records: payload.cache.records.length,
+        updatedAt: payload.updatedAt,
+        changed: true
+      };
+    } catch (error) {
+      throw new Error(error.message || 'Não foi possível ler a planilha na nuvem.');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [applyDashboardPayload, config?.sourceUrl]);
+
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash || '#/');
     window.addEventListener('hashchange', onHash);
@@ -202,97 +203,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!firebaseReady || !db) {
-      setDataSource('static');
-      return undefined;
-    }
-
-    let cancelled = false;
-    let retryTimerId = null;
-    let retryIndex = 0;
-    let unsubscribeCache = null;
-    let unsubscribeStatus = null;
-    let unsubscribeConfig = null;
-    const cacheRef = doc(db, 'dashboard', 'cache');
-    const statusRef = doc(db, 'monitor', 'status');
-    const configRef = doc(db, 'app', 'config');
-
-    const clearSubscriptions = () => {
-      unsubscribeCache?.();
-      unsubscribeStatus?.();
-      unsubscribeConfig?.();
-      unsubscribeCache = null;
-      unsubscribeStatus = null;
-      unsubscribeConfig = null;
-    };
-
-    const scheduleRetry = (error) => {
-      if (cancelled) return;
-      clearSubscriptions();
-      setLiveConnected(false);
-      setDataSource('static-fallback');
-      setOnline(false);
-      setStatus((old) => ({
-        ...(old || {}),
-        state: 'error',
-        lastError: `Firestore: ${error.message}`
-      }));
-      const delay = LIVE_RETRY_DELAYS_MS[retryIndex];
-      retryIndex = Math.min(retryIndex + 1, LIVE_RETRY_DELAYS_MS.length - 1);
-      retryTimerId = window.setTimeout(() => {
-        retryTimerId = null;
-        subscribe();
-      }, delay);
-    };
-
-    const subscribe = () => {
-      if (cancelled) return;
-      clearSubscriptions();
-      setDataSource('connecting');
-      setOnline(false);
-
-      unsubscribeCache = onSnapshot(cacheRef, (snapshot) => {
-        if (cancelled) return;
-        if (!snapshot.exists()) {
-          scheduleRetry(new Error('Documento dashboard/cache ainda não foi publicado.'));
-          return;
-        }
-
-        retryIndex = 0;
-        applyDashboardPayload(normalizeDashboardPayload({ cache: snapshot.data() }, 'firestore'));
-        setLiveConnected(true);
-        setDataSource('firestore');
-        setOnline(true);
-      }, scheduleRetry);
-
-      unsubscribeStatus = onSnapshot(statusRef, (snapshot) => {
-        if (cancelled || !snapshot.exists()) return;
-        setStatus((old) => ({ ...(old || {}), ...snapshot.data() }));
-      }, () => {});
-
-      unsubscribeConfig = onSnapshot(configRef, (snapshot) => {
-        if (cancelled || !snapshot.exists()) return;
-        const next = snapshot.data();
-        setConfig((old) => ({
-          ...old,
-          sourceUrl: next.sourceUrl || old.sourceUrl || DEFAULT_SOURCE,
-          alertEmail: next.alertEmail || old.alertEmail,
-          refreshSeconds: next.refreshSeconds || old.refreshSeconds || DEFAULT_REFRESH_SECONDS
-        }));
-      }, () => {});
-    };
-
-    subscribe();
-    return () => {
-      cancelled = true;
-      if (retryTimerId) window.clearTimeout(retryTimerId);
-      clearSubscriptions();
-    };
-  }, [applyDashboardPayload]);
-
-  useEffect(() => {
-    if (liveConnected) return undefined;
-
     let cancelled = false;
     let timerId = null;
     const pollIntervalMs = normalizeRefreshMs(config?.refreshSeconds);
@@ -301,8 +211,13 @@ function App() {
       try {
         const payload = await fetchDashboardPayload();
         if (cancelled) return;
+        const staticUpdatedAt = Date.parse(payload.updatedAt || '');
+        if (directRefreshAtRef.current && Number.isFinite(staticUpdatedAt) && staticUpdatedAt < directRefreshAtRef.current) {
+          setOnline(true);
+          return;
+        }
         applyDashboardPayload(payload);
-        setDataSource(payload.cache?.sourceKind === 'function' ? 'api' : 'static');
+        setDataSource('static');
         setOnline(true);
       } catch (error) {
         if (!cancelled) {
@@ -320,7 +235,7 @@ function App() {
       cancelled = true;
       if (timerId) window.clearTimeout(timerId);
     };
-  }, [applyDashboardPayload, config?.refreshSeconds, liveConnected]);
+  }, [applyDashboardPayload, config?.refreshSeconds]);
 
   return (
     <div className="appShell">
@@ -349,6 +264,8 @@ function Sidebar({ route, online, dataSource }) {
   const connectionState = dataSource === 'connecting' ? 'isConnecting' : online ? 'isOnline' : 'isOffline';
   const connectionTitle = dataSource === 'firestore'
     ? 'Dados em tempo real'
+    : dataSource === 'direct-sheet'
+      ? 'Planilha lida diretamente agora'
     : dataSource === 'connecting'
       ? 'Conectando à fonte em nuvem'
       : online
@@ -668,13 +585,13 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
   const [adminPassword, setAdminPassword] = useState('');
   const [refreshError, setRefreshError] = useState('');
   const [refreshSuccess, setRefreshSuccess] = useState('');
-  const tokenInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
   const failed = status?.state === 'error';
   const workbookDownloadUrl = getWorkbookDownloadUrl(config?.sourceUrl);
 
   useEffect(() => {
     if (!refreshOpen) return undefined;
-    const focusTimer = window.setTimeout(() => tokenInputRef.current?.focus(), 0);
+    const focusTimer = window.setTimeout(() => passwordInputRef.current?.focus(), 0);
     const onKeyDown = (event) => {
       if (event.key === 'Escape' && !refreshing) setRefreshOpen(false);
     };
@@ -713,31 +630,21 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
       const result = await onRefresh(password);
       const records = Number(result?.records);
       const recordLabel = Number.isFinite(records) && records > 0 ? ` ${records.toLocaleString('pt-BR')} registros foram processados.` : '';
-      setRefreshSuccess(result?.changed === false
-        ? `A planilha já estava atualizada.${recordLabel}`
-        : `Dados atualizados na nuvem.${recordLabel}`);
+      setRefreshSuccess(`Dados lidos diretamente da planilha.${recordLabel}`);
       setAdminPassword('');
     } catch (error) {
       setRefreshError(error.message || 'Não foi possível atualizar os dados.');
     }
   };
 
-  const syncLabel = dataSource === 'firestore'
-    ? 'Nuvem · ao vivo'
-    : dataSource === 'connecting'
-      ? 'Conectando...'
-      : dataSource === 'static-fallback'
-        ? 'Fallback Pages'
+  const syncLabel = dataSource === 'direct-sheet'
+      ? 'Planilha · agora'
       : dataSource === 'static-error'
         ? 'Indisponível'
-        : dataSource === 'api'
-          ? 'API online'
-          : 'Cache Pages';
-  const syncTitle = dataSource === 'firestore'
-    ? 'Dados recebidos em tempo real do Firestore; a planilha é sincronizada automaticamente na nuvem.'
-    : dataSource === 'api'
-      ? 'Dados recebidos pela API do backend.'
-      : 'O dashboard está usando o cache estático do GitHub Pages enquanto a fonte online não responde.';
+        : 'Cache Pages';
+  const syncTitle = dataSource === 'direct-sheet'
+    ? 'A planilha foi lida diretamente no Google Sheets e os dados desta tela foram atualizados agora.'
+    : 'O dashboard está usando o cache estático publicado no GitHub Pages.';
   return (
     <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
       <div>
@@ -795,7 +702,7 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
           <form className="refreshDialog" onSubmit={submitRefresh}>
             <div className="refreshDialogHeader">
               <div>
-                <span className="eyebrow">Sincronização na nuvem</span>
+                    <span className="eyebrow">Leitura direta da nuvem</span>
                 <h2 id="refresh-title">Atualizar Dados</h2>
               </div>
               <button className="iconButton" type="button" onClick={closeRefresh} disabled={refreshing} aria-label="Fechar atualização">
@@ -803,24 +710,24 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
               </button>
             </div>
             <p className="refreshLead">
-              A planilha será lida diretamente na nuvem. Depois da confirmação, o cache do dashboard é atualizado e o Pages recebe os dados sem depender do seu computador.
+              A planilha será lida diretamente do Google Sheets. Depois da confirmação, os dados desta tela são atualizados na hora, sem depender do seu computador ou do n8n.
             </p>
-            <label className="refreshTokenField">
+            <label className="refreshPasswordField">
               <span>Senha administrativa</span>
               <input
-                ref={tokenInputRef}
+                ref={passwordInputRef}
                 type="password"
                 value={adminPassword}
                 onChange={(event) => setAdminPassword(event.target.value)}
                 autoComplete="off"
                 spellCheck="false"
-                placeholder="Digite a senha configurada no Firebase"
+                placeholder="Digite a senha administrativa"
                 disabled={refreshing || Boolean(refreshSuccess)}
               />
             </label>
-            <p className="refreshHint">A senha é usada somente nesta solicitação e não é salva no navegador, no código ou no GitHub.</p>
+            <p className="refreshHint">A senha é usada somente como confirmação desta solicitação. Ela não é enviada nem salva no navegador, no código ou no GitHub.</p>
             {refreshError ? <div className="refreshFeedback error" role="alert">{refreshError}</div> : null}
-            {refreshSuccess ? <div className="refreshFeedback success" role="status">{refreshSuccess} O painel será atualizado automaticamente quando o Firestore confirmar a nova leitura.</div> : null}
+            {refreshSuccess ? <div className="refreshFeedback success" role="status">{refreshSuccess} O cache público será republicado automaticamente pelo GitHub Actions.</div> : null}
             <div className="refreshActions">
               <button className="secondaryButton" type="button" onClick={closeRefresh} disabled={refreshing}>
                 {refreshSuccess ? 'Fechar' : 'Cancelar'}
