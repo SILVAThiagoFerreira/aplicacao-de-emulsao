@@ -4,6 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Legend,
   LabelList,
@@ -14,7 +15,7 @@ import {
   YAxis
 } from 'recharts';
 import { Home } from 'lucide-react';
-import { CalendarDays, Download, FileSpreadsheet, ImageDown, RefreshCw, X } from 'lucide-react';
+import { ArrowLeft, BarChart3, CalendarDays, Download, FileSpreadsheet, ImageDown, RefreshCw, Search, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
   applyMetaFilters,
@@ -24,6 +25,8 @@ import {
   buildDailyTrend,
   buildMonthly,
   buildMonthlyByUmb,
+  buildPlanDailyTable,
+  buildPlanWaterfallRows,
   buildProjection,
   groupJustificationsByDate,
   totals,
@@ -309,7 +312,7 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
     startDate: getCurrentMonthRange().start,
     endDate: getCurrentMonthRange().end
   }));
-  const [reportOpen, setReportOpen] = useState(false);
+  const [reportType, setReportType] = useState(null);
   const [reportDate, setReportDate] = useState('');
 
   const dateRange = useMemo(() => {
@@ -369,8 +372,10 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
 
   const openReport = useCallback(() => {
     setReportDate(latestRecordDate || dateRange.end);
-    setReportOpen(true);
+    setReportType('chooser');
   }, [dateRange.end, latestRecordDate]);
+
+  const closeReport = useCallback(() => setReportType(null), []);
 
   const options = useMemo(() => ({
     poligonos: uniqueValues(allRecords, 'poligono'),
@@ -545,7 +550,13 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
         latestApplication={latestApplication}
         dateRange={filters}
       />
-      {reportOpen ? (
+      {reportType === 'chooser' ? (
+        <ReportChooser
+          onSelect={setReportType}
+          onClose={closeReport}
+        />
+      ) : null}
+      {reportType === 'one-page' ? (
         <ReportModal
           allRecords={allRecords}
           justifications={allJustifications}
@@ -553,7 +564,15 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
           date={reportDate}
           dateBounds={reportDateBounds}
           onDateChange={setReportDate}
-          onClose={() => setReportOpen(false)}
+          onBack={() => setReportType('chooser')}
+          onClose={closeReport}
+        />
+      ) : null}
+      {reportType === 'plan' ? (
+        <PlanReportModal
+          allRecords={allRecords}
+          onBack={() => setReportType('chooser')}
+          onClose={closeReport}
         />
       ) : null}
     </div>
@@ -746,9 +765,83 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
   );
 }
 
-function ReportModal({ allRecords, justifications, filters, date, dateBounds, onDateChange, onClose }) {
+function ReportChooser({ onSelect, onClose }) {
+  return (
+    <div className="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="report-chooser-title">
+      <div className="reportDialog reportChooserDialog">
+        <div className="reportDialogHeader">
+          <div>
+            <span className="eyebrow">Exportação rápida</span>
+            <h2 id="report-chooser-title">Escolha o relatório</h2>
+            <p>Selecione o formato que melhor responde à sua análise operacional.</p>
+          </div>
+          <button className="iconButton" type="button" onClick={onClose} aria-label="Fechar seleção de relatório"><X size={20} /></button>
+        </div>
+        <div className="reportTypeGrid">
+          <button className="reportTypeCard" type="button" onClick={() => onSelect('one-page')} data-testid="report-type-one-page">
+            <span className="reportTypeIcon"><ImageDown size={22} /></span>
+            <span className="reportTypeCardBody">
+              <strong>Relatório One Page</strong>
+              <small>Resumo do mês até a data de referência, com indicadores e aplicação detalhada do dia.</small>
+            </span>
+            <span className="reportTypeAction">Escolher <span aria-hidden="true">›</span></span>
+          </button>
+          <button className="reportTypeCard reportTypeCardFeatured" type="button" onClick={() => onSelect('plan')} data-testid="report-type-plan">
+            <span className="reportTypeIcon"><BarChart3 size={22} /></span>
+            <span className="reportTypeCardBody">
+              <strong>Relatório por plano</strong>
+              <small>Pesquise um plano e veja furos, emulsão por dia de carregamento, total e gráfico de cascata.</small>
+            </span>
+            <span className="reportTypeAction">Escolher <span aria-hidden="true">›</span></span>
+          </button>
+        </div>
+        <p className="reportChooserHint">Os dois relatórios são exportados como imagem PNG pronta para compartilhar.</p>
+      </div>
+    </div>
+  );
+}
+
+function downloadCanvas(canvas, filename) {
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+async function captureReportElement(element, { filename, fitTo = null } = {}) {
+  if (!element || !filename) return;
+  const bounds = element.getBoundingClientRect();
+  const previewCanvas = await html2canvas(element, {
+    backgroundColor: '#f7f8f9',
+    scale: Math.max(2, 1920 / Math.max(bounds.width, 1)),
+    useCORS: true,
+    logging: false
+  });
+
+  if (!fitTo) {
+    downloadCanvas(previewCanvas, filename);
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = fitTo.width;
+  canvas.height = fitTo.height;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#f7f8f9';
+  context.fillRect(0, 0, fitTo.width, fitTo.height);
+  const fitScale = Math.max(fitTo.width / previewCanvas.width, fitTo.height / previewCanvas.height);
+  const drawWidth = previewCanvas.width * fitScale;
+  const drawHeight = previewCanvas.height * fitScale;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(previewCanvas, (fitTo.width - drawWidth) / 2, (fitTo.height - drawHeight) / 2, drawWidth, drawHeight);
+  downloadCanvas(canvas, filename);
+}
+
+function ReportModal({ allRecords, justifications, filters, date, dateBounds, onDateChange, onBack, onClose }) {
   const reportRef = useRef(null);
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
   const selectedDate = String(date || '').slice(0, 10);
   const monthStart = selectedDate ? `${selectedDate.slice(0, 7)}-01` : '';
   const baseFilters = { ...filters, startDate: monthStart, endDate: selectedDate };
@@ -764,47 +857,32 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
   const exportImage = async () => {
     if (!reportRef.current || !selectedDate) return;
     setExporting(true);
+    setExportError('');
     try {
-      const FULL_HD_WIDTH = 1920;
-      const FULL_HD_HEIGHT = 1080;
-      const previewBounds = reportRef.current.getBoundingClientRect();
-      const previewCanvas = await html2canvas(reportRef.current, {
-        backgroundColor: '#f7f8f9',
-        scale: Math.max(2, FULL_HD_WIDTH / previewBounds.width),
-        useCORS: true,
-        logging: false
+      await captureReportElement(reportRef.current, {
+        filename: `relatorio-emulsao-${selectedDate}.png`,
+        fitTo: { width: 1920, height: 1080 }
       });
-      const canvas = document.createElement('canvas');
-      canvas.width = FULL_HD_WIDTH;
-      canvas.height = FULL_HD_HEIGHT;
-      const context = canvas.getContext('2d');
-      context.fillStyle = '#f7f8f9';
-      context.fillRect(0, 0, FULL_HD_WIDTH, FULL_HD_HEIGHT);
-      const fitScale = Math.max(FULL_HD_WIDTH / previewCanvas.width, FULL_HD_HEIGHT / previewCanvas.height);
-      const drawWidth = previewCanvas.width * fitScale;
-      const drawHeight = previewCanvas.height * fitScale;
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = 'high';
-      context.drawImage(previewCanvas, (FULL_HD_WIDTH - drawWidth) / 2, (FULL_HD_HEIGHT - drawHeight) / 2, drawWidth, drawHeight);
-      const link = document.createElement('a');
-      link.download = `relatorio-emulsao-${selectedDate}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+    } catch (error) {
+      setExportError(error.message || 'Não foi possível gerar a imagem do relatório.');
     } finally {
       setExporting(false);
     }
   };
 
   return (
-    <div className="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="report-title">
+    <div className="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="report-one-page-title">
       <div className="reportDialog">
         <div className="reportDialogHeader">
           <div>
             <span className="eyebrow">Exportação rápida</span>
-            <h2 id="report-title">Relatório One Page</h2>
+            <h2 id="report-one-page-title">Relatório One Page</h2>
             <p>Escolha a data de referência para consolidar o mês até aquele dia.</p>
           </div>
-          <button className="iconButton" type="button" onClick={onClose} aria-label="Fechar relatório"><X size={20} /></button>
+          <div className="reportHeaderActions">
+            <button className="reportBackButton" type="button" onClick={onBack}><ArrowLeft size={15} /> Relatórios</button>
+            <button className="iconButton" type="button" onClick={onClose} aria-label="Fechar relatório"><X size={20} /></button>
+          </div>
         </div>
         <label className="reportDateField">
           <span><CalendarDays size={16} /> Data da aplicação</span>
@@ -821,16 +899,180 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
             <ReportKpi label="Aplicado/Dia" value={formatKg(dayTotal.emulsao)} tone="gray" />
             <ReportKpi label="Furos Carregados/Dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
           </div>
-           <div className="reportDetailGrid">
-            <div><span className="reportSectionLabel">Acumulado mensal</span><strong>{monthTotal.registros.toLocaleString('pt-BR')} registros</strong><small>De {formatDate(monthStart)} até {formatDate(selectedDate)}</small></div>
-             <div><span className="reportSectionLabel">Aplicação Detalhada/Dia</span>{dayByPolygon.length ? dayByPolygon.map((row) => <p key={`${row.data}-${row.poligono}`}><span>{row.poligono || 'Sem polígono'}</span><strong>{formatKg(row.emulsao)}</strong></p>) : <small>Nenhuma aplicação encontrada nesta data.</small>}</div>
-           </div>
-           <div className="reportJustificationBlock"><span className="reportSectionLabel">Justificativas da data</span><JustificationList justifications={dayJustifications} emptyText="Nenhuma justificativa registrada para esta data." /></div>
-           <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
+          <div className="reportDetailGrid">
+             <div><span className="reportSectionLabel">Acumulado mensal</span><strong>{monthTotal.registros.toLocaleString('pt-BR')} registros</strong><small>De {formatDate(monthStart)} até {formatDate(selectedDate)}</small></div>
+            <div className="reportDetailByPlan">
+              <span className="reportSectionLabel">Aplicação detalhada/dia</span>
+              {dayByPolygon.length ? (
+                <div className="reportDetailTable" role="table" aria-label="Aplicação detalhada por plano">
+                  <div className="reportDetailTableHeader" role="row"><span role="columnheader">Plano</span><span role="columnheader">Emulsão</span><span role="columnheader">Furos</span></div>
+                  {dayByPolygon.map((row) => (
+                    <div className="reportDetailTableRow" role="row" key={`${row.data}-${row.poligono}`}>
+                      <span role="cell">{row.poligono || 'Sem plano'}</span>
+                      <strong role="cell">{formatKg(row.emulsao)}</strong>
+                      <strong role="cell">{row.furos.toLocaleString('pt-BR')}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : <small>Nenhuma aplicação encontrada nesta data.</small>}
+            </div>
+          </div>
+          <div className="reportJustificationBlock"><span className="reportSectionLabel">Justificativas da data</span><JustificationList justifications={dayJustifications} emptyText="Nenhuma justificativa registrada para esta data." /></div>
+          <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
+         </div>
+         {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}
+         <div className="reportActions">
+           <button className="secondaryButton" type="button" onClick={onClose}>Cancelar</button>
+          <button className="primaryButton" type="button" onClick={exportImage} disabled={!selectedDate || exporting}><Download size={17} /> {exporting ? 'Gerando imagem...' : 'Baixar imagem PNG'}</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PlanReportModal({ allRecords, onBack, onClose }) {
+  const reportRef = useRef(null);
+  const [planSearch, setPlanSearch] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const plans = useMemo(() => uniqueValues(allRecords, 'poligono'), [allRecords]);
+  const planSummaries = useMemo(() => plans.map((plan) => {
+    const rows = buildPlanDailyTable(allRecords, plan);
+    const planTotal = totals(rows);
+    return { plan, days: rows.length, emulsao: planTotal.emulsao, furos: planTotal.furos };
+  }), [allRecords, plans]);
+  const visiblePlans = useMemo(() => {
+    const query = planSearch.trim().toLocaleLowerCase('pt-BR');
+    if (!query) return planSummaries;
+    return planSummaries.filter((item) => item.plan.toLocaleLowerCase('pt-BR').includes(query));
+  }, [planSearch, planSummaries]);
+  const dailyRows = useMemo(() => buildPlanDailyTable(allRecords, selectedPlan), [allRecords, selectedPlan]);
+  const planTotal = useMemo(() => totals(dailyRows), [dailyRows]);
+  const emulsionWaterfallRows = useMemo(() => buildPlanWaterfallRows(dailyRows, 'emulsao'), [dailyRows]);
+  const holeWaterfallRows = useMemo(() => buildPlanWaterfallRows(dailyRows, 'furos'), [dailyRows]);
+  const firstDate = dailyRows[0]?.data || '';
+  const lastDate = dailyRows.at(-1)?.data || '';
+  const safePlanName = selectedPlan.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'plano';
+
+  const exportImage = async () => {
+    if (!reportRef.current || !selectedPlan || !dailyRows.length) return;
+    setExporting(true);
+    setExportError('');
+    try {
+      await captureReportElement(reportRef.current, {
+        filename: `relatorio-emulsao-plano-${safePlanName}.png`
+      });
+    } catch (error) {
+      setExportError(error.message || 'Não foi possível gerar a imagem do relatório.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="report-plan-title">
+      <div className="reportDialog planReportDialog">
+        <div className="reportDialogHeader">
+          <div>
+            <span className="eyebrow">Exportação detalhada</span>
+            <h2 id="report-plan-title">Relatório por plano</h2>
+            <p>Pesquise o plano, selecione-o e acompanhe a carga dia a dia.</p>
+          </div>
+          <div className="reportHeaderActions">
+            <button className="reportBackButton" type="button" onClick={onBack}><ArrowLeft size={15} /> Relatórios</button>
+            <button className="iconButton" type="button" onClick={onClose} aria-label="Fechar relatório por plano"><X size={20} /></button>
+          </div>
+        </div>
+
+        <div className="planSearchPanel">
+          <label className="planSearchField">
+            <span><Search size={16} /> Pesquisar nome do plano</span>
+            <input
+              type="search"
+              value={planSearch}
+              onChange={(event) => setPlanSearch(event.target.value)}
+              placeholder="Ex.: PP560926"
+              autoComplete="off"
+              data-testid="plan-search"
+            />
+          </label>
+          <div className="planResultsHeader"><span>{visiblePlans.length.toLocaleString('pt-BR')} planos encontrados</span><small>{selectedPlan ? `Selecionado: ${selectedPlan}` : 'Clique em um plano para abrir o relatório'}</small></div>
+          <div className="planResults" role="listbox" aria-label="Planos disponíveis">
+            {visiblePlans.length ? visiblePlans.map((item) => (
+              <button
+                className={`planResult ${selectedPlan === item.plan ? 'isSelected' : ''}`}
+                type="button"
+                role="option"
+                aria-selected={selectedPlan === item.plan}
+                key={item.plan}
+                onClick={() => setSelectedPlan(item.plan)}
+                data-testid={`plan-option-${item.plan}`}
+              >
+                <span className="planResultName">{item.plan}</span>
+                <span className="planResultMeta">{item.days.toLocaleString('pt-BR')} {item.days === 1 ? 'dia' : 'dias'} · {formatKg(item.emulsao)} · {item.furos.toLocaleString('pt-BR')} furos</span>
+              </button>
+            )) : <p className="planEmptyState">Nenhum plano corresponde à pesquisa.</p>}
+          </div>
+        </div>
+
+        {selectedPlan && dailyRows.length ? (
+          <div className="reportPreview planReportPreview" ref={reportRef}>
+            <div className="reportBrandLine"><img className="reportLogo" src="./assets/Enaex Brasil.png" alt="Enaex Brasil" /><span>US VALE VERDE · APLICAÇÃO DE EMULSÃO</span></div>
+            <div className="reportHeading">
+              <div><span className="reportKicker">Consolidação operacional</span><h3>{selectedPlan}</h3><p>Relatório por plano · dias de carregamento</p></div>
+              <div className="reportDateBadge"><span>Período do plano</span><strong>{formatDate(firstDate)} — {formatDate(lastDate)}</strong></div>
+            </div>
+            <div className="reportKpis">
+              <ReportKpi label="Emulsão aplicada" value={formatKg(planTotal.emulsao)} tone="red" />
+              <ReportKpi label="Furos carregados" value={planTotal.furos.toLocaleString('pt-BR')} tone="gray" />
+              <ReportKpi label="Dias de carregamento" value={dailyRows.length.toLocaleString('pt-BR')} tone="dark" />
+            </div>
+            <div className="planReportTableBlock">
+              <div className="reportSectionHeading"><span className="reportSectionLabel">Aplicação por dia de carregamento</span><small>{dailyRows.length.toLocaleString('pt-BR')} dias consolidados</small></div>
+              <div className="reportDataTableWrap">
+                <table className="reportDataTable">
+                  <thead><tr><th>Dia de carregamento</th><th>Furos carregados</th><th>Emulsão aplicada</th></tr></thead>
+                  <tbody>{dailyRows.map((row) => <tr key={row.data}><td>{row.dia}</td><td>{row.furos.toLocaleString('pt-BR')}</td><td>{formatKg(row.emulsao)}</td></tr>)}</tbody>
+                  <tfoot><tr><td>Total</td><td>{planTotal.furos.toLocaleString('pt-BR')}</td><td>{formatKg(planTotal.emulsao)}</td></tr></tfoot>
+                </table>
+              </div>
+            </div>
+            <div className="planReportChartBlock">
+              <div className="reportSectionHeading"><span className="reportSectionLabel">Gráficos de cascata</span><small>Valores diários e total do plano, em suas unidades de origem</small></div>
+              <div className="planWaterfallGrid">
+                <PlanWaterfallChart
+                  rows={emulsionWaterfallRows}
+                  title="Emulsão aplicada (kg)"
+                  subtitle="Aplicação acumulada por dia"
+                  ariaLabel={`Gráfico de cascata da emulsão aplicada em kg no plano ${selectedPlan}`}
+                  valueFormatter={formatKg}
+                  valueLabel="Emulsão aplicada"
+                />
+                <PlanWaterfallChart
+                  rows={holeWaterfallRows}
+                  title="Furos carregados"
+                  subtitle="Quantidade acumulada por dia"
+                  ariaLabel={`Gráfico de cascata dos furos carregados no plano ${selectedPlan}`}
+                  valueFormatter={(value) => `${Number(value).toLocaleString('pt-BR')} furos`}
+                  valueLabel="Furos carregados"
+                />
+              </div>
+            </div>
+            <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
+          </div>
+        ) : (
+          <div className="planReportEmpty" data-testid="plan-report-empty">
+            <span className="reportTypeIcon"><BarChart3 size={22} /></span>
+            <strong>{selectedPlan ? 'Nenhum carregamento encontrado para este plano.' : 'Selecione um plano para gerar o relatório'}</strong>
+            <small>{selectedPlan ? 'Verifique a origem dos dados ou escolha outro plano.' : 'A tabela e o gráfico de cascata aparecerão aqui após a seleção.'}</small>
+          </div>
+        )}
+
+        {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}
         <div className="reportActions">
           <button className="secondaryButton" type="button" onClick={onClose}>Cancelar</button>
-          <button className="primaryButton" type="button" onClick={exportImage} disabled={!selectedDate || exporting}><Download size={17} /> {exporting ? 'Gerando imagem...' : 'Baixar imagem PNG'}</button>
+          <button className="primaryButton" type="button" onClick={exportImage} disabled={!selectedPlan || !dailyRows.length || exporting}><Download size={17} /> {exporting ? 'Gerando imagem...' : 'Baixar relatório PNG'}</button>
         </div>
       </div>
     </div>
@@ -1072,6 +1314,48 @@ function ChartCard({ title, children, className = '' }) {
 function TooltipJustifications({ items }) {
   if (!items?.length) return null;
   return <div className="chartTooltipJustification"><span>Justificativa</span>{items.map((item, index) => <p key={`${item.poligono}-${item.motivo}-${index}`}><strong>{item.poligono || 'Geral'}:</strong> {item.motivo}</p>)}</div>;
+}
+
+function PlanWaterfallChart({ rows, title, subtitle, ariaLabel, valueFormatter, valueLabel }) {
+  return (
+    <div className="planMetricChart">
+      <div className="planMetricChartHeader"><strong>{title}</strong><small>{subtitle}</small></div>
+      <div className="reportWaterfallViewport" role="img" aria-label={ariaLabel}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} margin={{ top: 24, right: 22, bottom: 10, left: 12 }}>
+            <CartesianGrid vertical={false} stroke="#dfe3e7" strokeDasharray="3 3" />
+            <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} interval={0} />
+            <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value) => formatMil(value)} width={48} />
+            <Tooltip content={<PlanWaterfallTooltip valueFormatter={valueFormatter} valueLabel={valueLabel} />} cursor={{ fill: 'rgba(56,66,75,.06)' }} />
+            <Bar dataKey="base" stackId="waterfall" fill="transparent" stroke="transparent" isAnimationActive={false} legendType="none" />
+            <Bar dataKey="value" name={valueLabel} stackId="waterfall" isAnimationActive={false}>
+              {rows.map((row) => <Cell key={`${row.label}-${row.data}`} fill={row.isTotal ? '#38424B' : '#E20613'} />)}
+              <LabelList dataKey="displayValue" position="top" formatter={valueFormatter} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function PlanWaterfallTooltip({ active, payload, label, valueFormatter = formatKg, valueLabel = 'Emulsão aplicada' }) {
+  if (!active || !payload?.length) return null;
+  const valueItem = payload.find((item) => item?.dataKey === 'value');
+  if (!valueItem) return null;
+  const isTotal = Boolean(valueItem.payload?.isTotal);
+  return (
+    <div className="chartTooltip">
+      <div className="chartTooltipLabel">{label}</div>
+      <div className="chartTooltipItems">
+        <div className="chartTooltipRow">
+          <span className="chartTooltipSwatch" style={{ backgroundColor: isTotal ? '#38424B' : '#E20613' }} />
+          <span className="chartTooltipName">{isTotal ? `Total de ${valueLabel.toLocaleLowerCase('pt-BR')}` : valueLabel}</span>
+          <strong>{valueFormatter(valueItem.value)}</strong>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ChartTooltip({ active, payload, label, labelFormatter, valueFormatter, extraContent }) {

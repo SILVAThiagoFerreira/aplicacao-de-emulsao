@@ -8,6 +8,7 @@
     "dev": "npm --workspace web run dev",
     "build": "npm --workspace web run build",
     "preview": "npm --workspace web run preview",
+    "test": "node web/test-filter.js",
     "functions:serve": "npm --workspace functions run serve",
     "functions:deploy": "firebase deploy --only functions,firestore:rules,firestore:indexes",
     "seed": "node scripts/seed-firestore.mjs",

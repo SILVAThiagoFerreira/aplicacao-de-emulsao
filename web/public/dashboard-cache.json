@@ -1,6 +1,6 @@
 {
-  "sourceUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx",
-  "finalUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx",
+  "sourceUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true",
+  "finalUrl": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true",
   "sourceState": "live",
   "records": [
     {
@@ -5467,6 +5467,15 @@
       "mediaKgFuro": 211.75
     },
     {
+      "data": "2026-04-14",
+      "poligono": "REG260526",
+      "emulsao": 9457,
+      "furos": 203,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 46.58620689655172
+    },
+    {
       "data": "2026-04-16",
       "poligono": "PP240426",
       "emulsao": 3927,
@@ -5816,15 +5825,6 @@
       "umb": 1072,
       "operador": "THIAGO",
       "mediaKgFuro": 151.8
-    },
-    {
-      "data": "2026-04-14",
-      "poligono": "REG260526",
-      "emulsao": 9457,
-      "furos": 203,
-      "umb": 1123,
-      "operador": "GILMAR",
-      "mediaKgFuro": 46.58620689655172
     },
     {
       "data": "2026-05-14",
@@ -6572,6 +6572,762 @@
       "umb": 1072,
       "operador": "THIAGO",
       "mediaKgFuro": 110.25
+    },
+    {
+      "data": "2026-07-17",
+      "poligono": "PP410726",
+      "emulsao": 17131,
+      "furos": 126,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 135.96031746031747
+    },
+    {
+      "data": "2026-07-17",
+      "poligono": "PP410726",
+      "emulsao": 18449,
+      "furos": 171,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 107.88888888888889
+    },
+    {
+      "data": "2026-07-20",
+      "poligono": "PP410726",
+      "emulsao": 13190,
+      "furos": 71,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 185.77464788732394
+    },
+    {
+      "data": "2026-07-20",
+      "poligono": "PP410726",
+      "emulsao": 16413,
+      "furos": 142,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 115.58450704225352
+    },
+    {
+      "data": "2026-07-21",
+      "poligono": "REGPP300726",
+      "emulsao": 5409,
+      "furos": 54,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 100.16666666666667
+    },
+    {
+      "data": "2026-07-24",
+      "poligono": "PP430726",
+      "emulsao": 17884,
+      "furos": 125,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 143.072
+    },
+    {
+      "data": "2026-07-24",
+      "poligono": "PP430726",
+      "emulsao": 3474,
+      "furos": 20,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 173.7
+    },
+    {
+      "data": "2026-07-24",
+      "poligono": "REGPP260726",
+      "emulsao": 3825,
+      "furos": 37,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 103.37837837837837
+    },
+    {
+      "data": "2026-07-25",
+      "poligono": "PP430726",
+      "emulsao": 8454,
+      "furos": 124,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 68.1774193548387
+    },
+    {
+      "data": "2026-07-25",
+      "poligono": "PP430726",
+      "emulsao": 8623,
+      "furos": 51,
+      "umb": 1123,
+      "operador": "THIAGO",
+      "mediaKgFuro": 169.07843137254903
+    },
+    {
+      "data": "2026-07-27",
+      "poligono": "PP430726",
+      "emulsao": 7700,
+      "furos": 68,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 113.23529411764706
+    },
+    {
+      "data": "2026-07-27",
+      "poligono": "PP430726",
+      "emulsao": 6328,
+      "furos": 63,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 100.44444444444444
+    },
+    {
+      "data": "2026-07-27",
+      "poligono": "PP430726",
+      "emulsao": 19244,
+      "furos": 156,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 123.35897435897436
+    },
+    {
+      "data": "2026-07-28",
+      "poligono": "PPTRM350726",
+      "emulsao": 4817,
+      "furos": 65,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 74.1076923076923
+    },
+    {
+      "data": "2026-07-28",
+      "poligono": "PPTRM350726",
+      "emulsao": 2982,
+      "furos": 28,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 106.5
+    },
+    {
+      "data": "2026-07-29",
+      "poligono": "PP380726",
+      "emulsao": 10192,
+      "furos": 72,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 141.55555555555554
+    },
+    {
+      "data": "2026-07-29",
+      "poligono": "PP380726",
+      "emulsao": 5002,
+      "furos": 40,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 125.05
+    },
+    {
+      "data": "2026-07-30",
+      "poligono": "PPTRM370726",
+      "emulsao": 10169,
+      "furos": 87,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 116.88505747126437
+    },
+    {
+      "data": "2026-07-30",
+      "poligono": "PPTRM370726",
+      "emulsao": 3363,
+      "furos": 29,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 115.96551724137932
+    },
+    {
+      "data": "2026-07-30",
+      "poligono": "PP380726",
+      "emulsao": 3900,
+      "furos": 36,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 108.33333333333333
+    },
+    {
+      "data": "2026-07-30",
+      "poligono": "PP380726",
+      "emulsao": 8365,
+      "furos": 72,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 116.18055555555556
+    },
+    {
+      "data": "2026-07-31",
+      "poligono": "PP440826",
+      "emulsao": 8759,
+      "furos": 80,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 109.4875
+    },
+    {
+      "data": "2026-08-01",
+      "poligono": "PP440826",
+      "emulsao": 15807,
+      "furos": 137,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 115.37956204379562
+    },
+    {
+      "data": "2026-08-01",
+      "poligono": "PP440826",
+      "emulsao": 12121,
+      "furos": 113,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 107.26548672566372
+    },
+    {
+      "data": "2026-08-03",
+      "poligono": "PP440826",
+      "emulsao": 9922,
+      "furos": 88,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 112.75
+    },
+    {
+      "data": "2026-08-03",
+      "poligono": "PP440826",
+      "emulsao": 3497,
+      "furos": 30,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 116.56666666666666
+    },
+    {
+      "data": "2026-08-06",
+      "poligono": "PP530826",
+      "emulsao": 8529,
+      "furos": 81,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 105.29629629629629
+    },
+    {
+      "data": "2026-08-06",
+      "poligono": "PP530826",
+      "emulsao": 19756,
+      "furos": 178,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 110.98876404494382
+    },
+    {
+      "data": "2026-08-07",
+      "poligono": "PP220826",
+      "emulsao": 10002,
+      "furos": 95,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 105.28421052631579
+    },
+    {
+      "data": "2026-08-07",
+      "poligono": "PP220826",
+      "emulsao": 9116,
+      "furos": 76,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 119.94736842105263
+    },
+    {
+      "data": "2026-08-07",
+      "poligono": "PP220826",
+      "emulsao": 7456,
+      "furos": 71,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 105.01408450704226
+    },
+    {
+      "data": "2026-08-13",
+      "poligono": "PP540826",
+      "emulsao": 8128,
+      "furos": 209,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 38.889952153110045
+    },
+    {
+      "data": "2026-08-13",
+      "poligono": "PP540826",
+      "emulsao": 3599,
+      "furos": 91,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 39.54945054945055
+    },
+    {
+      "data": "2026-08-14",
+      "poligono": "PP540826",
+      "emulsao": 4467,
+      "furos": 111,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 40.24324324324324
+    },
+    {
+      "data": "2026-08-15",
+      "poligono": "PP540826",
+      "emulsao": 7128,
+      "furos": 151,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 47.205298013245034
+    },
+    {
+      "data": "2026-08-15",
+      "poligono": "PP540826",
+      "emulsao": 4467,
+      "furos": 89,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 50.19101123595506
+    },
+    {
+      "data": "2026-08-17",
+      "poligono": "PP440826_B",
+      "emulsao": 3721,
+      "furos": 30,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 124.03333333333333
+    },
+    {
+      "data": "2026-08-19",
+      "poligono": "PP440826_B",
+      "emulsao": 9700,
+      "furos": 75,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 129.33333333333334
+    },
+    {
+      "data": "2026-08-19",
+      "poligono": "PP440826_B",
+      "emulsao": 5368,
+      "furos": 45,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 119.28888888888889
+    },
+    {
+      "data": "2026-08-19",
+      "poligono": "PP440826_B",
+      "emulsao": 2889,
+      "furos": 26,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 111.11538461538461
+    },
+    {
+      "data": "2026-08-19",
+      "poligono": "PP440826_B",
+      "emulsao": 13866,
+      "furos": 121,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 114.59504132231405
+    },
+    {
+      "data": "2026-08-20",
+      "poligono": "PP490826",
+      "emulsao": 11003,
+      "furos": 65,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 169.27692307692308
+    },
+    {
+      "data": "2026-08-20",
+      "poligono": "PP490826",
+      "emulsao": 9811,
+      "furos": 61,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 160.8360655737705
+    },
+    {
+      "data": "2026-08-21",
+      "poligono": "PP490826",
+      "emulsao": 21716,
+      "furos": 130,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 167.04615384615386
+    },
+    {
+      "data": "2026-08-21",
+      "poligono": "PP490826",
+      "emulsao": 30060,
+      "furos": 183,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 164.2622950819672
+    },
+    {
+      "data": "2026-08-22",
+      "poligono": "PP490826",
+      "emulsao": 3209,
+      "furos": 20,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 160.45
+    },
+    {
+      "data": "2026-08-22",
+      "poligono": "PP490826",
+      "emulsao": 8805,
+      "furos": 63,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 139.76190476190476
+    },
+    {
+      "data": "2026-08-22",
+      "poligono": "PPTRIM220826",
+      "emulsao": 4069,
+      "furos": 35,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 116.25714285714285
+    },
+    {
+      "data": "2026-08-24",
+      "poligono": "PPTRIM220826",
+      "emulsao": 9001,
+      "furos": 88,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 102.2840909090909
+    },
+    {
+      "data": "2026-08-24",
+      "poligono": "PP530826",
+      "emulsao": 5571,
+      "furos": 51,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 109.23529411764706
+    },
+    {
+      "data": "2026-08-24",
+      "poligono": "PP530826",
+      "emulsao": 6435,
+      "furos": 79,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 81.45569620253164
+    },
+    {
+      "data": "2026-08-27",
+      "poligono": "PP550826",
+      "emulsao": 10797,
+      "furos": 191,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 56.52879581151832
+    },
+    {
+      "data": "2026-08-27",
+      "poligono": "PP550826",
+      "emulsao": 4877,
+      "furos": 85,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 57.37647058823529
+    },
+    {
+      "data": "2026-08-28",
+      "poligono": "PP550826",
+      "emulsao": 9543,
+      "furos": 179,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 53.312849162011176
+    },
+    {
+      "data": "2026-08-28",
+      "poligono": "PP550826",
+      "emulsao": 10065,
+      "furos": 198,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 50.833333333333336
+    },
+    {
+      "data": "2026-08-29",
+      "poligono": "PP550826",
+      "emulsao": 8335,
+      "furos": 160,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 52.09375
+    },
+    {
+      "data": "2026-08-29",
+      "poligono": "PP550826",
+      "emulsao": 3209,
+      "furos": 56,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 57.30357142857143
+    },
+    {
+      "data": "2026-08-31",
+      "poligono": "PP550826",
+      "emulsao": 6155,
+      "furos": 122,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 50.450819672131146
+    },
+    {
+      "data": "2026-08-31",
+      "poligono": "PP540826",
+      "emulsao": 1207,
+      "furos": 35,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 34.48571428571429
+    },
+    {
+      "data": "2026-09-01",
+      "poligono": "PP490926",
+      "emulsao": 12369,
+      "furos": 76,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 162.75
+    },
+    {
+      "data": "2026-09-02",
+      "poligono": "PP490926",
+      "emulsao": 23650,
+      "furos": 171,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 138.30409356725147
+    },
+    {
+      "data": "2026-09-02",
+      "poligono": "PP490926",
+      "emulsao": 23151,
+      "furos": 164,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 141.16463414634146
+    },
+    {
+      "data": "2026-09-03",
+      "poligono": "PP490926",
+      "emulsao": 9591,
+      "furos": 57,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 168.26315789473685
+    },
+    {
+      "data": "2026-09-03",
+      "poligono": "PP490926",
+      "emulsao": 21582,
+      "furos": 141,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 153.06382978723406
+    },
+    {
+      "data": "2026-09-04",
+      "poligono": "PP490926",
+      "emulsao": 6381,
+      "furos": 53,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 120.39622641509433
+    },
+    {
+      "data": "2026-09-04",
+      "poligono": "PP490926",
+      "emulsao": 21000,
+      "furos": 154,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 136.36363636363637
+    },
+    {
+      "data": "2026-09-05",
+      "poligono": "PP490926",
+      "emulsao": 17703,
+      "furos": 110,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 160.93636363636364
+    },
+    {
+      "data": "2026-09-05",
+      "poligono": "PP490926",
+      "emulsao": 6428,
+      "furos": 50,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 128.56
+    },
+    {
+      "data": "2026-09-08",
+      "poligono": "PPTRIM550926",
+      "emulsao": 6610,
+      "furos": 115,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 57.47826086956522
+    },
+    {
+      "data": "2026-09-08",
+      "poligono": "PPTRIM550926",
+      "emulsao": 5619,
+      "furos": 147,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 38.224489795918366
+    },
+    {
+      "data": "2026-09-09",
+      "poligono": "PP490926",
+      "emulsao": 15641,
+      "furos": 141,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 110.9290780141844
+    },
+    {
+      "data": "2026-09-09",
+      "poligono": "PP490926",
+      "emulsao": 22329,
+      "furos": 196,
+      "umb": 1072,
+      "operador": "WELLINGTON",
+      "mediaKgFuro": 113.9234693877551
+    },
+    {
+      "data": "2026-09-10",
+      "poligono": "PP490926",
+      "emulsao": 15570,
+      "furos": 180,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 86.5
+    },
+    {
+      "data": "2026-09-10",
+      "poligono": "PP490926",
+      "emulsao": 17676,
+      "furos": 190,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 93.03157894736842
+    },
+    {
+      "data": "2026-09-11",
+      "poligono": "PP490926",
+      "emulsao": 7903,
+      "furos": 67,
+      "umb": 1123,
+      "operador": "THIAGO",
+      "mediaKgFuro": 117.95522388059702
+    },
+    {
+      "data": "2026-09-11",
+      "poligono": "PP490926",
+      "emulsao": 12369,
+      "furos": 116,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 106.62931034482759
+    },
+    {
+      "data": "2026-09-12",
+      "poligono": "PP490926",
+      "emulsao": 6702,
+      "furos": 53,
+      "umb": 1123,
+      "operador": "PAULO",
+      "mediaKgFuro": 126.45283018867924
+    },
+    {
+      "data": "2026-09-12",
+      "poligono": "PP490926",
+      "emulsao": 6408,
+      "furos": 46,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 139.30434782608697
+    },
+    {
+      "data": "2026-09-13",
+      "poligono": "PP490926",
+      "emulsao": 9570,
+      "furos": 62,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 154.3548387096774
+    },
+    {
+      "data": "2026-09-13",
+      "poligono": "PP490926",
+      "emulsao": 9482,
+      "furos": 71,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 133.54929577464787
+    },
+    {
+      "data": "2026-09-13",
+      "poligono": "PP560926",
+      "emulsao": 6700,
+      "furos": 128,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 52.34375
+    },
+    {
+      "data": "2026-09-13",
+      "poligono": "PP560926",
+      "emulsao": 4819,
+      "furos": 88,
+      "umb": 1072,
+      "operador": "THIAGO",
+      "mediaKgFuro": 54.76136363636363
+    },
+    {
+      "data": "2026-09-15",
+      "poligono": "PP560926",
+      "emulsao": 4751,
+      "furos": 95,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 50.01052631578948
+    },
+    {
+      "data": "2026-09-15",
+      "poligono": "PP460926",
+      "emulsao": 7181,
+      "furos": 80,
+      "umb": 1123,
+      "operador": "GILMAR",
+      "mediaKgFuro": 89.7625
     }
   ],
   "ritmo": [
@@ -6628,24 +7384,24 @@
       "mes": "Julho",
       "mesNumero": 7,
       "meta": 400000,
-      "ritmo": 363437.8,
-      "aplicado": 175857
+      "ritmo": 379530,
+      "aplicado": 379530
     },
     {
       "ano": 2026,
       "mes": "Agosto",
       "mesNumero": 8,
       "meta": 400000,
-      "ritmo": 0,
-      "aplicado": 0
+      "ritmo": 323407,
+      "aplicado": 323407
     },
     {
       "ano": 2026,
       "mes": "Setembro",
       "mesNumero": 9,
       "meta": 400000,
-      "ritmo": 0,
-      "aplicado": 0
+      "ritmo": 602370,
+      "aplicado": 301185
     },
     {
       "ano": 2026,
@@ -7010,10 +7766,6 @@
       "meta": 35000
     },
     {
-      "data": "2026-07-18",
-      "meta": 17000
-    },
-    {
       "data": "2026-07-20",
       "meta": 35000
     },
@@ -7035,11 +7787,7 @@
     },
     {
       "data": "2026-07-25",
-      "meta": 35000
-    },
-    {
-      "data": "2026-07-26",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-07-27",
@@ -7059,15 +7807,11 @@
     },
     {
       "data": "2026-07-31",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-08-01",
-      "meta": 35000
-    },
-    {
-      "data": "2026-08-02",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-08-03",
@@ -7075,7 +7819,7 @@
     },
     {
       "data": "2026-08-04",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-08-05",
@@ -7090,28 +7834,16 @@
       "meta": 35000
     },
     {
-      "data": "2026-08-08",
-      "meta": 35000
-    },
-    {
-      "data": "2026-08-09",
-      "meta": 35000
-    },
-    {
       "data": "2026-08-10",
       "meta": 35000
     },
     {
       "data": "2026-08-11",
-      "meta": 35000
-    },
-    {
-      "data": "2026-08-12",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-08-13",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-08-14",
@@ -7119,11 +7851,7 @@
     },
     {
       "data": "2026-08-15",
-      "meta": 35000
-    },
-    {
-      "data": "2026-08-16",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-08-17",
@@ -7147,11 +7875,7 @@
     },
     {
       "data": "2026-08-22",
-      "meta": 35000
-    },
-    {
-      "data": "2026-08-23",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-08-24",
@@ -7175,11 +7899,7 @@
     },
     {
       "data": "2026-08-29",
-      "meta": 35000
-    },
-    {
-      "data": "2026-08-30",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-08-31",
@@ -7187,7 +7907,7 @@
     },
     {
       "data": "2026-09-01",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-09-02",
@@ -7199,19 +7919,11 @@
     },
     {
       "data": "2026-09-04",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-09-05",
-      "meta": 35000
-    },
-    {
-      "data": "2026-09-06",
-      "meta": 35000
-    },
-    {
-      "data": "2026-09-07",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-09-08",
@@ -7219,7 +7931,7 @@
     },
     {
       "data": "2026-09-09",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-09-10",
@@ -7231,11 +7943,7 @@
     },
     {
       "data": "2026-09-12",
-      "meta": 35000
-    },
-    {
-      "data": "2026-09-13",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-09-14",
@@ -7243,7 +7951,7 @@
     },
     {
       "data": "2026-09-15",
-      "meta": 35000
+      "meta": 17000
     },
     {
       "data": "2026-09-16",
@@ -7251,18 +7959,6 @@
     },
     {
       "data": "2026-09-17",
-      "meta": 35000
-    },
-    {
-      "data": "2026-09-18",
-      "meta": 35000
-    },
-    {
-      "data": "2026-09-19",
-      "meta": 35000
-    },
-    {
-      "data": "2026-09-20",
       "meta": 35000
     },
     {
@@ -7849,12 +8545,177 @@
       "data": "2026-07-15",
       "poligono": "PP290726_D, PP400726",
       "motivo": "Finalizamos os carregamentos do PP29D, PP40 , carregamos regularização e iniciamos as programação."
+    },
+    {
+      "data": "2026-07-16",
+      "poligono": "",
+      "motivo": "Equipe foi leberada pós desmonte."
+    },
+    {
+      "data": "2026-07-20",
+      "poligono": "PP410726",
+      "motivo": "Finalizamos o carregamento do PP410726 e iniciamos a temporização."
+    },
+    {
+      "data": "2026-07-21",
+      "poligono": "REG300726",
+      "motivo": "Finalizamos a temporização do PP41, carregamos a regularização REGPP30 , carregamos blocos e repés e não tinha área liberada para carregamento."
+    },
+    {
+      "data": "2026-07-22",
+      "poligono": "",
+      "motivo": "Parte da manhã carregamos secundario, a tarde equipe não trabalhou devido o prêmio de melhor desmonte."
+    },
+    {
+      "data": "2026-07-23",
+      "poligono": "pré-corte 37/38",
+      "motivo": "carregamento dos pré corte não teve aplicação."
+    },
+    {
+      "data": "2026-07-27",
+      "poligono": "PP430726",
+      "motivo": "Finalinalização do carregamento do PP43, foi temporizado e aguardado liberação de área para carregamento."
+    },
+    {
+      "data": "2026-07-28",
+      "poligono": "PPTRIM35",
+      "motivo": "Realizado o carregamento do PPTRIM35 temporizado e a equipe não tinha mas área liberada para carregamento."
+    },
+    {
+      "data": "2026-07-29",
+      "poligono": "PP380726",
+      "motivo": "Equipe deu inicio o carregamento do PP38 carregou o Pré-corte 22 fez temporização do PPTRIM35 e não tinha mas área liberada para carregamento."
+    },
+    {
+      "data": "2026-07-30",
+      "poligono": "PPTRIM37, PP380726",
+      "motivo": "Equipe finalizou o carregamento dos poligónos iniciou a temporização."
+    },
+    {
+      "data": "2026-07-31",
+      "poligono": "PP440826",
+      "motivo": "Equipe carregou área liberada e ficou aguadando liberação de área por parte da perfuração."
+    },
+    {
+      "data": "2026-08-03",
+      "poligono": "PP440826",
+      "motivo": "Foi finalizado e o carregamento do PP44, carregamos um parte do Pré-corte 44, temporizamos o fogo."
+    },
+    {
+      "data": "2026-08-08",
+      "poligono": "",
+      "motivo": "Não houve carregamento por falta de frente disponivel."
+    },
+    {
+      "data": "2026-08-10",
+      "poligono": "",
+      "motivo": "Somente carregamento de pré-corte."
+    },
+    {
+      "data": "2026-08-11",
+      "poligono": "",
+      "motivo": "Não houve carregamento por falta de frente disponivel."
+    },
+    {
+      "data": "2026-08-12",
+      "poligono": "",
+      "motivo": "Equipe liberada outoffice por falta de frente disponivel para carregamento."
+    },
+    {
+      "data": "2026-08-13",
+      "poligono": "",
+      "motivo": "Meta não atingida devido a operação em bancada de 5 metros"
+    },
+    {
+      "data": "2026-08-14",
+      "poligono": "",
+      "motivo": "Desmonte / Falta de frente disponivel para carregamento"
+    },
+    {
+      "data": "2026-08-22",
+      "poligono": "PPTRIM220826",
+      "motivo": "A Equipe precisou deixar uma area pra poder a ReD Perfurar no pptrim22"
+    },
+    {
+      "data": "2026-08-24",
+      "poligono": "",
+      "motivo": "Carregamento do PPTRIM22 e programação, programação do PP49 e carregamento do PP53"
+    },
+    {
+      "data": "2026-08-25",
+      "poligono": "",
+      "motivo": "Falta de frente para carregamento"
+    },
+    {
+      "data": "2026-08-26",
+      "poligono": "",
+      "motivo": "Falta de frente para carregamento"
+    },
+    {
+      "data": "2026-08-27",
+      "poligono": "PP550826",
+      "motivo": "Falta de área para carregamento, foi carregado uma área com limite de segurança no PP55"
+    },
+    {
+      "data": "2026-08-28",
+      "poligono": "PP550826",
+      "motivo": "Falta de área para carregamento, foi carregado uma área com limite de segurança no PP55 e detonado o PP49"
+    },
+    {
+      "data": "2026-08-29",
+      "poligono": "PP550826",
+      "motivo": "Furos de baixa metragem e o horario de até 12:00"
+    },
+    {
+      "data": "2026-08-30",
+      "poligono": "PP550826, PP540826",
+      "motivo": "Finalizamos os carregamentos dos poligonos, a tarde foi feito a temporização e iniciamos o carregamento do pré-corte."
+    },
+    {
+      "data": "2026-09-01",
+      "poligono": "PP490926",
+      "motivo": "Caminhão 1123, estava no lava a jato para manuteção."
+    },
+    {
+      "data": "2026-09-03",
+      "poligono": "PP490926",
+      "motivo": "Meta não atingida devido, o carregamento das regularizações do desmonte do dia 04.09.2026."
+    },
+    {
+      "data": "2026-09-09",
+      "poligono": "PPTRIM550926",
+      "motivo": "Finalizamos os carregamentos do polÍgono, Pré-corte 55 tarde foi feito a temporização e a bancada era de 5 metros por conta disso ão conseguimos atigir a meta."
+    },
+    {
+      "data": "2026-09-10",
+      "poligono": "PP490926",
+      "motivo": "Área que estava sendo carregada furos com profudidade baixa, por conta disso não conseguimos atingir a meta do dia."
+    },
+    {
+      "data": "2026-09-11",
+      "poligono": "PP490926",
+      "motivo": "Não atingimos a meta devido parte da equipe está em trenamento da NR19, e região que estavamos carregando furos com metragem baixa."
+    },
+    {
+      "data": "2026-09-12",
+      "poligono": "PP490926",
+      "motivo": "Não atingimos a meta devido não ter mas área para carregamento por questão de segurança de distâciamento da lavra."
+    },
+    {
+      "data": "2026-09-13",
+      "poligono": "PP490926/PP560926",
+      "motivo": "Finalizamos o carregamento do PP49, iniciamos o carregamento do PP56, não consegimos atigir a meta devido firosa de 5 m do PP56 e finalizamos a temporização do PP49 foi feito todos os testes."
+    },
+    {
+      "data": "2026-09-14",
+      "poligono": "PP560926/PP460926",
+      "motivo": "Finalizamos o carregamento do PP56, ficamos aguardando liberação de área no PP46 até as 15:00  , foi feita a temporização do PP56."
     }
   ],
   "totals": {
-    "emulsao": 6933584,
-    "furos": 57795
+    "emulsao": 7761849,
+    "furos": 65881
   },
-  "updatedAt": "2026-07-16T01:14:51.547Z",
-  "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/export?format=xlsx"
+  "updatedAt": "2026-09-16T13:53:35.448Z",
+  "source": "https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true"
 }

@@ -264,6 +264,8 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .dot.red { background: var(--enaex-red); }
 .reportOverlay { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 24px; background: rgba(18, 26, 33, .58); overflow: auto; }
 .reportDialog { width: min(820px, 100%); max-height: calc(100vh - 48px); overflow: auto; padding: 24px; background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.24); }
+.reportChooserDialog { width: min(740px, 100%); }
+.planReportDialog { width: min(1040px, 100%); }
 .refreshOverlay { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(18, 26, 33, .58); }
 .refreshDialog { width: min(480px, 100%); padding: 24px; background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.24); }
 .refreshDialogHeader { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; border-bottom: 1px solid var(--soft-line); padding-bottom: 16px; }
@@ -280,6 +282,9 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .reportDialogHeader { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; border-bottom: 1px solid var(--soft-line); padding-bottom: 16px; }
 .reportDialogHeader h2 { margin: 5px 0 4px; font-size: 23px; }
 .reportDialogHeader p { margin: 0; color: var(--muted); font-size: 13px; }
+.reportHeaderActions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.reportBackButton { display: inline-flex; align-items: center; gap: 5px; border: 0; padding: 7px 2px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 750; white-space: nowrap; }
+.reportBackButton:hover { color: var(--enaex-red); }
 .iconButton { width: 34px; height: 34px; color: var(--muted); background: #f1f3f5; border-radius: 50%; }
 .iconButton:hover { color: var(--enaex-red); background: #fbe8e9; }
 .reportDateField { display: grid; gap: 7px; margin: 17px 0; color: #3c4752; font-size: 13px; font-weight: 700; }
@@ -310,6 +315,14 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .reportDetailGrid small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; }
 .reportDetailGrid p { display: flex; justify-content: space-between; gap: 16px; margin: 7px 0 0; padding-bottom: 5px; border-bottom: 1px solid #e6e9eb; font-size: 12px; }
 .reportDetailGrid p strong { margin: 0; font-size: 12px; }
+.reportDetailByPlan { min-width: 0; }
+.reportDetailTable { display: grid; gap: 0; margin-top: 9px; font-size: 11px; }
+.reportDetailTableHeader, .reportDetailTableRow { display: grid; grid-template-columns: minmax(0, 1fr) max-content max-content; column-gap: 12px; align-items: baseline; }
+.reportDetailTableHeader { padding: 0 0 5px; color: var(--muted); border-bottom: 1px solid var(--enaex-red); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.reportDetailTableHeader span:not(:first-child), .reportDetailTableRow strong { text-align: right; }
+.reportDetailTableRow { padding: 6px 0; border-bottom: 1px solid #e6e9eb; }
+.reportDetailTableRow > span:first-child { overflow-wrap: anywhere; }
+.reportDetailTableRow strong { margin: 0; color: var(--topbar); font-size: 11px; }
 .reportJustificationBlock { margin-top: 18px; padding: 14px 0 0; border-top: 1px solid #d8dde1; }
 .reportJustificationBlock .justificationList { margin-top: 8px; max-height: none; }
 .justificationsPanel { padding: 12px 14px 14px; min-height: 190px; }
@@ -324,6 +337,52 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .primaryButton, .secondaryButton { min-height: 40px; padding: 10px 15px; font-size: 12px; font-weight: 750; }
 .primaryButton { background: var(--enaex-red); color: #fff; }
 .secondaryButton { background: #26323d; color: #fff; }
+.reportTypeGrid { display: grid; gap: 12px; margin-top: 20px; }
+.reportTypeCard { display: grid; grid-template-columns: auto minmax(0, 1fr) max-content; align-items: center; gap: 14px; width: 100%; padding: 16px; border: 1px solid #d7dce0; border-left: 4px solid #38424B; background: #fff; color: var(--ink); text-align: left; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+.reportTypeCard:hover { border-color: var(--enaex-red); background: #fffafb; transform: translateY(-1px); }
+.reportTypeCardFeatured { border-left-color: var(--enaex-red); }
+.reportTypeIcon { display: grid; place-items: center; width: 42px; height: 42px; color: var(--enaex-red); background: #fff0f1; border-radius: 8px; }
+.reportTypeCardBody { display: grid; gap: 5px; min-width: 0; }
+.reportTypeCardBody strong { font-size: 15px; }
+.reportTypeCardBody small { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.reportTypeAction { display: inline-flex; align-items: center; gap: 4px; color: var(--enaex-red); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.reportTypeAction span { font-size: 20px; line-height: .6; }
+.reportChooserHint { margin: 17px 0 0; color: var(--muted); font-size: 11px; }
+.planSearchPanel { margin-top: 18px; padding: 14px; border: 1px solid #e1e5e8; background: #f7f8f9; }
+.planSearchField { display: grid; gap: 7px; color: #3c4752; font-size: 12px; font-weight: 750; }
+.planSearchField span { display: inline-flex; align-items: center; gap: 7px; }
+.planSearchField input { width: 100%; padding: 10px 11px; border: 1px solid #d7dce0; background: #fff; color: var(--ink); outline: none; }
+.planSearchField input:focus { border-color: var(--enaex-red); box-shadow: 0 0 0 3px rgba(226, 6, 19, .1); }
+.planResultsHeader { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-top: 12px; color: var(--ink); font-size: 11px; font-weight: 750; }
+.planResultsHeader small { color: var(--muted); font-size: 10px; font-weight: 500; text-align: right; }
+.planResults { max-height: 226px; overflow: auto; margin-top: 7px; border: 1px solid #d7dce0; background: #fff; }
+.planResult { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; width: 100%; padding: 9px 11px; border: 0; border-bottom: 1px solid #edf0f2; background: #fff; color: var(--ink); text-align: left; }
+.planResult:last-child { border-bottom: 0; }
+.planResult:hover, .planResult.isSelected { background: #fff0f1; }
+.planResult.isSelected { box-shadow: inset 3px 0 0 var(--enaex-red); }
+.planResultName { min-width: 0; overflow-wrap: anywhere; font-size: 12px; font-weight: 800; }
+.planResultMeta { color: var(--muted); font-size: 10px; text-align: right; white-space: nowrap; }
+.planEmptyState { margin: 0; padding: 16px; color: var(--muted); font-size: 12px; text-align: center; }
+.planReportPreview { margin-top: 18px; }
+.planReportPreview .reportHeading p { text-transform: none; }
+.planReportTableBlock, .planReportChartBlock { margin-top: 18px; padding-top: 14px; border-top: 1px solid #d8dde1; }
+.reportSectionHeading { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; }
+.reportSectionHeading small { color: var(--muted); font-size: 10px; text-align: right; }
+.reportDataTableWrap { margin-top: 8px; overflow-x: auto; }
+.reportDataTable { min-width: 480px; font-size: 11px; }
+.reportDataTable th { padding: 7px 8px; border-bottom: 1px solid var(--enaex-red); }
+.reportDataTable td { padding: 6px 8px; border-bottom: 1px solid #e6e9eb; }
+.reportDataTable th:nth-child(n+2), .reportDataTable td:nth-child(n+2) { text-align: right; }
+.reportDataTable tfoot td { padding-top: 8px; border-top: 1px solid var(--enaex-red); border-bottom: 0; }
+.planWaterfallGrid { display: grid; gap: 18px; margin-top: 12px; }
+.planMetricChart { padding: 12px 12px 2px; border: 1px solid #e1e5e8; background: #fff; }
+.planMetricChartHeader { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.planMetricChartHeader strong { color: var(--topbar); font-size: 12px; }
+.planMetricChartHeader small { color: var(--muted); font-size: 10px; text-align: right; }
+.planMetricChart .recharts-label-list text { fill: #38424B !important; font-size: 10px; font-weight: 700; }
+.reportWaterfallViewport { width: 100%; height: 270px; margin-top: 4px; }
+.planReportEmpty { display: grid; justify-items: center; gap: 8px; margin-top: 18px; padding: 34px 18px; border: 1px dashed #cfd5da; background: #f7f8f9; color: var(--ink); text-align: center; }
+.planReportEmpty small { color: var(--muted); font-size: 12px; }
 .adminLayout { min-height: calc(100vh - 54px); display: grid; place-items: start center; padding: 36px 28px; }
 .adminCard { width: min(620px, 100%); padding: 28px; }
 .adminCard.wide { width: min(980px, 100%); }
@@ -397,9 +456,23 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .reportKpis, .reportDetailGrid { grid-template-columns: 1fr; }
   .reportDetailGrid > div:first-child { border-right: 0; border-bottom: 1px solid #d8dde1; padding: 0 0 14px; }
   .reportDateField input { width: 100%; }
+  .reportTypeCard { grid-template-columns: auto minmax(0, 1fr); }
+  .reportTypeAction { grid-column: 2; justify-self: start; }
+  .reportHeaderActions { align-items: flex-end; flex-direction: column-reverse; gap: 5px; }
+  .planResultsHeader, .reportSectionHeading { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .planResultsHeader small, .reportSectionHeading small { text-align: left; }
+  .planMetricChartHeader { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .planMetricChartHeader small { text-align: left; }
+  .planResult { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .planResultMeta { text-align: left; white-space: normal; }
+  .reportWaterfallViewport { height: 240px; }
 }
 @media (max-width: 360px) {
   .topbar { grid-template-columns: 104px minmax(0, 1fr) 86px; }
   .topbar h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; }
   .topbarUnit { min-width: 0; padding-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }

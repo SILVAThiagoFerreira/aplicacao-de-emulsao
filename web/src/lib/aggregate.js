@@ -84,6 +84,58 @@ export function buildDailyTable(records) {
     .map((item) => ({ ...item, mediaKgFuro: item.furos ? item.emulsao / item.furos : 0 }));
 }
 
+export function buildPlanDailyTable(records, plan) {
+  const targetPlan = String(plan || '').trim();
+  if (!targetPlan) return [];
+
+  const map = new Map();
+  records.forEach((item) => {
+    if (String(item.poligono || '').trim() !== targetPlan) return;
+    const data = String(item.data || '').slice(0, 10);
+    if (!data) return;
+    const previous = map.get(data) || { data, poligono: targetPlan, emulsao: 0, furos: 0 };
+    previous.emulsao += toNumber(item.emulsao);
+    previous.furos += toNumber(item.furos);
+    map.set(data, previous);
+  });
+
+  return Array.from(map.values())
+    .sort((a, b) => a.data.localeCompare(b.data))
+    .map((item) => ({
+      ...item,
+      dia: formatDate(item.data),
+      mediaKgFuro: item.furos ? item.emulsao / item.furos : 0
+    }));
+}
+
+export function buildPlanWaterfallRows(dailyRows, metric = 'emulsao') {
+  let cumulative = 0;
+  const rows = dailyRows.map((row) => {
+    const base = cumulative;
+    const value = toNumber(row[metric]);
+    cumulative += value;
+    return {
+      label: row.dia || formatDate(row.data),
+      data: row.data,
+      metric,
+      base,
+      value,
+      displayValue: value,
+      isTotal: false
+    };
+  });
+
+  rows.push({
+    label: 'Total',
+    data: '',
+    base: 0,
+    value: cumulative,
+    displayValue: cumulative,
+    isTotal: true
+  });
+  return rows;
+}
+
 export function buildDailyTrend(records, metas = []) {
   const map = new Map();
   records.forEach((item) => {
