@@ -781,7 +781,7 @@ function ReportChooser({ onSelect, onClose }) {
           <button className="reportTypeCard" type="button" onClick={() => onSelect('one-page')} data-testid="report-type-one-page">
             <span className="reportTypeIcon"><ImageDown size={22} /></span>
             <span className="reportTypeCardBody">
-              <strong>Relatório One Page</strong>
+              <strong>Relatório de Aplicação Diária</strong>
               <small>Resumo do mês até a data de referência, com indicadores e aplicação detalhada do dia.</small>
             </span>
             <span className="reportTypeAction">Escolher <span aria-hidden="true">›</span></span>
@@ -789,7 +789,7 @@ function ReportChooser({ onSelect, onClose }) {
           <button className="reportTypeCard reportTypeCardFeatured" type="button" onClick={() => onSelect('plan')} data-testid="report-type-plan">
             <span className="reportTypeIcon"><BarChart3 size={22} /></span>
             <span className="reportTypeCardBody">
-              <strong>Relatório por plano</strong>
+              <strong>Relatório de Aplicação por Plano</strong>
               <small>Pesquise um plano e veja furos, emulsão por dia de carregamento, total e gráfico de cascata.</small>
             </span>
             <span className="reportTypeAction">Escolher <span aria-hidden="true">›</span></span>
@@ -871,12 +871,12 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
   };
 
   return (
-    <div className="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="report-one-page-title">
+    <div className="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="report-daily-title">
       <div className="reportDialog">
         <div className="reportDialogHeader">
           <div>
             <span className="eyebrow">Exportação rápida</span>
-            <h2 id="report-one-page-title">Relatório One Page</h2>
+            <h2 id="report-daily-title">Relatório de Aplicação Diária</h2>
             <p>Escolha a data de referência para consolidar o mês até aquele dia.</p>
           </div>
           <div className="reportHeaderActions">
@@ -976,7 +976,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
         <div className="reportDialogHeader">
           <div>
             <span className="eyebrow">Exportação detalhada</span>
-            <h2 id="report-plan-title">Relatório por plano</h2>
+            <h2 id="report-plan-title">Relatório de Aplicação por Plano</h2>
             <p>Pesquise o plano, selecione-o e acompanhe a carga dia a dia.</p>
           </div>
           <div className="reportHeaderActions">
@@ -1020,7 +1020,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
           <div className="reportPreview planReportPreview" ref={reportRef}>
             <div className="reportBrandLine"><img className="reportLogo" src="./assets/Enaex Brasil.png" alt="Enaex Brasil" /><span>US VALE VERDE · APLICAÇÃO DE EMULSÃO</span></div>
             <div className="reportHeading">
-              <div><span className="reportKicker">Consolidação operacional</span><h3>{selectedPlan}</h3><p>Relatório por plano · dias de carregamento</p></div>
+              <div><span className="reportKicker">Consolidação operacional</span><h3>{selectedPlan}</h3><p>Relatório de Aplicação por Plano · dias de carregamento</p></div>
               <div className="reportDateBadge"><span>Período do plano</span><strong>{formatDate(firstDate)} — {formatDate(lastDate)}</strong></div>
             </div>
             <div className="reportKpis">
