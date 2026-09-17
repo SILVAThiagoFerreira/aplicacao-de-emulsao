@@ -136,6 +136,16 @@ export function buildPlanWaterfallRows(dailyRows, metric = 'emulsao') {
   return rows;
 }
 
+export function buildPlanCombinedWaterfallRows(dailyRows) {
+  const waterfallRows = buildPlanWaterfallRows(dailyRows, 'emulsao');
+  const totalHoles = dailyRows.reduce((sum, row) => sum + toNumber(row.furos), 0);
+
+  return waterfallRows.map((row, index) => ({
+    ...row,
+    furos: row.isTotal ? totalHoles : toNumber(dailyRows[index]?.furos)
+  }));
+}
+
 export function buildDailyTrend(records, metas = []) {
   const map = new Map();
   records.forEach((item) => {

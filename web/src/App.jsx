@@ -26,7 +26,7 @@ import {
   buildMonthly,
   buildMonthlyByUmb,
   buildPlanDailyTable,
-  buildPlanWaterfallRows,
+  buildPlanCombinedWaterfallRows,
   buildProjection,
   groupJustificationsByDate,
   totals,
@@ -949,8 +949,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
   }, [planSearch, planSummaries]);
   const dailyRows = useMemo(() => buildPlanDailyTable(allRecords, selectedPlan), [allRecords, selectedPlan]);
   const planTotal = useMemo(() => totals(dailyRows), [dailyRows]);
-  const emulsionWaterfallRows = useMemo(() => buildPlanWaterfallRows(dailyRows, 'emulsao'), [dailyRows]);
-  const holeWaterfallRows = useMemo(() => buildPlanWaterfallRows(dailyRows, 'furos'), [dailyRows]);
+  const combinedWaterfallRows = useMemo(() => buildPlanCombinedWaterfallRows(dailyRows), [dailyRows]);
   const firstDate = dailyRows[0]?.data || '';
   const lastDate = dailyRows.at(-1)?.data || '';
   const safePlanName = selectedPlan.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'plano';
@@ -1039,23 +1038,13 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
               </div>
             </div>
             <div className="planReportChartBlock">
-              <div className="reportSectionHeading"><span className="reportSectionLabel">Gráficos de cascata</span><small>Valores diários e total do plano, em suas unidades de origem</small></div>
+              <div className="reportSectionHeading"><span className="reportSectionLabel">Gráfico de cascata</span><small>Emulsão (kg) acima da barra · furos carregados no centro</small></div>
               <div className="planWaterfallGrid">
                 <PlanWaterfallChart
-                  rows={emulsionWaterfallRows}
+                  rows={combinedWaterfallRows}
                   title="Emulsão aplicada (kg)"
-                  subtitle="Aplicação acumulada por dia"
-                  ariaLabel={`Gráfico de cascata da emulsão aplicada em kg no plano ${selectedPlan}`}
-                  valueFormatter={formatKg}
-                  valueLabel="Emulsão aplicada"
-                />
-                <PlanWaterfallChart
-                  rows={holeWaterfallRows}
-                  title="Furos carregados"
-                  subtitle="Quantidade acumulada por dia"
-                  ariaLabel={`Gráfico de cascata dos furos carregados no plano ${selectedPlan}`}
-                  valueFormatter={(value) => `${Number(value).toLocaleString('pt-BR')} furos`}
-                  valueLabel="Furos carregados"
+                  subtitle="Furos carregados no centro de cada barra"
+                  ariaLabel={`Gráfico de cascata da emulsão aplicada em kg, com furos carregados no centro das barras, no plano ${selectedPlan}`}
                 />
               </div>
             </div>
@@ -1316,21 +1305,22 @@ function TooltipJustifications({ items }) {
   return <div className="chartTooltipJustification"><span>Justificativa</span>{items.map((item, index) => <p key={`${item.poligono}-${item.motivo}-${index}`}><strong>{item.poligono || 'Geral'}:</strong> {item.motivo}</p>)}</div>;
 }
 
-function PlanWaterfallChart({ rows, title, subtitle, ariaLabel, valueFormatter, valueLabel }) {
+function PlanWaterfallChart({ rows, title, subtitle, ariaLabel }) {
   return (
     <div className="planMetricChart">
       <div className="planMetricChartHeader"><strong>{title}</strong><small>{subtitle}</small></div>
       <div className="reportWaterfallViewport" role="img" aria-label={ariaLabel}>
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={rows} margin={{ top: 24, right: 22, bottom: 10, left: 12 }}>
+          <BarChart data={rows} margin={{ top: 34, right: 22, bottom: 10, left: 12 }}>
             <CartesianGrid vertical={false} stroke="#dfe3e7" strokeDasharray="3 3" />
             <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} interval={0} />
             <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value) => formatMil(value)} width={48} />
-            <Tooltip content={<PlanWaterfallTooltip valueFormatter={valueFormatter} valueLabel={valueLabel} />} cursor={{ fill: 'rgba(56,66,75,.06)' }} />
+            <Tooltip content={<PlanWaterfallTooltip valueFormatter={formatKg} valueLabel="Emulsão aplicada" />} cursor={{ fill: 'rgba(56,66,75,.06)' }} />
             <Bar dataKey="base" stackId="waterfall" fill="transparent" stroke="transparent" isAnimationActive={false} legendType="none" />
-            <Bar dataKey="value" name={valueLabel} stackId="waterfall" isAnimationActive={false}>
+            <Bar dataKey="value" name="Emulsão aplicada (kg)" stackId="waterfall" isAnimationActive={false}>
               {rows.map((row) => <Cell key={`${row.label}-${row.data}`} fill={row.isTotal ? '#38424B' : '#E20613'} />)}
-              <LabelList dataKey="displayValue" position="top" formatter={valueFormatter} />
+              <LabelList dataKey="displayValue" content={<PlanWaterfallEmulsionLabel />} />
+              <LabelList dataKey="furos" content={<PlanWaterfallHoleLabel />} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -1339,11 +1329,34 @@ function PlanWaterfallChart({ rows, title, subtitle, ariaLabel, valueFormatter, 
   );
 }
 
+function PlanWaterfallEmulsionLabel({ viewBox, value }) {
+  const { x = 0, y = 0, width = 0 } = viewBox || {};
+  if (!width) return null;
+
+  return (
+    <text className="planWaterfallEmulsionLabel" x={x + width / 2} y={Math.max(y - 9, 12)} textAnchor="middle" fill="#38424B" fontSize={10} fontWeight={700}>
+      {formatKg(value)}
+    </text>
+  );
+}
+
+function PlanWaterfallHoleLabel({ viewBox, value }) {
+  const { x = 0, y = 0, width = 0, height = 0 } = viewBox || {};
+  if (!width || !height || value == null) return null;
+
+  return (
+    <text className="planWaterfallHoleLabel" x={x + width / 2} y={y + height / 2} dy=".35em" textAnchor="middle" fill="#fff" fontSize={11} fontWeight={800}>
+      {Number(value).toLocaleString('pt-BR')}
+    </text>
+  );
+}
+
 function PlanWaterfallTooltip({ active, payload, label, valueFormatter = formatKg, valueLabel = 'Emulsão aplicada' }) {
   if (!active || !payload?.length) return null;
   const valueItem = payload.find((item) => item?.dataKey === 'value');
   if (!valueItem) return null;
   const isTotal = Boolean(valueItem.payload?.isTotal);
+  const holes = valueItem.payload?.furos;
   return (
     <div className="chartTooltip">
       <div className="chartTooltipLabel">{label}</div>
@@ -1352,6 +1365,11 @@ function PlanWaterfallTooltip({ active, payload, label, valueFormatter = formatK
           <span className="chartTooltipSwatch" style={{ backgroundColor: isTotal ? '#38424B' : '#E20613' }} />
           <span className="chartTooltipName">{isTotal ? `Total de ${valueLabel.toLocaleLowerCase('pt-BR')}` : valueLabel}</span>
           <strong>{valueFormatter(valueItem.value)}</strong>
+        </div>
+        <div className="chartTooltipRow">
+          <span className="chartTooltipSwatch" style={{ backgroundColor: '#38424B' }} />
+          <span className="chartTooltipName">Furos carregados</span>
+          <strong>{Number(holes || 0).toLocaleString('pt-BR')} furos</strong>
         </div>
       </div>
     </div>

@@ -374,13 +374,15 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .reportDataTable td { padding: 6px 8px; border-bottom: 1px solid #e6e9eb; }
 .reportDataTable th:nth-child(n+2), .reportDataTable td:nth-child(n+2) { text-align: right; }
 .reportDataTable tfoot td { padding-top: 8px; border-top: 1px solid var(--enaex-red); border-bottom: 0; }
-.planWaterfallGrid { display: grid; gap: 18px; margin-top: 12px; }
-.planMetricChart { padding: 12px 12px 2px; border: 1px solid #e1e5e8; background: #fff; }
+.planWaterfallGrid { display: block; margin-top: 12px; }
+.planMetricChart { padding: 13px 14px 4px; border: 1px solid #e1e5e8; background: #fff; }
 .planMetricChartHeader { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
-.planMetricChartHeader strong { color: var(--topbar); font-size: 12px; }
+.planMetricChartHeader strong { color: var(--topbar); font-size: 13px; }
 .planMetricChartHeader small { color: var(--muted); font-size: 10px; text-align: right; }
-.planMetricChart .recharts-label-list text { fill: #38424B !important; font-size: 10px; font-weight: 700; }
-.reportWaterfallViewport { width: 100%; height: 270px; margin-top: 4px; }
+.planMetricChart .recharts-label-list text { font-size: 10px; font-weight: 700; }
+.planMetricChart .recharts-label-list .planWaterfallEmulsionLabel { fill: #38424B !important; }
+.planMetricChart .recharts-label-list .planWaterfallHoleLabel { fill: #fff !important; font-size: 11px; font-weight: 800; }
+.reportWaterfallViewport { width: 100%; height: 300px; margin-top: 4px; }
 .planReportEmpty { display: grid; justify-items: center; gap: 8px; margin-top: 18px; padding: 34px 18px; border: 1px dashed #cfd5da; background: #f7f8f9; color: var(--ink); text-align: center; }
 .planReportEmpty small { color: var(--muted); font-size: 12px; }
 .adminLayout { min-height: calc(100vh - 54px); display: grid; place-items: start center; padding: 36px 28px; }
@@ -465,7 +467,7 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .planMetricChartHeader small { text-align: left; }
   .planResult { align-items: flex-start; flex-direction: column; gap: 4px; }
   .planResultMeta { text-align: left; white-space: normal; }
-  .reportWaterfallViewport { height: 240px; }
+  .reportWaterfallViewport { height: 270px; }
 }
 @media (max-width: 360px) {
   .topbar { grid-template-columns: 104px minmax(0, 1fr) 86px; }
