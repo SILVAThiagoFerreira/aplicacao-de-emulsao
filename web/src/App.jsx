@@ -1342,11 +1342,16 @@ function PlanWaterfallEmulsionLabel({ viewBox, value }) {
 
 function PlanWaterfallHoleLabel({ viewBox, value }) {
   const { x = 0, y = 0, width = 0, height = 0 } = viewBox || {};
-  if (!width || !height || value == null) return null;
+  const holeCount = Number(value);
+  if (!width || !height || !Number.isFinite(holeCount)) return null;
+
+  const holeUnit = holeCount === 1 ? 'furo' : 'furos';
+  const holeLabel = `${holeCount.toLocaleString('pt-BR')} ${holeUnit}`;
+  const fontSize = Math.min(10, Math.max(7, (width - 2) / (holeLabel.length * 0.55)));
 
   return (
-    <text className="planWaterfallHoleLabel" x={x + width / 2} y={y + height / 2} dy=".35em" textAnchor="middle" fill="#fff" fontSize={11} fontWeight={800}>
-      {Number(value).toLocaleString('pt-BR')}
+    <text className="planWaterfallHoleLabel" x={x + width / 2} y={y + height / 2} dy=".35em" textAnchor="middle" fill="#fff" style={{ fontSize }} fontWeight={800}>
+      {holeLabel}
     </text>
   );
 }
