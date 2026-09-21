@@ -410,37 +410,7 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
           refreshing={refreshing}
         />
 
-        <ChartCard title="EMULSÃO: Aplicação Dia a Dia" className="chartDailyTrend">
-          <div className="chartViewport chartViewportDaily">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={dailyTrend} margin={{ top: 10, right: 22, bottom: 8, left: 0 }}>
-              <defs>
-                <linearGradient id="dailyEmulsaoFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#e30613" stopOpacity={0.14} />
-                  <stop offset="95%" stopColor="#e30613" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="1 5" vertical={false} />
-              <XAxis dataKey="dia" ticks={dailyTicks} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={8} />
-              <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
-              <Tooltip
-                content={
-                  <ChartTooltip
-                    valueFormatter={(v) => formatKg(v)}
-                    labelFormatter={(_, items) => items?.[0]?.payload ? `Data: ${formatDate(items[0].payload.data)}` : ''}
-                    extraContent={(items) => <TooltipJustifications items={items?.[0]?.payload?.justificativas || []} />}
-                  />
-                }
-              />
-              <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 12 }} />
-              <Area dataKey="aplicado" fill="url(#dailyEmulsaoFill)" stroke="none" legendType="none" />
-              <Line type="monotone" dataKey="aplicado" name="Aplicado" stroke="#e30613" strokeWidth={2.6} dot={false} activeDot={{ r: 5 }} />
-              <Line type="monotone" dataKey="mediaMovel" name="Media movel 7d" stroke="#00A79D" strokeWidth={2.4} dot={false} activeDot={{ r: 4, fill: '#00A79D' }} />
-              <Line type="monotone" dataKey="meta" name="Meta" stroke="#B8A53D" strokeWidth={2.2} strokeDasharray="7 5" dot={false} activeDot={{ r: 4, fill: '#B8A53D' }} connectNulls />
-            </ComposedChart>
-          </ResponsiveContainer>
-          </div>
-        </ChartCard>
+        <DailyTrendChart data={dailyTrend} ticks={dailyTicks} />
 
         <ChartCard title="EMULSÃO: Aplicação Mensal" className="chartLarge">
           <div className="chartViewport chartViewportMonthly">
@@ -1303,6 +1273,101 @@ function ChartCard({ title, children, className = '' }) {
 function TooltipJustifications({ items }) {
   if (!items?.length) return null;
   return <div className="chartTooltipJustification"><span>Justificativa</span>{items.map((item, index) => <p key={`${item.poligono}-${item.motivo}-${index}`}><strong>{item.poligono || 'Geral'}:</strong> {item.motivo}</p>)}</div>;
+}
+
+function DailyTrendChart({ data, ticks }) {
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const clearHoverRef = useRef(null);
+
+  useEffect(() => {
+    setHoveredPoint(null);
+  }, [data]);
+
+  useEffect(() => () => {
+    if (clearHoverRef.current) window.clearTimeout(clearHoverRef.current);
+  }, []);
+
+  const keepTooltipVisible = useCallback(() => {
+    if (clearHoverRef.current) {
+      window.clearTimeout(clearHoverRef.current);
+      clearHoverRef.current = null;
+    }
+  }, []);
+
+  const handleMouseMove = useCallback((state) => {
+    keepTooltipVisible();
+    const point = state?.activePayload?.[0]?.payload || null;
+    setHoveredPoint((previous) => previous?.data === point?.data ? previous : point);
+  }, [keepTooltipVisible]);
+
+  const handleMouseLeave = useCallback(() => {
+    clearHoverRef.current = window.setTimeout(() => {
+      setHoveredPoint(null);
+      clearHoverRef.current = null;
+    }, 120);
+  }, []);
+
+  return (
+    <ChartCard title="EMULSÃO: Aplicação Dia a Dia" className="chartDailyTrend">
+      <div className="chartViewport chartViewportDaily">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={data}
+            margin={{ top: 10, right: 22, bottom: 8, left: 0 }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+          >
+            <defs>
+              <linearGradient id="dailyEmulsaoFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#e30613" stopOpacity={0.14} />
+                <stop offset="95%" stopColor="#e30613" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="1 5" vertical={false} />
+            <XAxis dataKey="dia" ticks={ticks} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={8} />
+            <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
+            <Tooltip
+              content={() => null}
+              cursor={{ stroke: '#38424B', strokeDasharray: '3 3', strokeWidth: 1 }}
+            />
+            <Legend verticalAlign="top" align="right" wrapperStyle={{ fontSize: 12 }} />
+            <Area dataKey="aplicado" fill="url(#dailyEmulsaoFill)" stroke="none" legendType="none" />
+            <Line type="monotone" dataKey="aplicado" name="Aplicado" stroke="#e30613" strokeWidth={2.6} dot={false} activeDot={{ r: 5 }} />
+            <Line type="monotone" dataKey="mediaMovel" name="Media movel 7d" stroke="#00A79D" strokeWidth={2.4} dot={false} activeDot={{ r: 4, fill: '#00A79D' }} />
+            <Line type="monotone" dataKey="meta" name="Meta" stroke="#B8A53D" strokeWidth={2.2} strokeDasharray="7 5" dot={false} activeDot={{ r: 4, fill: '#B8A53D' }} connectNulls />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      {hoveredPoint ? (
+        <div
+          className="chartTooltipDock"
+          aria-label="Detalhes do ponto selecionado"
+          onMouseEnter={keepTooltipVisible}
+          onMouseLeave={handleMouseLeave}
+        >
+          <DailyTrendHoverCard point={hoveredPoint} />
+        </div>
+      ) : null}
+    </ChartCard>
+  );
+}
+
+function DailyTrendHoverCard({ point }) {
+  const payload = [
+    { dataKey: 'aplicado', name: 'Aplicado', value: point.aplicado, color: '#e30613', payload: point },
+    { dataKey: 'mediaMovel', name: 'Media movel 7d', value: point.mediaMovel, color: '#00A79D', payload: point },
+    { dataKey: 'meta', name: 'Meta', value: point.meta, color: '#B8A53D', payload: point }
+  ].filter((item) => item.value != null);
+
+  return (
+    <ChartTooltip
+      active
+      payload={payload}
+      label={`Data: ${formatDate(point.data)}`}
+      valueFormatter={(value) => formatKg(value)}
+      extraContent={(items) => <TooltipJustifications items={items?.[0]?.payload?.justificativas || []} />}
+    />
+  );
 }
 
 function PlanWaterfallChart({ rows, title, subtitle, ariaLabel }) {

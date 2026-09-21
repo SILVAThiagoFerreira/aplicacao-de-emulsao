@@ -254,6 +254,22 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .chartTooltipJustification > span { display: block; margin-bottom: 4px; color: var(--enaex-red); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
 .chartTooltipJustification p { margin: 4px 0 0; }
 .chartTooltipJustification strong { color: #26323d; }
+.chartTooltipDock {
+  min-width: 0;
+  margin-top: 8px;
+  pointer-events: auto;
+}
+.chartTooltipDock .chartTooltip {
+  width: 100%;
+  min-width: 0;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(8, 12, 18, 0.08);
+}
+.chartTooltipDock .chartTooltipJustification {
+  max-height: 64px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
 .recharts-text { fill: #5d6872; }
 .recharts-label-list text { fill: #fff !important; }
 .chartLarge .recharts-label-list text { fill: #9b0016 !important; }
