@@ -482,6 +482,12 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .reportDetailTableRow strong { font-size: 10px; }
   .reportJustificationBlock .justificationMeta { align-items: flex-start; flex-direction: column; gap: 3px; }
   .reportJustificationBlock .justificationMeta span { overflow-wrap: anywhere; }
+  .planReportPreview .reportDataTable { min-width: 0; width: 100%; table-layout: fixed; font-size: 9px; }
+  .planReportPreview .reportDataTable th, .planReportPreview .reportDataTable td { padding: 5px 3px; overflow-wrap: anywhere; }
+  .planReportPreview .reportDataTable th { white-space: normal; line-height: 1.2; vertical-align: bottom; }
+  .planReportPreview .reportDataTable th:first-child, .planReportPreview .reportDataTable td:first-child { width: 40%; text-align: left; }
+  .planReportPreview .reportDataTable th:nth-child(2), .planReportPreview .reportDataTable td:nth-child(2) { width: 28%; }
+  .planReportPreview .reportDataTable th:nth-child(3), .planReportPreview .reportDataTable td:nth-child(3) { width: 32%; }
   .reportDateField input { width: 100%; }
   .reportTypeCard { grid-template-columns: auto minmax(0, 1fr); }
   .reportTypeAction { grid-column: 2; justify-self: start; }
