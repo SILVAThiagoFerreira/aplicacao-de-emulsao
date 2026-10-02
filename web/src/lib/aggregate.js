@@ -4,6 +4,20 @@ export function uniqueValues(records, field) {
   return Array.from(new Set(records.map((item) => item[field]).filter(Boolean))).sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
 }
 
+function normalizePlanName(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+}
+
+export function uniquePlanValues(records) {
+  const plans = new Map();
+  records.forEach((item) => {
+    const plan = String(item.poligono || '').trim().replace(/\s+/g, ' ');
+    const key = normalizePlanName(plan);
+    if (key && !plans.has(key)) plans.set(key, plan);
+  });
+  return Array.from(plans.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
 function hasCalendarFilter(filters) {
   return filters.year !== 'Todos' || filters.month !== 'Todos';
 }
@@ -86,11 +100,12 @@ export function buildDailyTable(records) {
 
 export function buildPlanDailyTable(records, plan) {
   const targetPlan = String(plan || '').trim();
-  if (!targetPlan) return [];
+  const targetKey = normalizePlanName(targetPlan);
+  if (!targetKey) return [];
 
   const map = new Map();
   records.forEach((item) => {
-    if (String(item.poligono || '').trim() !== targetPlan) return;
+    if (normalizePlanName(item.poligono) !== targetKey) return;
     const data = String(item.data || '').slice(0, 10);
     if (!data) return;
     const previous = map.get(data) || { data, poligono: targetPlan, emulsao: 0, furos: 0 };

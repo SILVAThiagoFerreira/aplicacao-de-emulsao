@@ -30,7 +30,8 @@ import {
   buildProjection,
   groupJustificationsByDate,
   totals,
-  uniqueValues
+  uniqueValues,
+  uniquePlanValues
 } from './lib/aggregate.js';
 import { formatDate, formatKg, formatMil, monthNames } from './lib/format.js';
 import { parseWorkbookToDashboard } from './lib/parseWorkbook.js';
@@ -859,12 +860,12 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
           <input type="date" value={selectedDate} min={dateBounds.start} max={dateBounds.end} onChange={(event) => onDateChange(event.target.value)} />
         </label>
         <div className="reportPreview" ref={reportRef}>
-          <div className="reportBrandLine"><img className="reportLogo" src="./assets/Enaex Brasil.png" alt="Enaex Brasil" /><span>US VALE VERDE · APLICAÇÃO DE EMULSÃO</span></div>
+          <div className="reportBrandLine"><span>US VALE VERDE</span></div>
           <div className="reportHeading">
             <div><span className="reportKicker">Resumo operacional</span><h3>Aplicação de Emulsão</h3><p>{monthName}</p></div>
-            <div className="reportDateBadge"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
           </div>
-          <div className="reportKpis">
+          <div className="reportMetricPanel dailyReportMetrics">
+            <div className="reportMetricItem"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
             <ReportKpi label="Aplicado (Month to date)" value={formatKg(monthTotal.emulsao)} tone="red" />
             <ReportKpi label="Aplicado/Dia" value={formatKg(dayTotal.emulsao)} tone="gray" />
             <ReportKpi label="Furos Carregados/Dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
@@ -888,7 +889,6 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
             </div>
           </div>
           <div className="reportJustificationBlock"><span className="reportSectionLabel">Justificativas da data</span><JustificationList justifications={dayJustifications} emptyText="Nenhuma justificativa registrada para esta data." /></div>
-          <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
          </div>
          {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}
          <div className="reportActions">
@@ -900,29 +900,76 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
   );
 }
 
+function normalizePlanSearch(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('pt-BR');
+}
+
 function PlanReportModal({ allRecords, onBack, onClose }) {
   const reportRef = useRef(null);
   const [planSearch, setPlanSearch] = useState('');
   const [selectedPlan, setSelectedPlan] = useState('');
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
-  const plans = useMemo(() => uniqueValues(allRecords, 'poligono'), [allRecords]);
+  const plans = useMemo(() => uniquePlanValues(allRecords), [allRecords]);
   const planSummaries = useMemo(() => plans.map((plan) => {
     const rows = buildPlanDailyTable(allRecords, plan);
     const planTotal = totals(rows);
-    return { plan, days: rows.length, emulsao: planTotal.emulsao, furos: planTotal.furos };
+    return {
+      plan,
+      days: rows.length,
+      emulsao: planTotal.emulsao,
+      furos: planTotal.furos,
+      firstDate: rows[0]?.data || '',
+      lastDate: rows.at(-1)?.data || ''
+    };
   }), [allRecords, plans]);
   const visiblePlans = useMemo(() => {
-    const query = planSearch.trim().toLocaleLowerCase('pt-BR');
+    const query = normalizePlanSearch(planSearch);
     if (!query) return planSummaries;
-    return planSummaries.filter((item) => item.plan.toLocaleLowerCase('pt-BR').includes(query));
+    return planSummaries.filter((item) => normalizePlanSearch(item.plan).includes(query));
   }, [planSearch, planSummaries]);
+  const suggestions = visiblePlans.slice(0, 8);
   const dailyRows = useMemo(() => buildPlanDailyTable(allRecords, selectedPlan), [allRecords, selectedPlan]);
   const planTotal = useMemo(() => totals(dailyRows), [dailyRows]);
   const combinedWaterfallRows = useMemo(() => buildPlanCombinedWaterfallRows(dailyRows), [dailyRows]);
   const firstDate = dailyRows[0]?.data || '';
   const lastDate = dailyRows.at(-1)?.data || '';
   const safePlanName = selectedPlan.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'plano';
+
+  const choosePlan = (plan) => {
+    setSelectedPlan(plan);
+    setPlanSearch(plan);
+    setSuggestionsOpen(false);
+    setActiveSuggestion(-1);
+  };
+
+  const handlePlanSearchKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      setSuggestionsOpen(false);
+      setActiveSuggestion(-1);
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      if (!suggestions.length) return;
+      event.preventDefault();
+      setSuggestionsOpen(true);
+      setActiveSuggestion((current) => event.key === 'ArrowDown'
+        ? (current + 1) % suggestions.length
+        : (current <= 0 ? suggestions.length - 1 : current - 1));
+      return;
+    }
+    if (event.key === 'Enter' && suggestionsOpen && suggestions.length) {
+      event.preventDefault();
+      choosePlan(suggestions[activeSuggestion >= 0 ? activeSuggestion : 0].plan);
+    }
+  };
 
   const exportImage = async () => {
     if (!reportRef.current || !selectedPlan || !dailyRows.length) return;
@@ -957,42 +1004,65 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
         <div className="planSearchPanel">
           <label className="planSearchField">
             <span><Search size={16} /> Pesquisar nome do plano</span>
-            <input
-              type="search"
-              value={planSearch}
-              onChange={(event) => setPlanSearch(event.target.value)}
-              placeholder="Ex.: PP560926"
-              autoComplete="off"
-              data-testid="plan-search"
-            />
+            <div className="planSearchControl">
+              <input
+                type="search"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={suggestionsOpen}
+                aria-controls={suggestionsOpen ? 'plan-suggestions' : undefined}
+                aria-activedescendant={activeSuggestion >= 0 ? `plan-suggestion-${activeSuggestion}` : undefined}
+                value={planSearch}
+                onFocus={() => setSuggestionsOpen(true)}
+                onChange={(event) => {
+                  setPlanSearch(event.target.value);
+                  setSuggestionsOpen(true);
+                  setActiveSuggestion(-1);
+                }}
+                onKeyDown={handlePlanSearchKeyDown}
+                onBlur={() => {
+                  setSuggestionsOpen(false);
+                  setActiveSuggestion(-1);
+                }}
+                placeholder="Ex.: PP560926"
+                autoComplete="off"
+                data-testid="plan-search"
+              />
+              {suggestionsOpen ? (
+                <div className="planSuggestions" id="plan-suggestions" role="listbox" aria-label="Sugestões de planos">
+                  {suggestions.length ? suggestions.map((item, index) => (
+                    <button
+                      className={`planSuggestion ${index === activeSuggestion ? 'isActive' : ''}`}
+                      type="button"
+                      role="option"
+                      aria-selected={selectedPlan === item.plan}
+                      id={`plan-suggestion-${index}`}
+                      key={item.plan}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => choosePlan(item.plan)}
+                    >
+                      <span className="planSuggestionName">{item.plan}</span>
+                      <span className="planSuggestionMeta">
+                        {formatDate(item.firstDate)} — {formatDate(item.lastDate)} · {item.days.toLocaleString('pt-BR')} {item.days === 1 ? 'dia' : 'dias'} · {formatKg(item.emulsao)} · {item.furos.toLocaleString('pt-BR')} furos
+                      </span>
+                    </button>
+                  )) : <p className="planEmptyState">Nenhum plano corresponde à pesquisa.</p>}
+                  {visiblePlans.length > suggestions.length ? <div className="planSuggestionMore">Digite mais letras para filtrar {visiblePlans.length.toLocaleString('pt-BR')} planos.</div> : null}
+                </div>
+              ) : null}
+            </div>
           </label>
-          <div className="planResultsHeader"><span>{visiblePlans.length.toLocaleString('pt-BR')} planos encontrados</span><small>{selectedPlan ? `Selecionado: ${selectedPlan}` : 'Clique em um plano para abrir o relatório'}</small></div>
-          <div className="planResults" role="listbox" aria-label="Planos disponíveis">
-            {visiblePlans.length ? visiblePlans.map((item) => (
-              <button
-                className={`planResult ${selectedPlan === item.plan ? 'isSelected' : ''}`}
-                type="button"
-                role="option"
-                aria-selected={selectedPlan === item.plan}
-                key={item.plan}
-                onClick={() => setSelectedPlan(item.plan)}
-                data-testid={`plan-option-${item.plan}`}
-              >
-                <span className="planResultName">{item.plan}</span>
-                <span className="planResultMeta">{item.days.toLocaleString('pt-BR')} {item.days === 1 ? 'dia' : 'dias'} · {formatKg(item.emulsao)} · {item.furos.toLocaleString('pt-BR')} furos</span>
-              </button>
-            )) : <p className="planEmptyState">Nenhum plano corresponde à pesquisa.</p>}
-          </div>
+          <div className="planResultsHeader"><span>{visiblePlans.length.toLocaleString('pt-BR')} planos encontrados no histórico</span><small>{selectedPlan ? `Selecionado: ${selectedPlan}` : 'Digite para ver sugestões de todos os meses'}</small></div>
         </div>
 
         {selectedPlan && dailyRows.length ? (
           <div className="reportPreview planReportPreview" ref={reportRef}>
-            <div className="reportBrandLine"><img className="reportLogo" src="./assets/Enaex Brasil.png" alt="Enaex Brasil" /><span>US VALE VERDE · APLICAÇÃO DE EMULSÃO</span></div>
+            <div className="reportBrandLine"><span>US VALE VERDE</span></div>
             <div className="reportHeading">
               <div><span className="reportKicker">Consolidação operacional</span><h3>{selectedPlan}</h3><p>Relatório de Aplicação por Plano · dias de carregamento</p></div>
-              <div className="reportDateBadge"><span>Período do plano</span><strong>{formatDate(firstDate)} — {formatDate(lastDate)}</strong></div>
             </div>
-            <div className="reportKpis">
+            <div className="reportMetricPanel planReportMetrics">
+              <div className="reportMetricItem"><span>Período do plano</span><strong>{formatDate(firstDate)} — {formatDate(lastDate)}</strong></div>
               <ReportKpi label="Emulsão aplicada" value={formatKg(planTotal.emulsao)} tone="red" />
               <ReportKpi label="Furos carregados" value={planTotal.furos.toLocaleString('pt-BR')} tone="gray" />
               <ReportKpi label="Dias de carregamento" value={dailyRows.length.toLocaleString('pt-BR')} tone="dark" />
@@ -1018,7 +1088,6 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
                 />
               </div>
             </div>
-            <div className="reportFooter">Gerado em {new Date().toLocaleString('pt-BR')} · Dados conforme o dashboard</div>
           </div>
         ) : (
           <div className="planReportEmpty" data-testid="plan-report-empty">
