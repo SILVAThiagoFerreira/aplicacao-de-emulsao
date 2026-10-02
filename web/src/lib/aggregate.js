@@ -5,7 +5,12 @@ export function uniqueValues(records, field) {
 }
 
 function normalizePlanName(value) {
-  return String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('pt-BR');
 }
 
 export function uniquePlanValues(records) {
