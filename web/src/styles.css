@@ -497,6 +497,8 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .planMetricChartHeader { align-items: flex-start; flex-direction: column; gap: 4px; }
   .planMetricChartHeader small { text-align: left; }
   .reportWaterfallViewport { height: 270px; }
+  .planMetricChart .recharts-label-list .planWaterfallEmulsionLabel,
+  .planMetricChart .recharts-label-list .planWaterfallHoleLabel { font-size: 8px !important; }
 }
 @media (max-width: 360px) {
   .topbar { grid-template-columns: 104px minmax(0, 1fr) 86px; }

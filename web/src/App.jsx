@@ -1078,12 +1078,12 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
               </div>
             </div>
             <div className="planReportChartBlock">
-              <div className="reportSectionHeading"><span className="reportSectionLabel">Gráfico de cascata</span><small>Emulsão (kg) acima da barra · furos carregados no centro</small></div>
+              <div className="reportSectionHeading"><span className="reportSectionLabel">Gráfico de cascata</span><small>Emulsão acima da barra · furos no centro</small></div>
               <div className="planWaterfallGrid">
                 <PlanWaterfallChart
                   rows={combinedWaterfallRows}
                   title="Emulsão aplicada (kg)"
-                  subtitle="Furos carregados no centro de cada barra"
+                  subtitle="Valores em milhares de kg"
                   ariaLabel={`Gráfico de cascata da emulsão aplicada em kg, com furos carregados no centro das barras, no plano ${selectedPlan}`}
                 />
               </div>
@@ -1447,7 +1447,15 @@ function PlanWaterfallChart({ rows, title, subtitle, ariaLabel }) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 34, right: 22, bottom: 10, left: 12 }}>
             <CartesianGrid vertical={false} stroke="#dfe3e7" strokeDasharray="3 3" />
-            <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} interval={0} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 8 }}
+              tickFormatter={formatPlanWaterfallTick}
+              axisLine={false}
+              tickLine={false}
+              minTickGap={0}
+              interval="preserveStartEnd"
+            />
             <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value) => formatMil(value)} width={48} />
             <Tooltip content={<PlanWaterfallTooltip valueFormatter={formatKg} valueLabel="Emulsão aplicada" />} cursor={{ fill: 'rgba(56,66,75,.06)' }} />
             <Bar dataKey="base" stackId="waterfall" fill="transparent" stroke="transparent" isAnimationActive={false} legendType="none" />
@@ -1469,9 +1477,26 @@ function PlanWaterfallEmulsionLabel({ viewBox, value }) {
 
   return (
     <text className="planWaterfallEmulsionLabel" x={x + width / 2} y={Math.max(y - 9, 12)} textAnchor="middle" fill="#38424B" fontSize={10} fontWeight={700}>
-      {formatKg(value)}
+      {formatCompactPlanKg(value)}
     </text>
   );
+}
+
+function formatPlanWaterfallTick(value) {
+  if (value === 'Total') return value;
+  const [day, month] = String(value || '').split('/');
+  return day && month ? `${day}/${month}` : value;
+}
+
+function formatCompactPlanKg(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return value;
+  if (Math.abs(amount) < 1000) return amount.toLocaleString('pt-BR');
+  const thousands = (amount / 1000).toLocaleString('pt-BR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+  return `${thousands}k`;
 }
 
 function PlanWaterfallHoleLabel({ viewBox, value }) {
@@ -1479,8 +1504,7 @@ function PlanWaterfallHoleLabel({ viewBox, value }) {
   const holeCount = Number(value);
   if (!width || !height || !Number.isFinite(holeCount)) return null;
 
-  const holeUnit = holeCount === 1 ? 'furo' : 'furos';
-  const holeLabel = `${holeCount.toLocaleString('pt-BR')} ${holeUnit}`;
+  const holeLabel = holeCount.toLocaleString('pt-BR');
   const fontSize = Math.min(10, Math.max(7, (width - 2) / (holeLabel.length * 0.55)));
 
   return (
