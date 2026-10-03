@@ -1251,11 +1251,11 @@ function FilterPanel({ filters, onFilterChange, onClear, options, dateRange }) {
           type="text"
           value={filters.poligonoSearch}
           onChange={handlePoligonoSearch}
-          list="plan-suggestions"
+          list="dashboard-plan-suggestions"
           aria-label="Buscar plano pelo nome"
           placeholder="Digite para buscar planos..."
         />
-        <datalist id="plan-suggestions">
+        <datalist id="dashboard-plan-suggestions">
           {options.poligonos.map((item) => <option key={item} value={item} />)}
         </datalist>
         <select value={filters.poligono} onChange={handlePoligono}>
