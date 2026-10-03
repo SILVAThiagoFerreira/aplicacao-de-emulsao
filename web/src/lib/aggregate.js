@@ -4,7 +4,7 @@ export function uniqueValues(records, field) {
   return Array.from(new Set(records.map((item) => item[field]).filter(Boolean))).sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
 }
 
-function normalizePlanName(value) {
+export function normalizePlanName(value) {
   return String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -30,17 +30,18 @@ function hasCalendarFilter(filters) {
 export function applyFilters(records, filters) {
   const start = filters.startDate || '';
   const end = filters.endDate || '';
-  const poligonoSearch = filters.poligonoSearch?.trim().toLowerCase() || '';
+  const poligonoSearch = normalizePlanName(filters.poligonoSearch);
+  const selectedPlan = normalizePlanName(filters.poligono);
   return records.filter((item) => {
     const data = String(item.data || '').slice(0, 10);
     if (start && data < start) return false;
     if (end && data > end) return false;
     if (filters.year !== 'Todos' && getYear(data) !== Number(filters.year)) return false;
     if (filters.month !== 'Todos' && Number(data.slice(5, 7)) !== Number(filters.month)) return false;
-    if (filters.poligono !== 'Todos' && item.poligono !== filters.poligono) return false;
+    if (selectedPlan && selectedPlan !== normalizePlanName('Todos') && normalizePlanName(item.poligono) !== selectedPlan) return false;
     if (filters.umb !== 'Todos' && String(item.umb) !== String(filters.umb)) return false;
     if (filters.operador !== 'Todos' && item.operador !== filters.operador) return false;
-    if (poligonoSearch && !String(item.poligono || '').toLowerCase().includes(poligonoSearch)) return false;
+    if (poligonoSearch && !normalizePlanName(item.poligono).includes(poligonoSearch)) return false;
     return true;
   });
 }
@@ -62,7 +63,8 @@ export function applyMetaFilters(metas, filters) {
 export function applyJustificationFilters(justifications, filters) {
   const start = filters.startDate || '';
   const end = filters.endDate || '';
-  const poligonoSearch = filters.poligonoSearch?.trim().toLowerCase() || '';
+  const poligonoSearch = normalizePlanName(filters.poligonoSearch);
+  const selectedPlan = normalizePlanName(filters.poligono);
   return justifications.filter((item) => {
     const data = String(item.data || '').slice(0, 10);
     if (!data) return false;
@@ -70,8 +72,8 @@ export function applyJustificationFilters(justifications, filters) {
     if (end && data > end) return false;
     if (filters.year !== 'Todos' && getYear(data) !== Number(filters.year)) return false;
     if (filters.month !== 'Todos' && Number(data.slice(5, 7)) !== Number(filters.month)) return false;
-    if (filters.poligono !== 'Todos' && item.poligono && item.poligono !== filters.poligono) return false;
-    if (poligonoSearch && item.poligono && !item.poligono.toLowerCase().includes(poligonoSearch)) return false;
+    if (selectedPlan && selectedPlan !== normalizePlanName('Todos') && item.poligono && normalizePlanName(item.poligono) !== selectedPlan) return false;
+    if (poligonoSearch && item.poligono && !normalizePlanName(item.poligono).includes(poligonoSearch)) return false;
     return true;
   });
 }

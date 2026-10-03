@@ -29,6 +29,7 @@ import {
   buildPlanCombinedWaterfallRows,
   buildProjection,
   groupJustificationsByDate,
+  normalizePlanName,
   totals,
   uniqueValues,
   uniquePlanValues
@@ -300,8 +301,7 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
   const allRecords = cache?.records || [];
   const metas = cache?.metas || [];
   const allJustifications = cache?.justificativas || [];
-
-  const currentMonth = useMemo(() => getCurrentMonthRange(), []);
+  const planOptions = useMemo(() => uniquePlanValues(allRecords), [allRecords]);
 
   const [filters, setFilters] = useState(() => ({
     poligonoSearch: '',
@@ -325,8 +325,33 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
   }, [allRecords]);
 
   const handleFilterChange = useCallback((field, value) => {
+    if (field === 'poligonoSearch') {
+      const selectedPlan = planOptions.find((plan) => normalizePlanName(plan) === normalizePlanName(value));
+      if (selectedPlan) {
+        setFilters((prev) => ({
+          ...prev,
+          poligonoSearch: selectedPlan,
+          poligono: selectedPlan,
+          umb: 'Todos',
+          operador: 'Todos',
+          year: 'Todos',
+          month: 'Todos',
+          startDate: dateRange.start,
+          endDate: dateRange.end
+        }));
+        return;
+      }
+      setFilters((prev) => ({ ...prev, poligonoSearch: value, poligono: 'Todos' }));
+      return;
+    }
+
+    if (field === 'poligono') {
+      setFilters((prev) => ({ ...prev, poligono: value, poligonoSearch: '' }));
+      return;
+    }
+
     setFilters((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  }, [dateRange.end, dateRange.start, planOptions]);
 
   const handleClearFilters = useCallback(() => {
     setFilters({
@@ -379,7 +404,7 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
   const closeReport = useCallback(() => setReportType(null), []);
 
   const options = useMemo(() => ({
-    poligonos: uniqueValues(allRecords, 'poligono'),
+    poligonos: planOptions,
     umbs: uniqueValues(allRecords, 'umb'),
     operadores: uniqueValues(allRecords, 'operador'),
     years: Array.from(new Set(allRecords.map((r) => String(r.data || '').slice(0, 4)).filter(Boolean))).sort()
@@ -1184,7 +1209,7 @@ function JustificationList({ justifications, emptyText }) {
 }
 
 function FilterPanel({ filters, onFilterChange, onClear, options, dateRange }) {
-  const hasActiveFilter = filters.poligono !== 'Todos' || filters.umb !== 'Todos' || filters.operador !== 'Todos' || filters.year !== 'Todos' || filters.month !== 'Todos' || filters.poligonoSearch !== '';
+  const hasActiveFilter = filters.poligono !== 'Todos' || filters.umb !== 'Todos' || filters.operador !== 'Todos' || filters.year !== 'Todos' || filters.month !== 'Todos' || filters.poligonoSearch !== '' || filters.startDate !== dateRange.start || filters.endDate !== dateRange.end;
 
   const handlePoligonoSearch = useCallback((e) => {
     onFilterChange('poligonoSearch', e.target.value);
@@ -1226,12 +1251,18 @@ function FilterPanel({ filters, onFilterChange, onClear, options, dateRange }) {
           type="text"
           value={filters.poligonoSearch}
           onChange={handlePoligonoSearch}
-          placeholder="Search"
+          list="plan-suggestions"
+          aria-label="Buscar plano pelo nome"
+          placeholder="Digite para buscar planos..."
         />
+        <datalist id="plan-suggestions">
+          {options.poligonos.map((item) => <option key={item} value={item} />)}
+        </datalist>
         <select value={filters.poligono} onChange={handlePoligono}>
           <option value="Todos">Todos</option>
           {options.poligonos.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
+        <p className="filterHint">Selecione uma sugestão para abrir o histórico completo do plano.</p>
       </div>
       <div className="panel filterBox">
         <h3>ANO</h3>
