@@ -17,6 +17,23 @@ export function formatMil(value) {
   return `${number.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Mil`;
 }
 
+export function formatCompactPlanKg(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return value;
+  if (Math.abs(amount) < 1000) return amount.toLocaleString('pt-BR');
+  const thousands = (amount / 1000).toLocaleString('pt-BR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+  return `${thousands}k`;
+}
+
+export function formatPlanWaterfallTick(value) {
+  if (value === 'Total') return value;
+  const [day, month] = String(value || '').split('/');
+  return day && month ? `${day}/${month}` : value;
+}
+
 export function formatDate(value) {
   if (!value) return '';
   const [year, month, day] = String(value).slice(0, 10).split('-');

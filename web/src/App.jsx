@@ -34,7 +34,7 @@ import {
   uniqueValues,
   uniquePlanValues
 } from './lib/aggregate.js';
-import { formatDate, formatKg, formatMil, monthNames } from './lib/format.js';
+import { formatCompactPlanKg, formatDate, formatKg, formatMil, formatPlanWaterfallTick, monthNames } from './lib/format.js';
 import { parseWorkbookToDashboard } from './lib/parseWorkbook.js';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true';
@@ -797,15 +797,6 @@ function ReportChooser({ onSelect, onClose }) {
   );
 }
 
-// Elementos que podem terminar uma página do PDF sem cortar uma linha ou um bloco ao meio.
-const REPORT_PAGE_BREAK_SELECTOR = 'tbody tr, .reportDetailTableRow, .reportMetricPanel, .reportHeading, .reportDetailGrid, .reportJustificationBlock, .planReportTableBlock, .planReportChartBlock';
-// Tabelas que repetem o cabeçalho quando continuam numa página nova.
-const REPORT_REPEATED_HEADERS = [
-  { table: '.reportDataTable', header: 'thead' },
-  { table: '.reportDetailTable', header: '.reportDetailTableHeader' }
-];
-const PDF_PAGE_MARGIN_MM = 10;
-
 function downloadCanvas(canvas, filename) {
   const link = document.createElement('a');
   link.download = filename;
@@ -840,63 +831,8 @@ function fitReportCanvas(previewCanvas, fitTo) {
   return canvas;
 }
 
-function getReportPageLayout(element, pxPerCssPixel) {
-  const originTop = element.getBoundingClientRect().top;
-  const toCanvasRange = (rect) => ({
-    top: Math.round((rect.top - originTop) * pxPerCssPixel),
-    bottom: Math.round((rect.bottom - originTop) * pxPerCssPixel)
-  });
-  const breaks = [...element.querySelectorAll(REPORT_PAGE_BREAK_SELECTOR)]
-    .map((node) => toCanvasRange(node.getBoundingClientRect()).bottom)
-    .sort((a, b) => a - b);
-  const headers = REPORT_REPEATED_HEADERS.flatMap(({ table, header }) => [...element.querySelectorAll(table)].flatMap((tableNode) => {
-    const headerNode = tableNode.querySelector(header);
-    return headerNode ? [{ table: toCanvasRange(tableNode.getBoundingClientRect()), header: toCanvasRange(headerNode.getBoundingClientRect()) }] : [];
-  }));
-  return { breaks, headers };
-}
-
-async function downloadReportPdf(canvas, filename, { breaks, headers }) {
-  const { jsPDF } = await import('jspdf');
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-  const contentWidth = 210 - PDF_PAGE_MARGIN_MM * 2;
-  const pxPerMm = canvas.width / contentWidth;
-  const pageHeightPx = Math.floor((297 - PDF_PAGE_MARGIN_MM * 2) * pxPerMm);
-
-  let top = 0;
-  while (top < canvas.height) {
-    // Se a página começa dentro de uma tabela, o cabeçalho dela é repetido no topo.
-    const continued = headers.find((item) => item.table.top < top && top < item.table.bottom);
-    const headerPx = continued ? continued.header.bottom - continued.header.top : 0;
-    let bottom = Math.min(top + pageHeightPx - headerPx, canvas.height);
-    if (bottom < canvas.height) {
-      const lastBreak = breaks.filter((point) => point > top && point <= bottom).at(-1);
-      if (lastBreak) bottom = lastBreak;
-    }
-
-    const slice = document.createElement('canvas');
-    slice.width = canvas.width;
-    slice.height = headerPx + (bottom - top);
-    const context = slice.getContext('2d');
-    if (continued) context.drawImage(canvas, 0, continued.header.top, canvas.width, headerPx, 0, 0, canvas.width, headerPx);
-    context.drawImage(canvas, 0, top, canvas.width, bottom - top, 0, headerPx, canvas.width, bottom - top);
-
-    if (top > 0) pdf.addPage();
-    pdf.addImage(slice.toDataURL('image/png'), 'PNG', PDF_PAGE_MARGIN_MM, PDF_PAGE_MARGIN_MM, contentWidth, slice.height / pxPerMm);
-    top = bottom;
-  }
-  pdf.save(filename);
-}
-
-async function exportReportElement(element, { filename, format = 'png', fitTo = null } = {}) {
-  if (!element || !filename) return;
+async function exportReportPng(element, { filename, fitTo = null }) {
   const previewCanvas = await renderReportCanvas(element);
-
-  if (format === 'pdf') {
-    await downloadReportPdf(previewCanvas, filename, getReportPageLayout(element, previewCanvas.width / element.getBoundingClientRect().width));
-    return;
-  }
-
   downloadCanvas(fitTo ? fitReportCanvas(previewCanvas, fitTo) : previewCanvas, filename);
 }
 
@@ -917,15 +853,20 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
   const monthName = selectedDate ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-';
 
   const exportReport = async (format) => {
-    if (!reportRef.current || !selectedDate) return;
+    if (!selectedDate || (format === 'png' && !reportRef.current)) return;
     setExporting(format);
     setExportError('');
     try {
-      await exportReportElement(reportRef.current, {
-        format,
-        filename: `relatorio-emulsao-${selectedDate}.${format}`,
-        fitTo: format === 'png' ? { width: 1920, height: 1080 } : null
-      });
+      if (format === 'pdf') {
+        const { createDailyReportPdf } = await import('./lib/reportPdf.js');
+        createDailyReportPdf({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications })
+          .save(`relatorio-emulsao-${selectedDate}.pdf`);
+      } else {
+        await exportReportPng(reportRef.current, {
+          filename: `relatorio-emulsao-${selectedDate}.png`,
+          fitTo: { width: 1920, height: 1080 }
+        });
+      }
     } catch (error) {
       setExportError(error.message || 'Não foi possível gerar o relatório.');
     } finally {
@@ -1065,14 +1006,23 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
   };
 
   const exportReport = async (format) => {
-    if (!reportRef.current || !selectedPlan || !dailyRows.length) return;
+    if (!selectedPlan || !dailyRows.length || (format === 'png' && !reportRef.current)) return;
     setExporting(format);
     setExportError('');
     try {
-      await exportReportElement(reportRef.current, {
-        format,
-        filename: `relatorio-emulsao-plano-${safePlanName}.${format}`
-      });
+      if (format === 'pdf') {
+        const { createPlanReportPdf } = await import('./lib/reportPdf.js');
+        createPlanReportPdf({
+          plan: selectedPlan,
+          dailyRows,
+          planTotal,
+          firstDate,
+          lastDate,
+          waterfallRows: combinedWaterfallRows
+        }).save(`relatorio-emulsao-plano-${safePlanName}.pdf`);
+      } else {
+        await exportReportPng(reportRef.current, { filename: `relatorio-emulsao-plano-${safePlanName}.png` });
+      }
     } catch (error) {
       setExportError(error.message || 'Não foi possível gerar o relatório.');
     } finally {
@@ -1581,23 +1531,6 @@ function PlanWaterfallEmulsionLabel({ viewBox, value }) {
       {formatCompactPlanKg(value)}
     </text>
   );
-}
-
-function formatPlanWaterfallTick(value) {
-  if (value === 'Total') return value;
-  const [day, month] = String(value || '').split('/');
-  return day && month ? `${day}/${month}` : value;
-}
-
-function formatCompactPlanKg(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return value;
-  if (Math.abs(amount) < 1000) return amount.toLocaleString('pt-BR');
-  const thousands = (amount / 1000).toLocaleString('pt-BR', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  });
-  return `${thousands}k`;
 }
 
 function PlanWaterfallHoleLabel({ viewBox, value }) {
