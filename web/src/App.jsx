@@ -15,7 +15,7 @@ import {
   YAxis
 } from 'recharts';
 import { Home } from 'lucide-react';
-import { ArrowLeft, BarChart3, CalendarDays, Download, FileSpreadsheet, ImageDown, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowLeft, BarChart3, CalendarDays, Download, FileSpreadsheet, FileText, ImageDown, RefreshCw, Search, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
   applyMetaFilters,
@@ -791,11 +791,20 @@ function ReportChooser({ onSelect, onClose }) {
             <span className="reportTypeAction">Escolher <span aria-hidden="true">›</span></span>
           </button>
         </div>
-        <p className="reportChooserHint">Os dois relatórios são exportados como imagem PNG pronta para compartilhar.</p>
+        <p className="reportChooserHint">Os dois relatórios podem ser baixados em PNG (imagem) ou PDF, prontos para compartilhar.</p>
       </div>
     </div>
   );
 }
+
+// Elementos que podem terminar uma página do PDF sem cortar uma linha ou um bloco ao meio.
+const REPORT_PAGE_BREAK_SELECTOR = 'tbody tr, .reportDetailTableRow, .reportMetricPanel, .reportHeading, .reportDetailGrid, .reportJustificationBlock, .planReportTableBlock, .planReportChartBlock';
+// Tabelas que repetem o cabeçalho quando continuam numa página nova.
+const REPORT_REPEATED_HEADERS = [
+  { table: '.reportDataTable', header: 'thead' },
+  { table: '.reportDetailTable', header: '.reportDetailTableHeader' }
+];
+const PDF_PAGE_MARGIN_MM = 10;
 
 function downloadCanvas(canvas, filename) {
   const link = document.createElement('a');
@@ -804,39 +813,96 @@ function downloadCanvas(canvas, filename) {
   link.click();
 }
 
-async function captureReportElement(element, { filename, fitTo = null } = {}) {
-  if (!element || !filename) return;
+function renderReportCanvas(element) {
   const bounds = element.getBoundingClientRect();
-  const previewCanvas = await html2canvas(element, {
+  return html2canvas(element, {
     backgroundColor: '#f7f8f9',
     scale: Math.max(2, 1920 / Math.max(bounds.width, 1)),
     useCORS: true,
     logging: false
   });
+}
 
-  if (!fitTo) {
-    downloadCanvas(previewCanvas, filename);
-    return;
-  }
-
+function fitReportCanvas(previewCanvas, fitTo) {
   const canvas = document.createElement('canvas');
   canvas.width = fitTo.width;
   canvas.height = fitTo.height;
   const context = canvas.getContext('2d');
   context.fillStyle = '#f7f8f9';
   context.fillRect(0, 0, fitTo.width, fitTo.height);
-  const fitScale = Math.max(fitTo.width / previewCanvas.width, fitTo.height / previewCanvas.height);
+  // min mantém o relatório inteiro dentro do quadro; max cortava topo e base quando ele ficava mais alto que 16:9.
+  const fitScale = Math.min(fitTo.width / previewCanvas.width, fitTo.height / previewCanvas.height);
   const drawWidth = previewCanvas.width * fitScale;
   const drawHeight = previewCanvas.height * fitScale;
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
   context.drawImage(previewCanvas, (fitTo.width - drawWidth) / 2, (fitTo.height - drawHeight) / 2, drawWidth, drawHeight);
-  downloadCanvas(canvas, filename);
+  return canvas;
+}
+
+function getReportPageLayout(element, pxPerCssPixel) {
+  const originTop = element.getBoundingClientRect().top;
+  const toCanvasRange = (rect) => ({
+    top: Math.round((rect.top - originTop) * pxPerCssPixel),
+    bottom: Math.round((rect.bottom - originTop) * pxPerCssPixel)
+  });
+  const breaks = [...element.querySelectorAll(REPORT_PAGE_BREAK_SELECTOR)]
+    .map((node) => toCanvasRange(node.getBoundingClientRect()).bottom)
+    .sort((a, b) => a - b);
+  const headers = REPORT_REPEATED_HEADERS.flatMap(({ table, header }) => [...element.querySelectorAll(table)].flatMap((tableNode) => {
+    const headerNode = tableNode.querySelector(header);
+    return headerNode ? [{ table: toCanvasRange(tableNode.getBoundingClientRect()), header: toCanvasRange(headerNode.getBoundingClientRect()) }] : [];
+  }));
+  return { breaks, headers };
+}
+
+async function downloadReportPdf(canvas, filename, { breaks, headers }) {
+  const { jsPDF } = await import('jspdf');
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+  const contentWidth = 210 - PDF_PAGE_MARGIN_MM * 2;
+  const pxPerMm = canvas.width / contentWidth;
+  const pageHeightPx = Math.floor((297 - PDF_PAGE_MARGIN_MM * 2) * pxPerMm);
+
+  let top = 0;
+  while (top < canvas.height) {
+    // Se a página começa dentro de uma tabela, o cabeçalho dela é repetido no topo.
+    const continued = headers.find((item) => item.table.top < top && top < item.table.bottom);
+    const headerPx = continued ? continued.header.bottom - continued.header.top : 0;
+    let bottom = Math.min(top + pageHeightPx - headerPx, canvas.height);
+    if (bottom < canvas.height) {
+      const lastBreak = breaks.filter((point) => point > top && point <= bottom).at(-1);
+      if (lastBreak) bottom = lastBreak;
+    }
+
+    const slice = document.createElement('canvas');
+    slice.width = canvas.width;
+    slice.height = headerPx + (bottom - top);
+    const context = slice.getContext('2d');
+    if (continued) context.drawImage(canvas, 0, continued.header.top, canvas.width, headerPx, 0, 0, canvas.width, headerPx);
+    context.drawImage(canvas, 0, top, canvas.width, bottom - top, 0, headerPx, canvas.width, bottom - top);
+
+    if (top > 0) pdf.addPage();
+    pdf.addImage(slice.toDataURL('image/png'), 'PNG', PDF_PAGE_MARGIN_MM, PDF_PAGE_MARGIN_MM, contentWidth, slice.height / pxPerMm);
+    top = bottom;
+  }
+  pdf.save(filename);
+}
+
+async function exportReportElement(element, { filename, format = 'png', fitTo = null } = {}) {
+  if (!element || !filename) return;
+  const previewCanvas = await renderReportCanvas(element);
+
+  if (format === 'pdf') {
+    await downloadReportPdf(previewCanvas, filename, getReportPageLayout(element, previewCanvas.width / element.getBoundingClientRect().width));
+    return;
+  }
+
+  downloadCanvas(fitTo ? fitReportCanvas(previewCanvas, fitTo) : previewCanvas, filename);
 }
 
 function ReportModal({ allRecords, justifications, filters, date, dateBounds, onDateChange, onBack, onClose }) {
   const reportRef = useRef(null);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState('');
   const [exportError, setExportError] = useState('');
   const selectedDate = String(date || '').slice(0, 10);
   const monthStart = selectedDate ? `${selectedDate.slice(0, 7)}-01` : '';
@@ -850,19 +916,20 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
   const dayByPolygon = buildDailyTable(dayRecords);
   const monthName = selectedDate ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-';
 
-  const exportImage = async () => {
+  const exportReport = async (format) => {
     if (!reportRef.current || !selectedDate) return;
-    setExporting(true);
+    setExporting(format);
     setExportError('');
     try {
-      await captureReportElement(reportRef.current, {
-        filename: `relatorio-emulsao-${selectedDate}.png`,
-        fitTo: { width: 1920, height: 1080 }
+      await exportReportElement(reportRef.current, {
+        format,
+        filename: `relatorio-emulsao-${selectedDate}.${format}`,
+        fitTo: format === 'png' ? { width: 1920, height: 1080 } : null
       });
     } catch (error) {
-      setExportError(error.message || 'Não foi possível gerar a imagem do relatório.');
+      setExportError(error.message || 'Não foi possível gerar o relatório.');
     } finally {
-      setExporting(false);
+      setExporting('');
     }
   };
 
@@ -918,7 +985,8 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
          {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}
          <div className="reportActions">
            <button className="secondaryButton" type="button" onClick={onClose}>Cancelar</button>
-          <button className="primaryButton" type="button" onClick={exportImage} disabled={!selectedDate || exporting}><Download size={17} /> {exporting ? 'Gerando imagem...' : 'Baixar imagem PNG'}</button>
+          <button className="outlineButton" type="button" onClick={() => exportReport('png')} disabled={!selectedDate || Boolean(exporting)}><Download size={17} /> {exporting === 'png' ? 'Gerando imagem...' : 'Baixar imagem PNG'}</button>
+          <button className="primaryButton" type="button" onClick={() => exportReport('pdf')} disabled={!selectedDate || Boolean(exporting)}><FileText size={17} /> {exporting === 'pdf' ? 'Gerando PDF...' : 'Baixar relatório PDF'}</button>
         </div>
       </div>
     </div>
@@ -940,7 +1008,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
   const [selectedPlan, setSelectedPlan] = useState('');
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState('');
   const [exportError, setExportError] = useState('');
   const plans = useMemo(() => uniquePlanValues(allRecords), [allRecords]);
   const planSummaries = useMemo(() => plans.map((plan) => {
@@ -996,18 +1064,19 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
     }
   };
 
-  const exportImage = async () => {
+  const exportReport = async (format) => {
     if (!reportRef.current || !selectedPlan || !dailyRows.length) return;
-    setExporting(true);
+    setExporting(format);
     setExportError('');
     try {
-      await captureReportElement(reportRef.current, {
-        filename: `relatorio-emulsao-plano-${safePlanName}.png`
+      await exportReportElement(reportRef.current, {
+        format,
+        filename: `relatorio-emulsao-plano-${safePlanName}.${format}`
       });
     } catch (error) {
-      setExportError(error.message || 'Não foi possível gerar a imagem do relatório.');
+      setExportError(error.message || 'Não foi possível gerar o relatório.');
     } finally {
-      setExporting(false);
+      setExporting('');
     }
   };
 
@@ -1125,7 +1194,8 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
         {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}
         <div className="reportActions">
           <button className="secondaryButton" type="button" onClick={onClose}>Cancelar</button>
-          <button className="primaryButton" type="button" onClick={exportImage} disabled={!selectedPlan || !dailyRows.length || exporting}><Download size={17} /> {exporting ? 'Gerando imagem...' : 'Baixar relatório PNG'}</button>
+          <button className="outlineButton" type="button" onClick={() => exportReport('png')} disabled={!selectedPlan || !dailyRows.length || Boolean(exporting)}><Download size={17} /> {exporting === 'png' ? 'Gerando imagem...' : 'Baixar relatório PNG'}</button>
+          <button className="primaryButton" type="button" onClick={() => exportReport('pdf')} disabled={!selectedPlan || !dailyRows.length || Boolean(exporting)}><FileText size={17} /> {exporting === 'pdf' ? 'Gerando PDF...' : 'Baixar relatório PDF'}</button>
         </div>
       </div>
     </div>

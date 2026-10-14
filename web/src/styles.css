@@ -201,14 +201,14 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .statusStrip strong { display: block; font-size: 13px; overflow-wrap: anywhere; }
 .statusStrip .statusError { display: block; margin-top: 3px; color: var(--enaex-red); font-size: 10px; line-height: 1.2; }
 .statusStrip.hasError { border-left: 4px solid var(--enaex-red); }
-.reportButton, .primaryButton, .secondaryButton, .iconButton { border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.reportButton, .primaryButton, .secondaryButton, .outlineButton, .iconButton { border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .refreshButton { justify-self: end; min-height: 34px; padding: 8px 13px; background: #fff; color: var(--enaex-red); border: 1px solid var(--enaex-red); font-size: 12px; font-weight: 800; border-radius: 3px; white-space: nowrap; }
 .refreshButton:hover { background: #fff0f1; }
 .reportButton { justify-self: end; min-height: 34px; padding: 8px 13px; background: var(--enaex-red); color: #fff; font-size: 12px; font-weight: 750; border-radius: 3px; white-space: nowrap; }
 .dataButton { justify-self: end; min-height: 34px; padding: 8px 13px; background: #eef0f2; color: var(--ink); border: 1px solid #d7dce0; font-size: 12px; font-weight: 750; border-radius: 3px; white-space: nowrap; }
 .reportButton:hover, .primaryButton:hover { background: var(--enaex-dark-red); }
 .dataButton:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
-.refreshButton:focus-visible, .reportButton:focus-visible, .dataButton:focus-visible, .primaryButton:focus-visible, .secondaryButton:focus-visible, .iconButton:focus-visible { outline: 3px solid rgba(226, 6, 19, .28); outline-offset: 2px; }
+.refreshButton:focus-visible, .reportButton:focus-visible, .dataButton:focus-visible, .primaryButton:focus-visible, .secondaryButton:focus-visible, .outlineButton:focus-visible, .iconButton:focus-visible { outline: 3px solid rgba(226, 6, 19, .28); outline-offset: 2px; }
 .refreshIcon.spin, .spin { animation: refreshSpin .9s linear infinite; }
 @keyframes refreshSpin { to { transform: rotate(360deg); } }
 .chartCard {
@@ -345,10 +345,12 @@ tfoot td { font-weight: 750; background: #fff; color: #4f5c66; border-top: 1px s
 .justificationMeta strong { color: #26323d; font-size: 12px; }
 .justificationItem p { margin: 5px 0 0; color: #3c4752; font-size: 12px; line-height: 1.4; }
 .justificationEmpty { margin: 14px 0 4px; color: var(--muted); font-size: 12px; }
-.reportActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
-.primaryButton, .secondaryButton { min-height: 40px; padding: 10px 15px; font-size: 12px; font-weight: 750; }
+.reportActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.primaryButton, .secondaryButton, .outlineButton { min-height: 40px; padding: 10px 15px; font-size: 12px; font-weight: 750; }
 .primaryButton { background: var(--enaex-red); color: #fff; }
 .secondaryButton { background: #26323d; color: #fff; }
+.outlineButton { border: 1px solid var(--enaex-red); background: #fff; color: var(--enaex-red); }
+.outlineButton:hover { background: #fff0f1; }
 .reportTypeGrid { display: grid; gap: 12px; margin-top: 20px; }
 .reportTypeCard { display: grid; grid-template-columns: auto minmax(0, 1fr) max-content; align-items: center; gap: 14px; width: 100%; padding: 16px; border: 1px solid #d7dce0; border-left: 4px solid #38424B; background: #fff; color: var(--ink); text-align: left; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
 .reportTypeCard:hover { border-color: var(--enaex-red); background: #fffafb; transform: translateY(-1px); }
@@ -489,6 +491,8 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .planReportPreview .reportDataTable th:nth-child(2), .planReportPreview .reportDataTable td:nth-child(2) { width: 28%; }
   .planReportPreview .reportDataTable th:nth-child(3), .planReportPreview .reportDataTable td:nth-child(3) { width: 32%; }
   .reportDateField input { width: 100%; }
+  .reportActions { flex-direction: column-reverse; }
+  .reportActions > button { width: 100%; justify-content: center; }
   .reportTypeCard { grid-template-columns: auto minmax(0, 1fr); }
   .reportTypeAction { grid-column: 2; justify-self: start; }
   .reportHeaderActions { align-items: flex-end; flex-direction: column-reverse; gap: 5px; }
