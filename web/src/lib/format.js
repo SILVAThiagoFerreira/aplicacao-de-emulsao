@@ -17,6 +17,14 @@ export function formatMil(value) {
   return `${number.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Mil`;
 }
 
+// Eixo em kg: abaixo de 1.000 kg mostra kg, para que ticks pequenos não virem "1 Mil" repetido.
+export function formatAxisKg(value) {
+  const number = toNumber(value);
+  if (Math.abs(number) < 1000) return `${number.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} kg`;
+  const thousands = number / 1000;
+  return `${thousands.toLocaleString('pt-BR', { maximumFractionDigits: Number.isInteger(thousands) ? 0 : 1 })} Mil`;
+}
+
 export function formatCompactPlanKg(value) {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return value;

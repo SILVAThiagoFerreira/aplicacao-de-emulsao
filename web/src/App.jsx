@@ -34,7 +34,7 @@ import {
   uniqueValues,
   uniquePlanValues
 } from './lib/aggregate.js';
-import { formatCompactPlanKg, formatDate, formatKg, formatMil, formatPlanWaterfallTick, monthNames } from './lib/format.js';
+import { formatAxisKg, formatCompactPlanKg, formatDate, formatKg, formatMil, formatPlanWaterfallTick, monthNames } from './lib/format.js';
 import { parseWorkbookToDashboard } from './lib/parseWorkbook.js';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true';
@@ -1127,7 +1127,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
                 <PlanWaterfallChart
                   rows={combinedWaterfallRows}
                   title="Emulsão aplicada (kg)"
-                  subtitle="Valores em milhares de kg"
+                  subtitle="Eixo em kg e milhares de kg"
                   ariaLabel={`Gráfico de cascata da emulsão aplicada em kg, com furos carregados no centro das barras, no plano ${selectedPlan}`}
                 />
               </div>
@@ -1507,7 +1507,7 @@ function PlanWaterfallChart({ rows, title, subtitle, ariaLabel }) {
               minTickGap={0}
               interval="preserveStartEnd"
             />
-            <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(value) => formatMil(value)} width={48} />
+            <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={formatAxisKg} width={56} />
             <Tooltip content={<PlanWaterfallTooltip valueFormatter={formatKg} valueLabel="Emulsão aplicada" />} cursor={{ fill: 'rgba(56,66,75,.06)' }} />
             <Bar dataKey="base" stackId="waterfall" fill="transparent" stroke="transparent" isAnimationActive={false} legendType="none" />
             <Bar dataKey="value" name="Emulsão aplicada (kg)" stackId="waterfall" isAnimationActive={false}>

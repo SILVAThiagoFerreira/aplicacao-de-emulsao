@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { formatCompactPlanKg, formatDate, formatKg, formatMil, formatPlanWaterfallTick } from './format.js';
+import { formatAxisKg, formatCompactPlanKg, formatDate, formatKg, formatPlanWaterfallTick } from './format.js';
 
 // PDF montado diretamente com texto, retângulos e linhas (vetor). Nada é capturado da tela.
 const MARGIN = 15;
@@ -225,7 +225,7 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
     rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.softLine, width: 0.2 });
   });
 
-  if (total) {
+  if (total && rows.length) {
     const cells = measure(total);
     const height = heightOf(cells);
     if (ensure(height)) drawHeader();
@@ -241,20 +241,23 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
 function drawWaterfallChart(writer, rows) {
   const { page, write, rule, dashed, box, ensure } = writer;
   const cardHeight = 92;
+  const plotWidth = (RIGHT_EDGE - 6) - (MARGIN + 18);
+  // Com muitos dias (barras estreitas), o valor sai na vertical e o eixo X mostra um rótulo a cada k dias.
+  const slot = plotWidth / rows.length;
+  const dense = slot < 9;
   ensure(9 + cardHeight);
-  drawSectionHeader(writer, 'GRÁFICO DE CASCATA', 'Emulsão acima da barra · furos no centro');
+  drawSectionHeader(writer, 'GRÁFICO DE CASCATA', dense ? 'Emulsão acima da barra · furos na tabela' : 'Emulsão acima da barra · furos no centro');
 
   const top = page.y;
   box(MARGIN, top, CONTENT_WIDTH, cardHeight, { stroke: COLOR.line, fill: COLOR.white });
   write('Emulsão aplicada (kg)', MARGIN + 4, top + 7, { size: 9.5, bold: true });
-  write('Valores em milhares de kg', RIGHT_EDGE - 4, top + 7, { size: 7, color: COLOR.muted, align: 'right' });
+  write('Eixo em kg e milhares de kg', RIGHT_EDGE - 4, top + 7, { size: 7, color: COLOR.muted, align: 'right' });
 
   const plotLeft = MARGIN + 18;
   const plotRight = RIGHT_EDGE - 6;
   const plotTop = top + 18;
   const plotBottom = top + cardHeight - 12;
   const plotHeight = plotBottom - plotTop;
-  const plotWidth = plotRight - plotLeft;
   // Folga acima da maior barra para o rótulo de valor não encostar no título do cartão.
   const peak = Math.max(1, ...rows.map((row) => row.base + row.value)) * 1.12;
   const step = niceStep(peak / 4);
@@ -266,13 +269,10 @@ function drawWaterfallChart(writer, rows) {
     const tick = index * step;
     const y = yOf(tick);
     if (index > 0) dashed(plotLeft, y, plotRight, y);
-    write(formatMil(tick), plotLeft - 2.5, y + 1.2, { size: 6, color: COLOR.muted, align: 'right' });
+    write(formatAxisKg(tick), plotLeft - 2.5, y + 1.2, { size: 6, color: COLOR.muted, align: 'right' });
   }
   rule(plotLeft, plotBottom, plotRight, plotBottom, { color: COLOR.grid, width: 0.25 });
 
-  // Com muitos dias (barras estreitas), o valor sai na vertical e o eixo X mostra um rótulo a cada k dias.
-  const slot = plotWidth / rows.length;
-  const dense = slot < 9;
   const barWidth = Math.min(slot * 0.6, 16);
   const labelSize = dense ? 5 : 6.5;
   const labelEvery = dense ? Math.ceil(7 / slot) : 1;
@@ -286,12 +286,13 @@ function drawWaterfallChart(writer, rows) {
       write(formatCompactPlanKg(row.value), centerX + 0.6, barTop - 1.5, { size: labelSize, bold: true, angle: 90 });
     } else {
       write(formatCompactPlanKg(row.value), centerX, barTop - 1.8, { size: labelSize, bold: true, align: 'center' });
-      write(Number(row.furos).toLocaleString('pt-BR'), centerX, barTop + barHeight / 2 + 1, {
-        size: labelSize,
-        bold: true,
-        color: barHeight >= 3.5 ? COLOR.white : COLOR.ink,
-        align: 'center'
-      });
+      const holes = Number(row.furos).toLocaleString('pt-BR');
+      if (barHeight >= 3.5) {
+        write(holes, centerX, barTop + barHeight / 2 + 1, { size: labelSize, bold: true, color: COLOR.white, align: 'center' });
+      } else {
+        // Barra fina demais para texto dentro: os furos vão ao lado, em cor escura sobre o fundo branco.
+        write(holes, centerX + barWidth / 2 + 1, barTop + barHeight / 2 + 1, { size: labelSize, bold: true, color: COLOR.ink });
+      }
     }
 
     if (row.isTotal || index % labelEvery === 0) {
@@ -344,7 +345,7 @@ export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, day
     emptyText: 'Nenhuma aplicação encontrada nesta data.'
   });
 
-  const justificationBoxes = dayJustifications.map((item) => ({
+  const justificationBoxes = dayJustifications.filter((item) => item.motivo).map((item) => ({
     item,
     lines: splitLines(item.motivo, CONTENT_WIDTH - 10, { size: 8.5 })
   }));
@@ -406,7 +407,8 @@ export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, las
       dia: 'Total',
       furos: planTotal.furos.toLocaleString('pt-BR'),
       emulsao: formatKg(planTotal.emulsao)
-    }
+    },
+    emptyText: 'Nenhum carregamento encontrado para este plano.'
   });
 
   drawWaterfallChart(writer, waterfallRows);
