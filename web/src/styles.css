@@ -168,7 +168,7 @@ button { cursor: pointer; }
 .dashboardGrid {
   display: grid;
   grid-template-columns: minmax(0, 36fr) minmax(0, 64fr);
-  align-items: start;
+  align-items: stretch;
   padding: 14px 20px 18px 22px;
   gap: 16px;
 }
@@ -443,8 +443,9 @@ tfoot td { font-weight: 750; background: transparent; color: #26323d; border-top
 .reportDetailTableRow strong { margin: 0; color: var(--topbar); font-size: 11px; }
 .reportJustificationBlock { margin-top: 20px; }
 .reportJustificationBlock .justificationList { margin-top: 8px; max-height: none; }
-.justificationsPanel { padding: 12px 14px 14px; }
+.justificationsPanel { padding: 12px 14px 14px; display: flex; flex-direction: column; min-height: 0; }
 .justificationList { display: grid; gap: 8px; margin-top: 8px; max-height: 230px; overflow: auto; }
+.leftPanel > .justificationsPanel .justificationList { flex: 1 1 0; min-height: 230px; max-height: none; align-content: start; }
 .justificationItem { padding: 9px 10px; border-left: 3px solid var(--enaex-red); background: #f5f6f7; }
 .justificationMeta { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; color: var(--muted); font-size: 11px; }
 .justificationMeta strong { color: #26323d; font-size: 12px; }
