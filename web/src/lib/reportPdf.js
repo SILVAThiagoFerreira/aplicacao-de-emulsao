@@ -1,7 +1,8 @@
 import { jsPDF } from 'jspdf';
-import { formatAxisKg, formatCompactPlanKg, formatDate, formatKg, formatPlanWaterfallTick } from './format.js';
+import { formatCompactPlanKg, formatDate, formatKg, formatPlanWaterfallTick } from './format.js';
 
 // PDF montado diretamente com texto, retângulos e linhas (vetor). Nada é capturado da tela.
+// Estilo: fundo branco, título vermelho em caixa alta, subtítulo cinza, seções com régua fina.
 const MARGIN = 15;
 const PAGE_WIDTH = 210;
 const RIGHT_EDGE = PAGE_WIDTH - MARGIN;
@@ -13,17 +14,14 @@ const LINE_SPACING = 1.35;
 const TABLE_TEXT_SIZE = 8;
 
 const COLOR = {
-  red: [226, 6, 19],
-  ink: [56, 66, 75],
-  muted: [120, 127, 133],
-  body: [60, 70, 78],
-  line: [216, 221, 225],
-  softLine: [230, 233, 235],
-  grid: [222, 226, 230],
-  hair: [236, 239, 241],
-  panel: [247, 248, 249],
-  zebra: [242, 244, 245],
-  white: [255, 255, 255]
+  red: [181, 18, 27],
+  white: [255, 255, 255],
+  charcoal: [60, 63, 68],
+  gray: [138, 143, 150],
+  body: [74, 74, 74],
+  line: [229, 229, 229],
+  hair: [238, 238, 238],
+  ink: [60, 63, 68]
 };
 
 function lineHeight(size) {
@@ -36,13 +34,6 @@ function capitalize(value) {
 
 function formatGeneratedAt(date) {
   return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-}
-
-function niceStep(rawStep) {
-  const base = 10 ** Math.floor(Math.log10(rawStep));
-  const fraction = rawStep / base;
-  const nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
-  return nice * base;
 }
 
 function createReportWriter({ title, runningTitle, footerTitle }) {
@@ -93,25 +84,14 @@ function createReportWriter({ title, runningTitle, footerTitle }) {
     pdf.line(x1, y1, x2, y2);
   };
 
-  const dashed = (x1, y1, x2, y2) => {
-    pdf.setDrawColor(...COLOR.grid);
-    pdf.setLineWidth(0.2);
-    pdf.setLineDashPattern([0.9, 0.9], 0);
-    pdf.line(x1, y1, x2, y2);
-    pdf.setLineDashPattern([], 0);
-  };
-
-  const box = (x, y, width, height, { fill = null, stroke = null, radius = 0 } = {}) => {
+  const box = (x, y, width, height, { fill = null } = {}) => {
     if (fill) pdf.setFillColor(...fill);
-    if (stroke) pdf.setDrawColor(...stroke);
-    const mode = fill && stroke ? 'FD' : fill ? 'F' : 'S';
-    if (radius) pdf.roundedRect(x, y, width, height, radius, radius, mode);
-    else pdf.rect(x, y, width, height, mode);
+    pdf.rect(x, y, width, height, 'F');
   };
 
   const newPage = () => {
     pdf.addPage();
-    write(fitText(runningTitle, CONTENT_WIDTH, { size: 7.5 }), MARGIN, MARGIN + 2, { size: 7.5, color: COLOR.muted });
+    write(fitText(runningTitle, CONTENT_WIDTH, { size: 7.5 }), MARGIN, MARGIN + 2, { size: 7.5, color: COLOR.gray });
     page.y = MARGIN + 10;
   };
 
@@ -126,70 +106,71 @@ function createReportWriter({ title, runningTitle, footerTitle }) {
     const total = pdf.getNumberOfPages();
     for (let number = 1; number <= total; number += 1) {
       pdf.setPage(number);
+      rule(MARGIN, FOOTER_Y - 4, RIGHT_EDGE, FOOTER_Y - 4, { color: COLOR.charcoal, width: 0.3 });
       const pageLabel = `Página ${number} de ${total}`;
       const pageLabelWidth = textWidth(pageLabel, 7);
-      write(fitText(footerTitle, CONTENT_WIDTH - pageLabelWidth - 6, { size: 7 }), MARGIN, FOOTER_Y, { size: 7, color: COLOR.muted });
-      write(pageLabel, RIGHT_EDGE, FOOTER_Y, { size: 7, color: COLOR.muted, align: 'right' });
+      write(fitText(footerTitle, CONTENT_WIDTH - pageLabelWidth - 6, { size: 7 }), MARGIN, FOOTER_Y, { size: 7, color: COLOR.gray });
+      write(pageLabel, RIGHT_EDGE, FOOTER_Y, { size: 7, color: COLOR.gray, align: 'right' });
     }
     return pdf;
   };
 
-  return { pdf, page, write, splitLines, writeLines, textWidth, rule, dashed, box, ensure, finish };
+  return { pdf, page, write, splitLines, writeLines, textWidth, rule, box, newPage, ensure, finish };
 }
 
-function drawMasthead(writer, { kicker, title, subtitle }) {
-  const { page, write, box, splitLines, writeLines, textWidth } = writer;
-  write('US VALE VERDE', MARGIN, page.y + 3, { size: 8, bold: true, color: COLOR.ink, spacing: 0.2 });
-  box(MARGIN, page.y + 6, 12, 0.9, { fill: COLOR.red });
-  page.y += 11;
-  write(kicker, MARGIN, page.y + 2.5, { size: 7.5, bold: true, color: COLOR.red, spacing: 0.25 });
-  page.y += 6;
-  // Nome longo: diminui a fonte até caber em no máximo duas linhas, sem estourar a margem.
+function drawMasthead(writer, { title, subtitle }) {
+  const { page, write, splitLines, writeLines, textWidth } = writer;
+  write('US VALE VERDE', MARGIN, page.y + 3, { size: 7.5, color: COLOR.gray, spacing: 0.15 });
+  page.y += 10;
+  // Título em caixa alta, vermelho e sem negrito; cabe em no máximo duas linhas, reduzindo a fonte se preciso.
+  const upper = title.toLocaleUpperCase('pt-BR');
   let titleFit = null;
-  for (const size of [20, 16, 13, 11]) {
-    const lines = splitLines(title, CONTENT_WIDTH, { size, bold: true });
-    if (lines.length <= 2 && lines.every((line) => textWidth(line, size, true) <= CONTENT_WIDTH)) {
+  for (const size of [24, 19, 15, 12]) {
+    const lines = splitLines(upper, CONTENT_WIDTH, { size });
+    if (lines.length <= 2 && lines.every((line) => textWidth(line, size) <= CONTENT_WIDTH)) {
       titleFit = { size, lines };
       break;
     }
   }
-  if (!titleFit) titleFit = { size: 11, lines: splitLines(title, CONTENT_WIDTH, { size: 11, bold: true }).slice(0, 2) };
-  page.y += writeLines(titleFit.lines, MARGIN, page.y + 6, { size: titleFit.size, bold: true }) + 1.5;
-  write(subtitle, MARGIN, page.y + 3, { size: 10, color: COLOR.muted });
-  page.y += 10;
+  if (!titleFit) titleFit = { size: 12, lines: splitLines(upper, CONTENT_WIDTH, { size: 12 }).slice(0, 2) };
+  page.y += writeLines(titleFit.lines, MARGIN, page.y + 6, { size: titleFit.size, color: COLOR.red }) + 1.5;
+  write(subtitle, MARGIN, page.y + 3, { size: 11, color: COLOR.body });
+  page.y += 14;
 }
 
 function drawKpiPanel(writer, items) {
-  const { page, box, rule, splitLines, writeLines, write, ensure } = writer;
-  const height = 22;
+  const { page, rule, writeLines, write, ensure } = writer;
+  const height = 20;
   ensure(height);
-  box(MARGIN, page.y, CONTENT_WIDTH, height, { fill: COLOR.panel, radius: 2 });
   const cellWidth = CONTENT_WIDTH / items.length;
   items.forEach((item, index) => {
     const x = MARGIN + index * cellWidth;
-    write(item.label, x + 4, page.y + 6.5, { size: 7, color: COLOR.muted });
-    const lines = splitLines(item.value, cellWidth - 8, { size: item.size, bold: true });
-    writeLines(lines, x + 4, page.y + 13.5, { size: item.size, bold: true, color: item.red ? COLOR.red : COLOR.ink });
+    write(item.label, x, page.y + 4, { size: 7, color: COLOR.gray });
+    const lines = writer.splitLines(item.value, cellWidth - 4, { size: item.size, bold: true });
+    writeLines(lines, x, page.y + 11, { size: item.size, bold: true, color: item.red ? COLOR.red : COLOR.charcoal });
   });
-  page.y += height + 4;
+  rule(MARGIN, page.y + height - 2, RIGHT_EDGE, page.y + height - 2, { color: COLOR.line, width: 0.2 });
+  page.y += height + 2;
 }
 
+// Régua fina clara sob o título da seção; o título em cinza, sem caixa.
 function drawSectionHeader(writer, kicker, aside = '') {
   const { page, write, rule, ensure } = writer;
-  ensure(9);
-  write(kicker, MARGIN, page.y + 5, { size: 8, bold: true, color: COLOR.ink, spacing: 0.15 });
-  if (aside) write(aside, RIGHT_EDGE, page.y + 5, { size: 7, color: COLOR.muted, align: 'right' });
-  page.y += 9;
+  ensure(10);
+  write(kicker, MARGIN, page.y + 4, { size: 9.5, color: COLOR.body, spacing: 0.1 });
+  if (aside) write(aside, RIGHT_EDGE, page.y + 4, { size: 7.5, color: COLOR.gray, align: 'right' });
+  rule(MARGIN, page.y + 6.5, RIGHT_EDGE, page.y + 6.5, { color: COLOR.line, width: 0.2 });
+  page.y += 10;
 }
 
 // Tabela que quebra entre linhas e repete o cabeçalho em cada página nova.
 // Com `section`, o título da seção nunca fica sozinho no fim de uma página.
 function drawTable(writer, { section = null, columns, rows, total = null, emptyText = '' }) {
-  const { page, write, rule, box, ensure, splitLines, writeLines } = writer;
+  const { page, write, rule, ensure, splitLines, writeLines } = writer;
 
   const drawHeader = () => {
-    columns.forEach((column) => write(column.label.toLocaleUpperCase('pt-BR'), column.x, page.y + 4.6, { size: 6.8, bold: true, color: COLOR.muted, spacing: 0.1, align: column.align }));
-    rule(MARGIN, page.y + 7, RIGHT_EDGE, page.y + 7, { color: COLOR.line, width: 0.2 });
+    columns.forEach((column) => write(column.label.toLocaleUpperCase('pt-BR'), column.x, page.y + 4.6, { size: 6.8, bold: true, color: COLOR.gray, spacing: column.align === 'right' ? 0 : 0.1, align: column.align }));
+    rule(MARGIN, page.y + 7, RIGHT_EDGE, page.y + 7, { color: COLOR.charcoal, width: 0.25 });
     page.y += 8.5;
   };
 
@@ -198,7 +179,7 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
 
   const firstRowHeight = rows.length ? heightOf(measure(rows[0])) : 9;
   if (section) {
-    ensure(9 + 8.5 + firstRowHeight);
+    ensure(10 + 8.5 + firstRowHeight);
     drawSectionHeader(writer, section.kicker, section.aside);
   } else {
     ensure(8.5 + firstRowHeight);
@@ -206,11 +187,11 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
   drawHeader();
 
   if (!rows.length) {
-    write(emptyText, MARGIN + 3, page.y + 4.5, { size: TABLE_TEXT_SIZE, color: COLOR.muted });
+    write(emptyText, MARGIN, page.y + 4.5, { size: TABLE_TEXT_SIZE, color: COLOR.gray });
     page.y += 9;
   }
 
-  rows.forEach((row, index) => {
+  rows.forEach((row) => {
     const cells = measure(row);
     const height = heightOf(cells);
     if (ensure(height)) drawHeader();
@@ -225,7 +206,7 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
     const cells = measure(total);
     const height = heightOf(cells);
     if (ensure(height)) drawHeader();
-    box(MARGIN, page.y, CONTENT_WIDTH, height, { fill: COLOR.panel });
+    rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.charcoal, width: 0.3 });
     columns.forEach((column, columnIndex) => {
       writeLines(cells[columnIndex], column.x, page.y + 4.6, { size: TABLE_TEXT_SIZE, bold: true, align: column.align });
     });
@@ -234,40 +215,28 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
   page.y += 4;
 }
 
+// Gráfico de cascata sem grade nem eixo Y: os valores ficam nas próprias barras.
+// Sempre começa em folha nova (um gráfico por página).
 function drawWaterfallChart(writer, rows) {
-  const { page, write, rule, dashed, box, ensure } = writer;
-  const cardHeight = 92;
-  const plotWidth = (RIGHT_EDGE - 6) - (MARGIN + 18);
+  const { page, write, rule, box, ensure, newPage, textWidth } = writer;
+  const plotLeft = MARGIN + 2;
+  const plotRight = RIGHT_EDGE - 2;
+  const plotWidth = plotRight - plotLeft;
   // Com muitos dias (barras estreitas), o valor sai na vertical e o eixo X mostra um rótulo a cada k dias.
   const slot = plotWidth / rows.length;
   const dense = slot < 9;
-  ensure(9 + cardHeight);
-  drawSectionHeader(writer, 'GRÁFICO DE CASCATA', dense ? 'Emulsão acima da barra · furos na tabela' : 'Emulsão acima da barra · furos no centro');
+  const hasTotal = rows.some((row) => row.isTotal);
+  newPage();
+  drawSectionHeader(writer, 'GRÁFICO DE CASCATA', dense ? 'Emulsão acima da barra · furos na vertical' : 'Emulsão acima da barra · furos no centro');
 
-  const top = page.y;
-  box(MARGIN, top, CONTENT_WIDTH, cardHeight, { fill: COLOR.panel, radius: 2 });
-  write('Emulsão aplicada (kg)', MARGIN + 4, top + 7, { size: 9.5, bold: true });
-  write('Eixo em kg e milhares de kg', RIGHT_EDGE - 4, top + 7, { size: 7, color: COLOR.muted, align: 'right' });
-
-  const plotLeft = MARGIN + 18;
-  const plotRight = RIGHT_EDGE - 6;
-  const plotTop = top + 18;
-  const plotBottom = top + cardHeight - 12;
-  const plotHeight = plotBottom - plotTop;
-  // Folga acima da maior barra para o rótulo de valor não encostar no título do cartão.
-  const peak = Math.max(1, ...rows.map((row) => row.base + row.value)) * 1.12;
-  const step = niceStep(peak / 4);
-  const max = step * Math.ceil(peak / step);
+  const plotTop = page.y + 6;
+  const plotHeight = 110;
+  const plotBottom = plotTop + plotHeight;
+  // Folga acima da maior barra para o rótulo de valor não encostar no cabeçalho.
+  const max = Math.max(1, ...rows.map((row) => row.base + row.value)) * 1.12;
   const yOf = (value) => plotBottom - (value / max) * plotHeight;
 
-  const tickCount = Math.round(max / step);
-  for (let index = 0; index <= tickCount; index += 1) {
-    const tick = index * step;
-    const y = yOf(tick);
-    if (index > 0) dashed(plotLeft, y, plotRight, y);
-    write(formatAxisKg(tick), plotLeft - 2.5, y + 1.2, { size: 6, color: COLOR.muted, align: 'right' });
-  }
-  rule(plotLeft, plotBottom, plotRight, plotBottom, { color: COLOR.line, width: 0.2 });
+  rule(plotLeft, plotBottom, plotRight, plotBottom, { color: COLOR.gray, width: 0.2 });
 
   const barWidth = Math.min(slot * 0.6, 16);
   const labelSize = dense ? 5 : 6.5;
@@ -276,27 +245,37 @@ function drawWaterfallChart(writer, rows) {
     const centerX = plotLeft + slot * (index + 0.5);
     const barTop = yOf(row.base + row.value);
     const barHeight = Math.max(yOf(row.base) - barTop, 0.3);
-    box(centerX - barWidth / 2, barTop, barWidth, barHeight, { fill: row.isTotal ? COLOR.ink : COLOR.red });
+    box(centerX - barWidth / 2, barTop, barWidth, barHeight, { fill: row.isTotal ? COLOR.charcoal : COLOR.red });
 
     if (dense) {
-      write(formatCompactPlanKg(row.value), centerX + 0.6, barTop - 1.5, { size: labelSize, bold: true, angle: 90 });
+      write(formatCompactPlanKg(row.value), centerX + 0.6, barTop - 1.5, { size: labelSize, bold: true, color: COLOR.charcoal, angle: 90 });
     } else {
-      write(formatCompactPlanKg(row.value), centerX, barTop - 1.8, { size: labelSize, bold: true, align: 'center' });
+      write(formatCompactPlanKg(row.value), centerX, barTop - 1.8, { size: labelSize, bold: true, color: COLOR.charcoal, align: 'center' });
       const holes = Number(row.furos).toLocaleString('pt-BR');
       if (barHeight >= 3.5) {
         write(holes, centerX, barTop + barHeight / 2 + 1, { size: labelSize, bold: true, color: COLOR.white, align: 'center' });
       } else {
         // Barra fina demais para texto dentro: os furos vão ao lado, em cor escura sobre o fundo branco.
-        write(holes, centerX + barWidth / 2 + 1, barTop + barHeight / 2 + 1, { size: labelSize, bold: true, color: COLOR.ink });
+        write(holes, centerX + barWidth / 2 + 1, barTop + barHeight / 2 + 1, { size: labelSize, bold: true, color: COLOR.charcoal });
       }
     }
 
     if (row.isTotal || index % labelEvery === 0) {
-      write(formatPlanWaterfallTick(row.label), centerX, plotBottom + 4.5, { size: labelSize, color: COLOR.muted, align: 'center' });
+      write(formatPlanWaterfallTick(row.label), centerX, plotBottom + 4.5, { size: labelSize, color: COLOR.gray, align: 'center' });
     }
   });
 
-  page.y = top + cardHeight + 4;
+  // Legenda pequena, com marcadores quadrados, abaixo do gráfico.
+  const legendY = plotBottom + 14;
+  const legend = [{ label: 'Emulsão aplicada (kg)', color: COLOR.red }, ...(hasTotal ? [{ label: 'Total', color: COLOR.charcoal }] : [])];
+  let legendX = MARGIN;
+  legend.forEach((item) => {
+    box(legendX, legendY - 2.2, 2.4, 2.4, { fill: item.color });
+    write(item.label, legendX + 4, legendY, { size: 7, color: COLOR.body });
+    legendX += 4 + textWidth(item.label, 7) + 8;
+  });
+
+  page.y = legendY + 6;
 }
 
 export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, generatedAt = new Date() }) {
@@ -306,10 +285,10 @@ export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, day
     runningTitle: `US VALE VERDE · Aplicação de Emulsão · ${reportDate}`,
     footerTitle: `Relatório de Aplicação Diária · gerado em ${formatGeneratedAt(generatedAt)}`
   });
-  const { page, write, rule, box, splitLines, writeLines, ensure } = writer;
+  const { page, write, splitLines, writeLines, ensure, rule } = writer;
   const monthLabel = capitalize(new Date(`${selectedDate}T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }));
 
-  drawMasthead(writer, { kicker: 'RESUMO OPERACIONAL', title: 'Aplicação de Emulsão', subtitle: monthLabel });
+  drawMasthead(writer, { title: 'Aplicação de Emulsão', subtitle: monthLabel });
 
   drawKpiPanel(writer, [
     { label: 'Data de referência', value: reportDate, size: 12 },
@@ -329,9 +308,9 @@ export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, day
       aside: `${dayByPolygon.length.toLocaleString('pt-BR')} ${dayByPolygon.length === 1 ? 'plano' : 'planos'}`
     },
     columns: [
-      { key: 'plano', label: 'Plano', x: MARGIN + 3, align: 'left', wrapWidth: 110 },
+      { key: 'plano', label: 'Plano', x: MARGIN, align: 'left', wrapWidth: 110 },
       { key: 'emulsao', label: 'Emulsão', x: RIGHT_EDGE - 22, align: 'right', wrapWidth: 40, bold: true },
-      { key: 'furos', label: 'Furos', x: RIGHT_EDGE - 3, align: 'right', wrapWidth: 30, bold: true }
+      { key: 'furos', label: 'Furos', x: RIGHT_EDGE, align: 'right', wrapWidth: 30, bold: true }
     ],
     rows: dayByPolygon.map((row) => ({
       plano: row.poligono || 'Sem plano',
@@ -343,23 +322,23 @@ export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, day
 
   const justificationBoxes = dayJustifications.filter((item) => item.motivo).map((item) => ({
     item,
-    lines: splitLines(item.motivo, CONTENT_WIDTH - 10, { size: 8.5 })
+    lines: splitLines(item.motivo, CONTENT_WIDTH, { size: 8.5 })
   }));
-  const boxHeight = (lines) => 6 + lines.length * lineHeight(8.5) + 2.5;
-  ensure(9 + (justificationBoxes.length ? boxHeight(justificationBoxes[0].lines) : 8));
+  const blockHeight = (lines) => 5 + lines.length * lineHeight(8.5) + 1.5;
+  ensure(10 + (justificationBoxes.length ? blockHeight(justificationBoxes[0].lines) : 8));
   drawSectionHeader(writer, 'JUSTIFICATIVAS DA DATA');
   if (!justificationBoxes.length) {
-    write('Nenhuma justificativa registrada para esta data.', MARGIN, page.y + 3, { size: 8.5, color: COLOR.muted });
+    write('Nenhuma justificativa registrada para esta data.', MARGIN, page.y + 3, { size: 8.5, color: COLOR.gray });
     page.y += 8;
   }
   justificationBoxes.forEach(({ item, lines }) => {
-    const height = boxHeight(lines);
+    const height = blockHeight(lines);
     ensure(height + 2);
-    box(MARGIN, page.y, CONTENT_WIDTH, height, { fill: COLOR.panel });
-    box(MARGIN, page.y, 1.1, height, { fill: COLOR.red });
-    write(`${formatDate(item.data)} · ${item.poligono || 'Geral'}`, MARGIN + 4.5, page.y + 4.5, { size: 8, bold: true });
-    writeLines(lines, MARGIN + 4.5, page.y + 9, { size: 8.5, color: COLOR.body });
-    page.y += height + 2.5;
+    write(`${formatDate(item.data)} · ${item.poligono || 'Geral'}`, MARGIN, page.y + 3.5, { size: 8, bold: true });
+    writeLines(lines, MARGIN, page.y + 8, { size: 8.5, color: COLOR.body });
+    page.y += height;
+    rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.hair, width: 0.15 });
+    page.y += 2;
   });
 
   return writer.finish();
@@ -373,7 +352,6 @@ export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, las
   });
 
   drawMasthead(writer, {
-    kicker: 'CONSOLIDAÇÃO OPERACIONAL',
     title: plan,
     subtitle: 'Relatório de Aplicação por Plano · dias de carregamento'
   });
@@ -390,9 +368,9 @@ export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, las
       aside: `${dailyRows.length.toLocaleString('pt-BR')} dias consolidados`
     },
     columns: [
-      { key: 'dia', label: 'Dia de carregamento', x: MARGIN + 3, align: 'left', wrapWidth: 90 },
+      { key: 'dia', label: 'Dia de carregamento', x: MARGIN, align: 'left', wrapWidth: 90 },
       { key: 'furos', label: 'Furos carregados', x: MARGIN + 118, align: 'right', wrapWidth: 60 },
-      { key: 'emulsao', label: 'Emulsão aplicada', x: RIGHT_EDGE - 3, align: 'right', wrapWidth: 60 }
+      { key: 'emulsao', label: 'Emulsão aplicada', x: RIGHT_EDGE, align: 'right', wrapWidth: 60 }
     ],
     rows: dailyRows.map((row) => ({
       dia: row.dia,

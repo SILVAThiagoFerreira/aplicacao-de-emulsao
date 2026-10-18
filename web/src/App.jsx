@@ -975,7 +975,7 @@ function downloadCanvas(canvas, filename) {
 function renderReportCanvas(element) {
   const bounds = element.getBoundingClientRect();
   return html2canvas(element, {
-    backgroundColor: '#f7f8f9',
+    backgroundColor: '#ffffff',
     scale: Math.max(2, 1920 / Math.max(bounds.width, 1)),
     useCORS: true,
     logging: false
@@ -987,7 +987,7 @@ function fitReportCanvas(previewCanvas, fitTo) {
   canvas.width = fitTo.width;
   canvas.height = fitTo.height;
   const context = canvas.getContext('2d');
-  context.fillStyle = '#f7f8f9';
+  context.fillStyle = '#ffffff';
   context.fillRect(0, 0, fitTo.width, fitTo.height);
   // min mantém o relatório inteiro dentro do quadro; max cortava topo e base quando ele ficava mais alto que 16:9.
   const fitScale = Math.min(fitTo.width / previewCanvas.width, fitTo.height / previewCanvas.height);
@@ -1061,9 +1061,9 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
           <input type="date" value={selectedDate} min={dateBounds.start} max={dateBounds.end} onChange={(event) => onDateChange(event.target.value)} />
         </label>
         <div className="reportPreview" ref={reportRef}>
-          <div className="reportBrandLine"><span>US VALE VERDE</span></div>
           <div className="reportHeading">
-            <div><span className="reportKicker">Resumo operacional</span><h3>Aplicação de Emulsão</h3><p>{monthName}</p></div>
+            <div><h3>Aplicação de Emulsão</h3><p>{monthName}</p></div>
+            <img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" />
           </div>
           <div className="reportMetricPanel dailyReportMetrics">
             <div className="reportMetricItem"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
@@ -1269,9 +1269,9 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
 
         {selectedPlan && dailyRows.length ? (
           <div className="reportPreview planReportPreview" ref={reportRef}>
-            <div className="reportBrandLine"><span>US VALE VERDE</span></div>
             <div className="reportHeading">
-              <div><span className="reportKicker">Consolidação operacional</span><h3>{selectedPlan}</h3><p>Relatório de Aplicação por Plano · dias de carregamento</p></div>
+              <div><h3>{selectedPlan}</h3><p>Relatório de Aplicação por Plano · dias de carregamento</p></div>
+              <img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" />
             </div>
             <div className="reportMetricPanel planReportMetrics">
               <div className="reportMetricItem"><span>Período do plano</span><strong>{formatDate(firstDate)} — {formatDate(lastDate)}</strong></div>
@@ -1294,8 +1294,6 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
               <div className="planWaterfallGrid">
                 <PlanWaterfallChart
                   rows={combinedWaterfallRows}
-                  title="Emulsão aplicada (kg)"
-                  subtitle="Eixo em kg e milhares de kg"
                   ariaLabel={`Gráfico de cascata da emulsão aplicada em kg, com furos carregados no centro das barras, no plano ${selectedPlan}`}
                 />
               </div>
@@ -1662,24 +1660,23 @@ function DailyTrendHoverCard({ point }) {
   );
 }
 
-function PlanWaterfallChart({ rows, title, subtitle, ariaLabel }) {
+// Sem grade nem eixo Y: os valores ficam nas barras (data labels); o eixo X só tem uma linha de base.
+function PlanWaterfallChart({ rows, ariaLabel }) {
   return (
     <div className="planMetricChart">
-      <div className="planMetricChartHeader"><strong>{title}</strong><small>{subtitle}</small></div>
       <div className="reportWaterfallViewport" role="img" aria-label={ariaLabel}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 34, right: 22, bottom: 10, left: 12 }}>
-            <CartesianGrid vertical={false} stroke="#e4e8eb" strokeDasharray="3 3" />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 8 }}
               tickFormatter={formatPlanWaterfallTick}
-              axisLine={false}
+              axisLine={{ stroke: '#C4C7CC', strokeWidth: 0.75 }}
               tickLine={false}
               minTickGap={0}
               interval="preserveStartEnd"
             />
-            <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={formatAxisKg} width={56} />
+            <YAxis hide />
             <Tooltip content={<PlanWaterfallTooltip valueFormatter={formatKg} valueLabel="Emulsão aplicada" />} cursor={{ fill: 'rgba(56,66,75,.06)' }} />
             <Bar dataKey="base" stackId="waterfall" fill="transparent" stroke="transparent" isAnimationActive={false} legendType="none" />
             <Bar dataKey="value" name="Emulsão aplicada (kg)" stackId="waterfall" isAnimationActive={false}>
