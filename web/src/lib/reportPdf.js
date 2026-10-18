@@ -19,7 +19,8 @@ const COLOR = {
   body: [60, 70, 78],
   line: [216, 221, 225],
   softLine: [230, 233, 235],
-  grid: [200, 206, 211],
+  grid: [222, 226, 230],
+  hair: [236, 239, 241],
   panel: [247, 248, 249],
   zebra: [242, 244, 245],
   white: [255, 255, 255]
@@ -111,8 +112,7 @@ function createReportWriter({ title, runningTitle, footerTitle }) {
   const newPage = () => {
     pdf.addPage();
     write(fitText(runningTitle, CONTENT_WIDTH, { size: 7.5 }), MARGIN, MARGIN + 2, { size: 7.5, color: COLOR.muted });
-    rule(MARGIN, MARGIN + 5, RIGHT_EDGE, MARGIN + 5);
-    page.y = MARGIN + 11;
+    page.y = MARGIN + 10;
   };
 
   // Abre página nova quando `height` não cabe; devolve true nesse caso.
@@ -126,7 +126,6 @@ function createReportWriter({ title, runningTitle, footerTitle }) {
     const total = pdf.getNumberOfPages();
     for (let number = 1; number <= total; number += 1) {
       pdf.setPage(number);
-      rule(MARGIN, FOOTER_Y - 3, RIGHT_EDGE, FOOTER_Y - 3, { width: 0.2 });
       const pageLabel = `Página ${number} de ${total}`;
       const pageLabelWidth = textWidth(pageLabel, 7);
       write(fitText(footerTitle, CONTENT_WIDTH - pageLabelWidth - 6, { size: 7 }), MARGIN, FOOTER_Y, { size: 7, color: COLOR.muted });
@@ -139,10 +138,10 @@ function createReportWriter({ title, runningTitle, footerTitle }) {
 }
 
 function drawMasthead(writer, { kicker, title, subtitle }) {
-  const { page, write, rule, splitLines, writeLines, textWidth } = writer;
-  write('US VALE VERDE', MARGIN, page.y + 3, { size: 8, color: COLOR.ink, spacing: 0.2 });
-  rule(MARGIN, page.y + 6.5, RIGHT_EDGE, page.y + 6.5, { color: COLOR.red, width: 0.9 });
-  page.y += 13;
+  const { page, write, box, splitLines, writeLines, textWidth } = writer;
+  write('US VALE VERDE', MARGIN, page.y + 3, { size: 8, bold: true, color: COLOR.ink, spacing: 0.2 });
+  box(MARGIN, page.y + 6, 12, 0.9, { fill: COLOR.red });
+  page.y += 11;
   write(kicker, MARGIN, page.y + 2.5, { size: 7.5, bold: true, color: COLOR.red, spacing: 0.25 });
   page.y += 6;
   // Nome longo: diminui a fonte até caber em no máximo duas linhas, sem estourar a margem.
@@ -164,11 +163,10 @@ function drawKpiPanel(writer, items) {
   const { page, box, rule, splitLines, writeLines, write, ensure } = writer;
   const height = 22;
   ensure(height);
-  box(MARGIN, page.y, CONTENT_WIDTH, height, { stroke: COLOR.line, radius: 2 });
+  box(MARGIN, page.y, CONTENT_WIDTH, height, { fill: COLOR.panel, radius: 2 });
   const cellWidth = CONTENT_WIDTH / items.length;
   items.forEach((item, index) => {
     const x = MARGIN + index * cellWidth;
-    if (index > 0) rule(x, page.y + 3, x, page.y + height - 3, { color: COLOR.softLine, width: 0.2 });
     write(item.label, x + 4, page.y + 6.5, { size: 7, color: COLOR.muted });
     const lines = splitLines(item.value, cellWidth - 8, { size: item.size, bold: true });
     writeLines(lines, x + 4, page.y + 13.5, { size: item.size, bold: true, color: item.red ? COLOR.red : COLOR.ink });
@@ -179,8 +177,7 @@ function drawKpiPanel(writer, items) {
 function drawSectionHeader(writer, kicker, aside = '') {
   const { page, write, rule, ensure } = writer;
   ensure(9);
-  rule(MARGIN, page.y, RIGHT_EDGE, page.y);
-  write(kicker, MARGIN, page.y + 5, { size: 7.5, bold: true, color: COLOR.red, spacing: 0.25 });
+  write(kicker, MARGIN, page.y + 5, { size: 8, bold: true, color: COLOR.ink, spacing: 0.15 });
   if (aside) write(aside, RIGHT_EDGE, page.y + 5, { size: 7, color: COLOR.muted, align: 'right' });
   page.y += 9;
 }
@@ -191,8 +188,8 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
   const { page, write, rule, box, ensure, splitLines, writeLines } = writer;
 
   const drawHeader = () => {
-    columns.forEach((column) => write(column.label, column.x, page.y + 4.6, { size: TABLE_TEXT_SIZE, bold: true, align: column.align }));
-    rule(MARGIN, page.y + 7, RIGHT_EDGE, page.y + 7, { color: COLOR.red, width: 0.4 });
+    columns.forEach((column) => write(column.label.toLocaleUpperCase('pt-BR'), column.x, page.y + 4.6, { size: 6.8, bold: true, color: COLOR.muted, spacing: 0.1, align: column.align }));
+    rule(MARGIN, page.y + 7, RIGHT_EDGE, page.y + 7, { color: COLOR.line, width: 0.2 });
     page.y += 8.5;
   };
 
@@ -217,19 +214,18 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
     const cells = measure(row);
     const height = heightOf(cells);
     if (ensure(height)) drawHeader();
-    if (index % 2 === 1) box(MARGIN, page.y, CONTENT_WIDTH, height, { fill: COLOR.zebra });
     columns.forEach((column, columnIndex) => {
       writeLines(cells[columnIndex], column.x, page.y + 4.2, { size: TABLE_TEXT_SIZE, bold: column.bold, align: column.align });
     });
     page.y += height;
-    rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.softLine, width: 0.2 });
+    rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.hair, width: 0.15 });
   });
 
   if (total && rows.length) {
     const cells = measure(total);
     const height = heightOf(cells);
     if (ensure(height)) drawHeader();
-    rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.red, width: 0.4 });
+    box(MARGIN, page.y, CONTENT_WIDTH, height, { fill: COLOR.panel });
     columns.forEach((column, columnIndex) => {
       writeLines(cells[columnIndex], column.x, page.y + 4.6, { size: TABLE_TEXT_SIZE, bold: true, align: column.align });
     });
@@ -249,7 +245,7 @@ function drawWaterfallChart(writer, rows) {
   drawSectionHeader(writer, 'GRÁFICO DE CASCATA', dense ? 'Emulsão acima da barra · furos na tabela' : 'Emulsão acima da barra · furos no centro');
 
   const top = page.y;
-  box(MARGIN, top, CONTENT_WIDTH, cardHeight, { stroke: COLOR.line, fill: COLOR.white });
+  box(MARGIN, top, CONTENT_WIDTH, cardHeight, { fill: COLOR.panel, radius: 2 });
   write('Emulsão aplicada (kg)', MARGIN + 4, top + 7, { size: 9.5, bold: true });
   write('Eixo em kg e milhares de kg', RIGHT_EDGE - 4, top + 7, { size: 7, color: COLOR.muted, align: 'right' });
 
@@ -271,7 +267,7 @@ function drawWaterfallChart(writer, rows) {
     if (index > 0) dashed(plotLeft, y, plotRight, y);
     write(formatAxisKg(tick), plotLeft - 2.5, y + 1.2, { size: 6, color: COLOR.muted, align: 'right' });
   }
-  rule(plotLeft, plotBottom, plotRight, plotBottom, { color: COLOR.grid, width: 0.25 });
+  rule(plotLeft, plotBottom, plotRight, plotBottom, { color: COLOR.line, width: 0.2 });
 
   const barWidth = Math.min(slot * 0.6, 16);
   const labelSize = dense ? 5 : 6.5;

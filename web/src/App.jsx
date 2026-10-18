@@ -448,7 +448,7 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
                   <stop offset="95%" stopColor="#b00020" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="1 5" vertical={false} />
+              <CartesianGrid stroke="#e4e8eb" strokeDasharray="1 5" vertical={false} />
               <XAxis dataKey="mes" padding={{ left: 12, right: 12 }} minTickGap={14} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} padding={{ top: 12, bottom: 0 }} />
               <Tooltip
@@ -480,7 +480,7 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
           <div className="chartViewport chartViewportUmb">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyByUmb} margin={{ top: 12, right: 20, bottom: 12, left: 0 }}>
-              <CartesianGrid strokeDasharray="1 5" vertical={false} />
+              <CartesianGrid stroke="#e4e8eb" strokeDasharray="1 5" vertical={false} />
               <XAxis dataKey="umb" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
               <Tooltip
@@ -517,7 +517,7 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
           <div className="chartViewport chartViewportProjection">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart layout="vertical" data={projection} margin={{ top: 10, right: 58, bottom: 10, left: 12 }}>
-              <CartesianGrid strokeDasharray="1 5" horizontal={false} />
+              <CartesianGrid stroke="#e4e8eb" strokeDasharray="1 5" horizontal={false} />
               <XAxis type="number" tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={70} />
               <Tooltip content={<ChartTooltip valueFormatter={(v) => formatKg(v)} />} />
@@ -881,7 +881,7 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
           <div>
             <span className="eyebrow">Exportação rápida</span>
             <h2 id="report-daily-title">Relatório de Aplicação Diária</h2>
-            <p>Escolha a data de referência para consolidar o mês até aquele dia.</p>
+            <p>Consolida o mês até a data escolhida.</p>
           </div>
           <div className="reportHeaderActions">
             <button className="reportBackButton" type="button" onClick={onBack}><ArrowLeft size={15} /> Relatórios</button>
@@ -1443,7 +1443,7 @@ function DailyTrendChart({ data, ticks }) {
                 <stop offset="95%" stopColor="#e30613" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="1 5" vertical={false} />
+            <CartesianGrid stroke="#e4e8eb" strokeDasharray="1 5" vertical={false} />
             <XAxis dataKey="dia" ticks={ticks} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={8} />
             <YAxis tickFormatter={formatMil} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} width={68} />
             <Tooltip
@@ -1497,7 +1497,7 @@ function PlanWaterfallChart({ rows, title, subtitle, ariaLabel }) {
       <div className="reportWaterfallViewport" role="img" aria-label={ariaLabel}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={rows} margin={{ top: 34, right: 22, bottom: 10, left: 12 }}>
-            <CartesianGrid vertical={false} stroke="#dfe3e7" strokeDasharray="3 3" />
+            <CartesianGrid vertical={false} stroke="#e4e8eb" strokeDasharray="3 3" />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 8 }}
