@@ -1065,6 +1065,7 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
             <div><h3>Aplicação de Emulsão</h3><p>Resumo de {monthName} até a data de referência, {formatDate(selectedDate) || '-'}.</p></div>
             <div className="reportLogos"><img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" /><img className="reportLogo reportLogoClient" src="assets/Mineracao Vale Verde.png" alt="Mineração Vale Verde" /></div>
           </div>
+          <div className="dailyReportBody">
           <div className="reportTitleLine">Indicadores de aplicação no mês e no dia:</div>
           <div className="reportMetricPanel dailyReportMetrics">
             <div className="reportMetricItem"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
@@ -1091,6 +1092,7 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
             </div>
           </div>
           <div className="reportJustificationBlock"><span className="reportSectionLabel">Justificativas da data</span><JustificationList justifications={dayJustifications} emptyText="Nenhuma justificativa registrada para esta data." /></div>
+          </div>
           <ReportFooter note="os valores de Aplicado (Month to date) somam a emulsão aplicada do primeiro dia do mês até a data de referência; Aplicado/Dia e Furos Carregados/Dia consideram apenas a data de referência, detalhada por plano." />
          </div>
          {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}

@@ -160,7 +160,7 @@ function drawMasthead(writer, { title, subtitle }) {
   // Título em caixa alta, vermelho e sem negrito; cabe em no máximo duas linhas, reduzindo a fonte se preciso.
   const upper = title.toLocaleUpperCase('pt-BR');
   let titleFit = null;
-  for (const size of [28, 22, 17, 13]) {
+  for (const size of [22, 18, 15, 12]) {
     const lines = splitLines(upper, CONTENT_WIDTH - 90, { size });
     if (lines.length <= 2 && lines.every((line) => textWidth(line, size) <= CONTENT_WIDTH - 90)) {
       titleFit = { size, lines };
@@ -169,7 +169,7 @@ function drawMasthead(writer, { title, subtitle }) {
   }
   if (!titleFit) titleFit = { size: 12, lines: splitLines(upper, CONTENT_WIDTH, { size: 12 }).slice(0, 2) };
   page.y += writeLines(titleFit.lines, MARGIN, page.y + 6, { size: titleFit.size, color: COLOR.red }) + 1.5;
-  write(subtitle, MARGIN, page.y + 3, { size: 11, color: COLOR.body });
+  write(subtitle, MARGIN, page.y + 3, { size: 9, color: COLOR.body });
   page.y += 12;
 }
 
@@ -192,7 +192,7 @@ function drawKpiPanel(writer, items) {
 function drawSectionHeader(writer, kicker, aside = '') {
   const { page, write, rule, ensure } = writer;
   ensure(10);
-  write(kicker, MARGIN, page.y + 4, { size: 11, color: COLOR.body });
+  write(kicker, MARGIN, page.y + 4, { size: 9, color: COLOR.body });
   if (aside) write(aside, RIGHT_EDGE, page.y + 4, { size: 7.5, color: COLOR.gray, align: 'right' });
   rule(MARGIN, page.y + 6.5, RIGHT_EDGE, page.y + 6.5, { color: COLOR.line, width: 0.2 });
   page.y += 10;
@@ -327,7 +327,9 @@ function drawNote(writer, text) {
   page.y += lines.length * lineHeight(size) + 4;
 }
 
-export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, generatedAt = new Date(), logos = null }) {
+// Monta o relatório diário. `gap` desloca o conteúdo para baixo (centralização vertical) e `noteTop`
+// fixa a nota "Atenção" logo acima do rodapé. Sem `noteTop`, a nota segue o conteúdo.
+function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, generatedAt, logos }, { gap = 0, noteTop = null } = {}) {
   const reportDate = formatDate(selectedDate);
   const writer = createReportWriter({
     title: `Relatório de Aplicação Diária ${reportDate}`,
@@ -339,6 +341,8 @@ export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, day
   const monthLabel = capitalize(new Date(`${selectedDate}T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }));
 
   drawMasthead(writer, { title: 'Aplicação de Emulsão', subtitle: monthLabel });
+  const bodyStart = page.y;
+  page.y += gap;
 
   drawKpiPanel(writer, [
     { label: 'Data de referência', value: reportDate, size: 12 },
@@ -391,8 +395,22 @@ export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, day
     page.y += 2;
   });
 
+  const bodyEnd = page.y;
+  if (noteTop !== null) page.y = noteTop;
+  const noteStart = page.y;
   drawNote(writer, 'os valores de Aplicado (Month to date) somam a emulsão aplicada do primeiro dia do mês até a data de referência; Aplicado/Dia e Furos Carregados/Dia consideram apenas a data de referência, detalhada por plano.');
-  return writer.finish();
+  return { writer, bodyStart, bodyEnd, noteStart, noteEnd: page.y };
+}
+
+export function createDailyReportPdf(args) {
+  // Passagem de medição: descobre a altura do conteúdo e da nota para centralizar o bloco entre cabeçalho e nota.
+  const probe = buildDailyReport(args);
+  const bodyHeight = probe.bodyEnd - probe.bodyStart;
+  const noteHeight = probe.noteEnd - probe.noteStart;
+  const noteTop = CONTENT_BOTTOM - noteHeight;
+  const free = noteTop - probe.bodyStart - bodyHeight;
+  const fits = probe.writer.pdf.getNumberOfPages() === 1 && free > 0;
+  return buildDailyReport(args, { gap: fits ? free / 2 : 0, noteTop: fits ? noteTop : null }).writer.finish();
 }
 
 export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, lastDate, waterfallRows, generatedAt = new Date(), logos = null }) {
