@@ -14,7 +14,6 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
-import { Home } from 'lucide-react';
 import { ArrowLeft, BarChart3, CalendarDays, Download, FileSpreadsheet, FileText, ImageDown, RefreshCw, Search, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
@@ -245,9 +244,8 @@ function App() {
   return (
     <div className="appShell">
       <Topbar />
-      <Sidebar route={route} online={online} dataSource={dataSource} />
       <main className="mainCanvas">
-        <Dashboard cache={cache} status={status} config={config} dataSource={dataSource} onRefresh={refreshDashboard} refreshing={refreshing} />
+        <Dashboard cache={cache} status={status} config={config} dataSource={dataSource} onRefresh={refreshDashboard} refreshing={refreshing} route={route} online={online} />
       </main>
     </div>
   );
@@ -265,7 +263,118 @@ function Topbar() {
   );
 }
 
-function Sidebar({ route, online, dataSource }) {
+const SIDEBAR_ICON_PROPS = {
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.7,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  'aria-hidden': 'true',
+  focusable: 'false'
+};
+
+// Ícones desenhados para o painel: traço uniforme de 1.7 px, cantos arredondados.
+const SidebarIcons = {
+  home: (
+    <svg {...SIDEBAR_ICON_PROPS}>
+      <path d="M4 10.5 12 4l8 6.5" />
+      <path d="M6 9.5V20h12V9.5" />
+      <path d="M10 20v-5h4v5" />
+      <path d="M12 7.2c1.1 1.3 1.6 2.2 1.6 3a1.6 1.6 0 0 1-3.2 0c0-.8.5-1.7 1.6-3z" />
+    </svg>
+  ),
+  filter: (
+    <svg {...SIDEBAR_ICON_PROPS}>
+      <path d="M3.5 5h17l-6.4 7.6V19l-4.2 2v-8.4z" />
+    </svg>
+  ),
+  clearFilter: (
+    <svg {...SIDEBAR_ICON_PROPS}>
+      <path d="M3.5 5h11.5l-4.6 5.5V16" />
+      <path d="m15.5 13.5 5 5" />
+      <path d="m20.5 13.5-5 5" />
+    </svg>
+  ),
+  refresh: (
+    <svg {...SIDEBAR_ICON_PROPS}>
+      <path d="M19.8 12a7.8 7.8 0 0 1-13.6 5.2" />
+      <path d="M4.2 12a7.8 7.8 0 0 1 13.6-5.2" />
+      <path d="M18.6 2.8v4.2h-4.2" />
+      <path d="M5.4 21.2v-4.2h4.2" />
+    </svg>
+  ),
+  report: (
+    <svg {...SIDEBAR_ICON_PROPS}>
+      <path d="M13.5 3H6.8A1.8 1.8 0 0 0 5 4.8v14.4A1.8 1.8 0 0 0 6.8 21h10.4a1.8 1.8 0 0 0 1.8-1.8V7.5z" />
+      <path d="M13.5 3v4.5H18" />
+      <path d="M9 17.5v-3" />
+      <path d="M12 17.5v-5.5" />
+      <path d="M15 17.5v-2" />
+    </svg>
+  ),
+  database: (
+    <svg {...SIDEBAR_ICON_PROPS}>
+      <ellipse cx="9.5" cy="5.5" rx="6" ry="2.5" />
+      <path d="M3.5 5.5v10c0 1.4 2.7 2.5 6 2.5" />
+      <path d="M15.5 5.5v3.2" />
+      <path d="M3.5 10.5c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5" />
+      <path d="M17.5 14.2v6.3" />
+      <path d="m15 18 2.5 2.5L20 18" />
+    </svg>
+  ),
+  pit: (
+    <svg {...SIDEBAR_ICON_PROPS}>
+      <path d="M3 18.5 9 9l3 4.5 2.5-3.5L21 18.5z" />
+      <path d="M3 21h18" />
+    </svg>
+  )
+};
+
+function SideButton({ label, icon, active = false, pressed, disabled = false, onClick, href, download }) {
+  if (href) {
+    return (
+      <a
+        className={`sideButton ${active ? 'active' : ''}`}
+        href={href}
+        title={label}
+        aria-label={label}
+        download={download}
+        target={download ? '_blank' : undefined}
+        rel={download ? 'noopener noreferrer' : undefined}
+      >
+        {icon}
+      </a>
+    );
+  }
+  return (
+    <button
+      className={`sideButton ${active ? 'active' : ''}`}
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      aria-pressed={pressed}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function Sidebar({
+  route,
+  online,
+  dataSource,
+  filtersOpen,
+  onToggleFilters,
+  filtersActive,
+  onClearFilters,
+  refreshing,
+  onOpenRefresh,
+  onOpenReport,
+  workbookDownloadUrl
+}) {
   const connectionState = dataSource === 'connecting' ? 'isConnecting' : online ? 'isOnline' : 'isOffline';
   const connectionTitle = dataSource === 'firestore'
     ? 'Dados em tempo real'
@@ -278,7 +387,21 @@ function Sidebar({ route, online, dataSource }) {
         : 'Falha ao ler cache';
   return (
     <aside className="sidebar">
-      <a className={route === '#/' ? 'active' : ''} href="#/" title="Dashboard"><Home size={23} /></a>
+      <SideButton href="#/" label="Dashboard" icon={SidebarIcons.home} active={route === '#/'} />
+      <div className="sidebarGroup">
+        <SideButton label="Filtros" icon={SidebarIcons.filter} active={filtersOpen} pressed={filtersOpen} onClick={onToggleFilters} />
+        <SideButton label="Limpar filtros" icon={SidebarIcons.clearFilter} disabled={!filtersActive} onClick={onClearFilters} />
+      </div>
+      <div className="sidebarGroup">
+        <SideButton
+          label={refreshing ? 'Atualizando dados...' : 'Atualizar dados'}
+          icon={<span className={refreshing ? 'sideSpin' : undefined}>{SidebarIcons.refresh}</span>}
+          disabled={refreshing}
+          onClick={onOpenRefresh}
+        />
+        <SideButton label="Exportar relatório" icon={SidebarIcons.report} onClick={onOpenReport} />
+        <SideButton label="Baixar base de dados (Excel)" icon={SidebarIcons.database} href={workbookDownloadUrl} download="base-dados-emulsao.xlsx" />
+      </div>
       <span className={`connectionDot ${connectionState}`} title={connectionTitle} aria-label={connectionTitle} role="status" />
     </aside>
   );
@@ -297,7 +420,7 @@ function getDateTicks(rows) {
     .filter(Boolean);
 }
 
-function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing }) {
+function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing, route, online }) {
   const allRecords = cache?.records || [];
   const metas = cache?.metas || [];
   const allJustifications = cache?.justificativas || [];
@@ -315,6 +438,8 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
   }));
   const [reportType, setReportType] = useState(null);
   const [reportDate, setReportDate] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [refreshOpen, setRefreshOpen] = useState(false);
 
   const dateRange = useMemo(() => {
     const dates = allRecords.map((r) => r.data).filter(Boolean).sort();
@@ -366,6 +491,32 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
     });
   }, [dateRange.start, dateRange.end]);
 
+  const filtersActive = filters.poligono !== 'Todos' || filters.umb !== 'Todos' || filters.operador !== 'Todos' || filters.year !== 'Todos' || filters.month !== 'Todos' || filters.poligonoSearch !== '' || filters.startDate !== dateRange.start || filters.endDate !== dateRange.end;
+
+  // Painel de filtros fecha com segundo clique no botão, clique fora ou Esc.
+  useEffect(() => {
+    if (!filtersOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (event.target.closest?.('.sidebar, .filterFlyout')) return;
+      setFiltersOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setFiltersOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [filtersOpen]);
+
+  const closeRefresh = useCallback(() => {
+    if (!refreshing) setRefreshOpen(false);
+  }, [refreshing]);
+
+  const workbookDownloadUrl = getWorkbookDownloadUrl(config?.sourceUrl);
+
   const filteredRecords = useMemo(() => applyFilters(allRecords, filters), [allRecords, filters]);
   const filteredMetas = useMemo(() => applyMetaFilters(metas, filters), [metas, filters]);
   const filteredJustifications = useMemo(() => applyJustificationFilters(allJustifications, filters), [allJustifications, filters]);
@@ -411,29 +562,48 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
   }), [allRecords]);
 
   return (
+    <>
+    <Sidebar
+      route={route}
+      online={online}
+      dataSource={dataSource}
+      filtersOpen={filtersOpen}
+      onToggleFilters={() => setFiltersOpen((open) => !open)}
+      filtersActive={filtersActive}
+      onClearFilters={handleClearFilters}
+      refreshing={refreshing}
+      onOpenRefresh={() => setRefreshOpen(true)}
+      onOpenReport={openReport}
+      workbookDownloadUrl={workbookDownloadUrl}
+    />
+    <aside className={`filterFlyout ${filtersOpen ? 'isOpen' : ''}`} aria-label="Filtros">
+      <div className="filterFlyoutHeader">
+        <div>
+          <span className="eyebrow">Painel</span>
+          <h2>Filtros</h2>
+        </div>
+        <button className="iconButton" type="button" onClick={() => setFiltersOpen(false)} aria-label="Fechar filtros">
+          <X size={20} />
+        </button>
+      </div>
+      <FilterPanel
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        options={options}
+        dateRange={dateRange}
+      />
+    </aside>
     <div className="dashboardGrid">
       <section className="leftPanel">
         <DailyPanel rows={dailyRows} total={total} />
-        <FilterPanel
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onClear={handleClearFilters}
-          options={options}
-          dateRange={dateRange}
-        />
         <JustificationsPanel justifications={filteredJustifications} />
       </section>
       <section className="rightPanel">
         <StatusStrip
-          cache={cache}
-          status={status}
-          config={config}
-          dataSource={dataSource}
           total={total}
           latestApplication={latestApplication}
-          onOpenReport={openReport}
-          onRefresh={onRefresh}
-          refreshing={refreshing}
+          status={status}
+          cache={cache}
         />
 
         <DailyTrendChart data={dailyTrend} ticks={dailyTicks} />
@@ -572,6 +742,10 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing })
         />
       ) : null}
     </div>
+    {refreshOpen ? (
+      <RefreshDialog onRefresh={onRefresh} refreshing={refreshing} onClose={closeRefresh} />
+    ) : null}
+    </>
   );
 }
 
@@ -595,41 +769,44 @@ function getWorkbookDownloadUrl(sourceUrl) {
   }
 }
 
-function StatusStrip({ cache, status, config, dataSource, total, latestApplication, onOpenReport, onRefresh, refreshing }) {
-  const [refreshOpen, setRefreshOpen] = useState(false);
+function StatusStrip({ total, latestApplication, status, cache }) {
+  const failed = status?.state === 'error';
+  return (
+    <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
+      <div>
+        <span className="label">Registros filtrados</span>
+        <strong>{total.registros.toLocaleString('pt-BR')}</strong>
+      </div>
+      <div>
+        <span className="label">Ultima aplicacao</span>
+        <strong>{formatDate(latestApplication) || '-'}</strong>
+      </div>
+      <div>
+        <span className="label">Ultima atualizacao</span>
+        <strong>{readTimestamp(cache?.updatedAt) || readTimestamp(status?.lastSuccessAt) || 'Aguardando refresh'}</strong>
+        {failed && status?.lastError ? <small className="statusError" title={status.lastError}>Falha na última verificação</small> : null}
+      </div>
+    </div>
+  );
+}
+
+function RefreshDialog({ onRefresh, refreshing, onClose }) {
   const [adminPassword, setAdminPassword] = useState('');
   const [refreshError, setRefreshError] = useState('');
   const [refreshSuccess, setRefreshSuccess] = useState('');
   const passwordInputRef = useRef(null);
-  const failed = status?.state === 'error';
-  const workbookDownloadUrl = getWorkbookDownloadUrl(config?.sourceUrl);
 
   useEffect(() => {
-    if (!refreshOpen) return undefined;
     const focusTimer = window.setTimeout(() => passwordInputRef.current?.focus(), 0);
     const onKeyDown = (event) => {
-      if (event.key === 'Escape' && !refreshing) setRefreshOpen(false);
+      if (event.key === 'Escape' && !refreshing) onClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.clearTimeout(focusTimer);
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [refreshOpen, refreshing]);
-
-  const openRefresh = () => {
-    setAdminPassword('');
-    setRefreshError('');
-    setRefreshSuccess('');
-    setRefreshOpen(true);
-  };
-
-  const closeRefresh = () => {
-    if (refreshing) return;
-    setRefreshOpen(false);
-    setAdminPassword('');
-    setRefreshError('');
-  };
+  }, [refreshing, onClose]);
 
   const submitRefresh = async (event) => {
     event.preventDefault();
@@ -652,111 +829,57 @@ function StatusStrip({ cache, status, config, dataSource, total, latestApplicati
     }
   };
 
-  const syncLabel = dataSource === 'direct-sheet'
-      ? 'Planilha · agora'
-      : dataSource === 'static-error'
-        ? 'Indisponível'
-        : 'Cache Pages';
-  const syncTitle = dataSource === 'direct-sheet'
-    ? 'A planilha foi lida diretamente no Google Sheets e os dados desta tela foram atualizados agora.'
-    : 'O dashboard está usando o cache estático publicado no GitHub Pages.';
   return (
-    <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
-      <div>
-        <span className="label">Registros filtrados</span>
-        <strong>{total.registros.toLocaleString('pt-BR')}</strong>
-      </div>
-      <div>
-        <span className="label">Ultima aplicacao</span>
-        <strong>{formatDate(latestApplication) || '-'}</strong>
-      </div>
-      <div>
-        <span className="label">Ultima atualizacao</span>
-        <strong>{readTimestamp(cache?.updatedAt) || readTimestamp(status?.lastSuccessAt) || 'Aguardando refresh'}</strong>
-      </div>
-      <div>
-        <span className="label">Fonte de dados</span>
-        <strong title={syncTitle}>{syncLabel}</strong>
-        {failed && status?.lastError ? <small className="statusError" title={status.lastError}>Falha na última verificação</small> : null}
-      </div>
-      <button
-        className="refreshButton"
-        onClick={openRefresh}
-        type="button"
-        disabled={refreshing}
-        title="Ler a planilha na nuvem e atualizar o dashboard"
-      >
-        <RefreshCw size={16} className={refreshing ? 'refreshIcon spin' : 'refreshIcon'} />
-        {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
-      </button>
-      <button className="reportButton" onClick={onOpenReport} type="button">
-        <ImageDown size={16} />
-        Exportar relatório
-      </button>
-      <a
-        className="dataButton"
-        href={workbookDownloadUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        download="base-dados-emulsao.xlsx"
-        aria-label="Baixar Base de Dados em Excel"
-      >
-        <FileSpreadsheet size={16} />
-        Baixar Base de Dados
-      </a>
-      {refreshOpen ? (
-        <div
-          className="refreshOverlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="refresh-title"
-          onClick={(event) => {
-            if (event.target === event.currentTarget && !refreshing) closeRefresh();
-          }}
-        >
-          <form className="refreshDialog" onSubmit={submitRefresh}>
-            <div className="refreshDialogHeader">
-              <div>
-                    <span className="eyebrow">Leitura direta da nuvem</span>
-                <h2 id="refresh-title">Atualizar Dados</h2>
-              </div>
-              <button className="iconButton" type="button" onClick={closeRefresh} disabled={refreshing} aria-label="Fechar atualização">
-                <X size={20} />
-              </button>
-            </div>
-            <p className="refreshLead">
-              A planilha será lida diretamente do Google Sheets. Depois da confirmação, os dados desta tela são atualizados na hora, sem depender do seu computador ou do n8n.
-            </p>
-            <label className="refreshPasswordField">
-              <span>Senha administrativa</span>
-              <input
-                ref={passwordInputRef}
-                type="password"
-                value={adminPassword}
-                onChange={(event) => setAdminPassword(event.target.value)}
-                autoComplete="off"
-                spellCheck="false"
-                placeholder="Digite a senha administrativa"
-                disabled={refreshing || Boolean(refreshSuccess)}
-              />
-            </label>
-            <p className="refreshHint">A senha é usada somente como confirmação desta solicitação. Ela não é enviada nem salva no navegador, no código ou no GitHub.</p>
-            {refreshError ? <div className="refreshFeedback error" role="alert">{refreshError}</div> : null}
-            {refreshSuccess ? <div className="refreshFeedback success" role="status">{refreshSuccess} O cache público será republicado automaticamente pelo GitHub Actions.</div> : null}
-            <div className="refreshActions">
-              <button className="secondaryButton" type="button" onClick={closeRefresh} disabled={refreshing}>
-                {refreshSuccess ? 'Fechar' : 'Cancelar'}
-              </button>
-              {!refreshSuccess ? (
-                <button className="primaryButton" type="submit" disabled={refreshing}>
-                  <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
-                  {refreshing ? 'Lendo planilha...' : 'Confirmar atualização'}
-                </button>
-              ) : null}
-            </div>
-          </form>
+    <div
+      className="refreshOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="refresh-title"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !refreshing) onClose();
+      }}
+    >
+      <form className="refreshDialog" onSubmit={submitRefresh}>
+        <div className="refreshDialogHeader">
+          <div>
+            <span className="eyebrow">Leitura direta da nuvem</span>
+            <h2 id="refresh-title">Atualizar Dados</h2>
+          </div>
+          <button className="iconButton" type="button" onClick={onClose} disabled={refreshing} aria-label="Fechar atualização">
+            <X size={20} />
+          </button>
         </div>
-      ) : null}
+        <p className="refreshLead">
+          A planilha será lida diretamente do Google Sheets. Depois da confirmação, os dados desta tela são atualizados na hora, sem depender do seu computador ou do n8n.
+        </p>
+        <label className="refreshPasswordField">
+          <span>Senha administrativa</span>
+          <input
+            ref={passwordInputRef}
+            type="password"
+            value={adminPassword}
+            onChange={(event) => setAdminPassword(event.target.value)}
+            autoComplete="off"
+            spellCheck="false"
+            placeholder="Digite a senha administrativa"
+            disabled={refreshing || Boolean(refreshSuccess)}
+          />
+        </label>
+        <p className="refreshHint">A senha é usada somente como confirmação desta solicitação. Ela não é enviada nem salva no navegador, no código ou no GitHub.</p>
+        {refreshError ? <div className="refreshFeedback error" role="alert">{refreshError}</div> : null}
+        {refreshSuccess ? <div className="refreshFeedback success" role="status">{refreshSuccess} O cache público será republicado automaticamente pelo GitHub Actions.</div> : null}
+        <div className="refreshActions">
+          <button className="secondaryButton" type="button" onClick={onClose} disabled={refreshing}>
+            {refreshSuccess ? 'Fechar' : 'Cancelar'}
+          </button>
+          {!refreshSuccess ? (
+            <button className="primaryButton" type="submit" disabled={refreshing}>
+              <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
+              {refreshing ? 'Lendo planilha...' : 'Confirmar atualização'}
+            </button>
+          ) : null}
+        </div>
+      </form>
     </div>
   );
 }
@@ -1228,9 +1351,7 @@ function JustificationList({ justifications, emptyText }) {
   );
 }
 
-function FilterPanel({ filters, onFilterChange, onClear, options, dateRange }) {
-  const hasActiveFilter = filters.poligono !== 'Todos' || filters.umb !== 'Todos' || filters.operador !== 'Todos' || filters.year !== 'Todos' || filters.month !== 'Todos' || filters.poligonoSearch !== '' || filters.startDate !== dateRange.start || filters.endDate !== dateRange.end;
-
+function FilterPanel({ filters, onFilterChange, options, dateRange }) {
   const handlePoligonoSearch = useCallback((e) => {
     onFilterChange('poligonoSearch', e.target.value);
   }, [onFilterChange]);
@@ -1334,9 +1455,6 @@ function FilterPanel({ filters, onFilterChange, onClear, options, dateRange }) {
         </div>
         <p className="filterHint">Filtros de data e ano/mes funcionam juntos.</p>
       </div>
-      <div className="panel filterBox clearFilterBox span2">
-        <button className="clearButton" onClick={onClear} disabled={!hasActiveFilter}>Limpar filtros</button>
-      </div>
     </div>
   );
 }
@@ -1346,7 +1464,6 @@ function PeriodSummary({ total, recordCount, dayCount, justificationCount, lates
     <section className="panel periodSummary" aria-label="Resumo do período">
       <div className="periodSummaryHeader">
         <div>
-          <span className="eyebrow">Leitura rápida</span>
           <h2>RESUMO DO PERÍODO</h2>
         </div>
         <span className="periodSummaryMark" aria-hidden="true">◎</span>
