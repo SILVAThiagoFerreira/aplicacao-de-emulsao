@@ -323,6 +323,17 @@ const SidebarIcons = {
       <path d="m15 18 2.5 2.5L20 18" />
     </svg>
   ),
+  calendar: (
+    <svg {...SIDEBAR_ICON_PROPS}>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+      <path d="M3.5 10h17" />
+      <path d="M8 3v4" />
+      <path d="M16 3v4" />
+      <path d="M8.5 14.5h.01" />
+      <path d="M12 14.5h.01" />
+      <path d="M15.5 14.5h.01" />
+    </svg>
+  ),
   pit: (
     <svg {...SIDEBAR_ICON_PROPS}>
       <path d="M3 18.5 9 9l3 4.5 2.5-3.5L21 18.5z" />
@@ -337,7 +348,7 @@ function SideButton({ label, icon, active = false, pressed, disabled = false, on
       <a
         className={`sideButton ${active ? 'active' : ''}`}
         href={href}
-        title={label}
+        data-tip={label}
         aria-label={label}
         download={download}
         target={download ? '_blank' : undefined}
@@ -353,7 +364,7 @@ function SideButton({ label, icon, active = false, pressed, disabled = false, on
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={label}
+      data-tip={label}
       aria-label={label}
       aria-pressed={pressed}
     >
@@ -370,6 +381,8 @@ function Sidebar({
   onToggleFilters,
   filtersActive,
   onClearFilters,
+  currentMonthActive,
+  onToggleCurrentMonth,
   refreshing,
   onOpenRefresh,
   onOpenReport,
@@ -390,6 +403,7 @@ function Sidebar({
       <SideButton href="#/" label="Dashboard" icon={SidebarIcons.home} active={route === '#/'} />
       <div className="sidebarGroup">
         <SideButton label="Filtros" icon={SidebarIcons.filter} active={filtersOpen} pressed={filtersOpen} onClick={onToggleFilters} />
+        <SideButton label="Mês atual" icon={SidebarIcons.calendar} active={currentMonthActive} pressed={currentMonthActive} onClick={onToggleCurrentMonth} />
         <SideButton label="Limpar filtros" icon={SidebarIcons.clearFilter} disabled={!filtersActive} onClick={onClearFilters} />
       </div>
       <div className="sidebarGroup">
@@ -491,6 +505,20 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing, r
     });
   }, [dateRange.start, dateRange.end]);
 
+  const monthRange = getCurrentMonthRange();
+  const currentMonthActive = filters.startDate === monthRange.start && filters.endDate === monthRange.end;
+  // Primeiro clique aplica o mês atual; segundo volta o período para o intervalo completo dos dados.
+  const toggleCurrentMonth = useCallback(() => {
+    setFilters((prev) => {
+      const monthActive = prev.startDate === monthRange.start && prev.endDate === monthRange.end;
+      return {
+        ...prev,
+        startDate: monthActive ? dateRange.start : monthRange.start,
+        endDate: monthActive ? dateRange.end : monthRange.end
+      };
+    });
+  }, [dateRange.start, dateRange.end, monthRange.start, monthRange.end]);
+
   const filtersActive = filters.poligono !== 'Todos' || filters.umb !== 'Todos' || filters.operador !== 'Todos' || filters.year !== 'Todos' || filters.month !== 'Todos' || filters.poligonoSearch !== '' || filters.startDate !== dateRange.start || filters.endDate !== dateRange.end;
 
   // Painel de filtros fecha com segundo clique no botão, clique fora ou Esc.
@@ -571,6 +599,8 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing, r
       onToggleFilters={() => setFiltersOpen((open) => !open)}
       filtersActive={filtersActive}
       onClearFilters={handleClearFilters}
+      currentMonthActive={currentMonthActive}
+      onToggleCurrentMonth={toggleCurrentMonth}
       refreshing={refreshing}
       onOpenRefresh={() => setRefreshOpen(true)}
       onOpenReport={openReport}
