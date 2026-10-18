@@ -63,3 +63,11 @@ export function monthLabelFromKey(key) {
   const month = Number(String(key || '').slice(5, 7));
   return monthNames[month - 1] || key;
 }
+
+// "Outubro 2026" a partir de uma data ISO (yyyy-mm-dd).
+export function formatMonthYear(value) {
+  const [year, month] = String(value || '').slice(0, 10).split('-');
+  const name = monthNames[Number(month) - 1];
+  if (!year || !name) return '';
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${year}`;
+}

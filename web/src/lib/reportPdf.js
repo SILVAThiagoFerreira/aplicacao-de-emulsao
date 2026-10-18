@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { formatCompactPlanKg, formatDate, formatKg, formatPlanWaterfallTick } from './format.js';
+import { formatCompactPlanKg, formatDate, formatKg, formatMonthYear, formatPlanWaterfallTick } from './format.js';
 
 // PDF montado diretamente com texto, retângulos e linhas (vetor). Nada é capturado da tela.
 // Estilo: fundo branco, título vermelho em caixa alta, subtítulo cinza, seções com régua fina.
@@ -173,26 +173,27 @@ function drawMasthead(writer, { title, subtitle }) {
   page.y += 12;
 }
 
-function drawKpiPanel(writer, items) {
+function drawKpiPanel(writer, items, { height = 20, valueSize = null } = {}) {
   const { page, rule, writeLines, write, ensure } = writer;
-  const height = 20;
   ensure(height);
   const cellWidth = CONTENT_WIDTH / items.length;
   items.forEach((item, index) => {
     const x = MARGIN + index * cellWidth;
     write(item.label, x, page.y + 4, { size: 7, color: COLOR.gray });
-    const lines = writer.splitLines(item.value, cellWidth - 4, { size: item.size, bold: true });
-    writeLines(lines, x, page.y + 11, { size: item.size, bold: true, color: item.red ? COLOR.red : COLOR.charcoal });
+    const size = valueSize ?? item.size;
+    const lines = writer.splitLines(item.value, cellWidth - 4, { size, bold: true });
+    writeLines(lines, x, page.y + 11, { size, bold: true, color: item.red ? COLOR.red : COLOR.charcoal });
+    if (item.sub) write(item.sub, x, page.y + 17, { size: 7.5, color: COLOR.gray });
   });
   rule(MARGIN, page.y + height - 2, RIGHT_EDGE, page.y + height - 2, { color: COLOR.line, width: 0.2 });
   page.y += height + 2;
 }
 
 // Régua fina clara sob o título da seção; o título em cinza, sem caixa.
-function drawSectionHeader(writer, kicker, aside = '') {
+function drawSectionHeader(writer, kicker, aside = '', { size = 9, bold = false } = {}) {
   const { page, write, rule, ensure } = writer;
   ensure(10);
-  write(kicker, MARGIN, page.y + 4, { size: 9, color: COLOR.body });
+  write(kicker, MARGIN, page.y + 4, { size, bold, color: COLOR.body });
   if (aside) write(aside, RIGHT_EDGE, page.y + 4, { size: 7.5, color: COLOR.gray, align: 'right' });
   rule(MARGIN, page.y + 6.5, RIGHT_EDGE, page.y + 6.5, { color: COLOR.line, width: 0.2 });
   page.y += 10;
@@ -200,7 +201,7 @@ function drawSectionHeader(writer, kicker, aside = '') {
 
 // Tabela que quebra entre linhas e repete o cabeçalho em cada página nova.
 // Com `section`, o título da seção nunca fica sozinho no fim de uma página.
-function drawTable(writer, { section = null, columns, rows, total = null, emptyText = '' }) {
+function drawTable(writer, { section = null, columns, rows, total = null, emptyText = '', textSize = TABLE_TEXT_SIZE }) {
   const { page, write, rule, ensure, splitLines, writeLines } = writer;
 
   const drawHeader = () => {
@@ -209,20 +210,20 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
     page.y += 8.5;
   };
 
-  const measure = (row) => columns.map((column) => splitLines(row[column.key] ?? '', column.wrapWidth, { size: TABLE_TEXT_SIZE, bold: column.bold }));
-  const heightOf = (cells) => Math.max(1, ...cells.map((lines) => lines.length)) * lineHeight(TABLE_TEXT_SIZE) + 3.4;
+  const measure = (row) => columns.map((column) => splitLines(row[column.key] ?? '', column.wrapWidth, { size: textSize, bold: column.bold }));
+  const heightOf = (cells) => Math.max(1, ...cells.map((lines) => lines.length)) * lineHeight(textSize) + 3.4;
 
   const firstRowHeight = rows.length ? heightOf(measure(rows[0])) : 9;
   if (section) {
     ensure(10 + 8.5 + firstRowHeight);
-    drawSectionHeader(writer, section.kicker, section.aside);
+    drawSectionHeader(writer, section.kicker, section.aside, { size: section.size, bold: section.bold });
   } else {
     ensure(8.5 + firstRowHeight);
   }
   drawHeader();
 
   if (!rows.length) {
-    write(emptyText, MARGIN, page.y + 4.5, { size: TABLE_TEXT_SIZE, color: COLOR.gray });
+    write(emptyText, MARGIN, page.y + 4.5, { size: textSize, color: COLOR.gray });
     page.y += 9;
   }
 
@@ -231,7 +232,7 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
     const height = heightOf(cells);
     if (ensure(height)) drawHeader();
     columns.forEach((column, columnIndex) => {
-      writeLines(cells[columnIndex], column.x, page.y + 4.2, { size: TABLE_TEXT_SIZE, bold: column.bold, align: column.align });
+      writeLines(cells[columnIndex], column.x, page.y + 4.2, { size: textSize, bold: column.bold, align: column.align });
     });
     page.y += height;
     rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.hair, width: 0.15 });
@@ -243,7 +244,7 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
     if (ensure(height)) drawHeader();
     rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.charcoal, width: 0.3 });
     columns.forEach((column, columnIndex) => {
-      writeLines(cells[columnIndex], column.x, page.y + 4.6, { size: TABLE_TEXT_SIZE, bold: true, align: column.align });
+      writeLines(cells[columnIndex], column.x, page.y + 4.6, { size: textSize, bold: true, align: column.align });
     });
     page.y += height + 2;
   }
@@ -327,9 +328,12 @@ function drawNote(writer, text) {
   page.y += lines.length * lineHeight(size) + 4;
 }
 
-// Monta o relatório diário. `gap` desloca o conteúdo para baixo (centralização vertical) e `noteTop`
-// fixa a nota "Atenção" logo acima do rodapé. Sem `noteTop`, a nota segue o conteúdo.
-function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, generatedAt, logos }, { gap = 0, noteTop = null } = {}) {
+// Relatório diário: cabeçalho, três indicadores, planos do dia, justificativas e uma linha de nota.
+// O bloco de conteúdo fica centralizado entre o cabeçalho e a nota (quando cabe em uma página).
+const DAILY_BODY_BOTTOM = CONTENT_BOTTOM;
+const DAILY_NOTE_Y = FOOTER_Y - 10;
+
+function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, generatedAt = new Date(), logos = null }, { gap = 0 } = {}) {
   const reportDate = formatDate(selectedDate);
   const writer = createReportWriter({
     title: `Relatório de Aplicação Diária ${reportDate}`,
@@ -338,27 +342,24 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
     logos
   });
   const { page, write, splitLines, writeLines, ensure, rule } = writer;
-  const monthLabel = capitalize(new Date(`${selectedDate}T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }));
 
-  drawMasthead(writer, { title: 'Aplicação de Emulsão', subtitle: monthLabel });
+  drawMasthead(writer, { title: 'Aplicação de Emulsão', subtitle: `${formatMonthYear(selectedDate)} · até ${reportDate}` });
   const bodyStart = page.y;
   page.y += gap;
 
   drawKpiPanel(writer, [
-    { label: 'Data de referência', value: reportDate, size: 12 },
-    { label: 'Aplicado (Month to date)', value: formatKg(monthTotal.emulsao), size: 12, red: true },
-    { label: 'Aplicado/Dia', value: formatKg(dayTotal.emulsao), size: 12 },
-    { label: 'Furos Carregados/Dia', value: dayTotal.furos.toLocaleString('pt-BR'), size: 12 }
-  ]);
+    { label: 'Aplicado no mês', value: formatKg(monthTotal.emulsao), red: true, sub: `${monthTotal.registros.toLocaleString('pt-BR')} registros no mês` },
+    { label: 'Aplicado no dia', value: formatKg(dayTotal.emulsao) },
+    { label: 'Furos no dia', value: dayTotal.furos.toLocaleString('pt-BR') }
+  ], { height: 26, valueSize: 20 });
 
-  ensure(16);
-  drawSectionHeader(writer, 'ACUMULADO MENSAL', `De ${formatDate(monthStart)} até ${reportDate}`);
-  write(`${monthTotal.registros.toLocaleString('pt-BR')} registros`, MARGIN, page.y + 4, { size: 12, bold: true });
-  page.y += 12;
-
+  page.y += 4;
   drawTable(writer, {
+    textSize: 9.5,
     section: {
-      kicker: 'APLICAÇÃO DETALHADA/DIA',
+      size: 11,
+      bold: true,
+      kicker: 'Planos do dia',
       aside: `${dayByPolygon.length.toLocaleString('pt-BR')} ${dayByPolygon.length === 1 ? 'plano' : 'planos'}`
     },
     columns: [
@@ -371,46 +372,42 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
       emulsao: formatKg(row.emulsao),
       furos: row.furos.toLocaleString('pt-BR')
     })),
-    emptyText: 'Nenhuma aplicação encontrada nesta data.'
+    emptyText: 'Nenhuma aplicação nesta data.'
   });
 
   const justificationBoxes = dayJustifications.filter((item) => item.motivo).map((item) => ({
     item,
-    lines: splitLines(item.motivo, CONTENT_WIDTH, { size: 8.5 })
+    lines: splitLines(item.motivo, CONTENT_WIDTH, { size: 9.5 })
   }));
-  const blockHeight = (lines) => 5 + lines.length * lineHeight(8.5) + 1.5;
+  const blockHeight = (lines) => 5.5 + lines.length * lineHeight(9.5) + 1.5;
   ensure(10 + (justificationBoxes.length ? blockHeight(justificationBoxes[0].lines) : 8));
-  drawSectionHeader(writer, 'JUSTIFICATIVAS DA DATA');
+  drawSectionHeader(writer, 'Justificativas', '', { size: 11, bold: true });
   if (!justificationBoxes.length) {
-    write('Nenhuma justificativa registrada para esta data.', MARGIN, page.y + 3, { size: 8.5, color: COLOR.gray });
+    write('Nenhuma.', MARGIN, page.y + 3, { size: 9.5, color: COLOR.gray });
     page.y += 8;
   }
   justificationBoxes.forEach(({ item, lines }) => {
     const height = blockHeight(lines);
     ensure(height + 2);
     write(`${formatDate(item.data)} · ${item.poligono || 'Geral'}`, MARGIN, page.y + 3.5, { size: 8, bold: true });
-    writeLines(lines, MARGIN, page.y + 8, { size: 8.5, color: COLOR.body });
+    writeLines(lines, MARGIN, page.y + 8, { size: 9.5, color: COLOR.body });
     page.y += height;
     rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.hair, width: 0.15 });
     page.y += 2;
   });
 
   const bodyEnd = page.y;
-  if (noteTop !== null) page.y = noteTop;
-  const noteStart = page.y;
-  drawNote(writer, 'os valores de Aplicado (Month to date) somam a emulsão aplicada do primeiro dia do mês até a data de referência; Aplicado/Dia e Furos Carregados/Dia consideram apenas a data de referência, detalhada por plano.');
-  return { writer, bodyStart, bodyEnd, noteStart, noteEnd: page.y };
+  write(`Mês: ${formatDate(monthStart)} até a data · Dia: somente a data, por plano.`, MARGIN, DAILY_NOTE_Y, { size: 7.5, color: COLOR.gray });
+  return { writer, bodyStart, bodyEnd };
 }
 
 export function createDailyReportPdf(args) {
-  // Passagem de medição: descobre a altura do conteúdo e da nota para centralizar o bloco entre cabeçalho e nota.
+  // Passagem de medição: descobre a altura do conteúdo e centraliza o bloco entre o cabeçalho e a nota.
   const probe = buildDailyReport(args);
   const bodyHeight = probe.bodyEnd - probe.bodyStart;
-  const noteHeight = probe.noteEnd - probe.noteStart;
-  const noteTop = CONTENT_BOTTOM - noteHeight;
-  const free = noteTop - probe.bodyStart - bodyHeight;
+  const free = DAILY_BODY_BOTTOM - probe.bodyStart - bodyHeight;
   const fits = probe.writer.pdf.getNumberOfPages() === 1 && free > 0;
-  return buildDailyReport(args, { gap: fits ? free / 2 : 0, noteTop: fits ? noteTop : null }).writer.finish();
+  return buildDailyReport(args, { gap: fits ? free / 2 : 0 }).writer.finish();
 }
 
 export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, lastDate, waterfallRows, generatedAt = new Date(), logos = null }) {

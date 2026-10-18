@@ -33,7 +33,7 @@ import {
   uniqueValues,
   uniquePlanValues
 } from './lib/aggregate.js';
-import { formatAxisKg, formatCompactPlanKg, formatDate, formatKg, formatMil, formatPlanWaterfallTick, monthNames } from './lib/format.js';
+import { formatAxisKg, formatCompactPlanKg, formatDate, formatKg, formatMil, formatMonthYear, formatPlanWaterfallTick, monthNames } from './lib/format.js';
 import { parseWorkbookToDashboard } from './lib/parseWorkbook.js';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true';
@@ -1018,7 +1018,6 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
   const monthTotal = totals(monthRecords);
   const dayTotal = totals(dayRecords);
   const dayByPolygon = buildDailyTable(dayRecords);
-  const monthName = selectedDate ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-';
 
   const exportReport = async (format) => {
     if (!selectedDate || (format === 'png' && !reportRef.current)) return;
@@ -1062,39 +1061,38 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
         </label>
         <div className="reportPreview dailyReportPreview" ref={reportRef}>
           <div className="reportHeading">
-            <div><h3>Aplicação de Emulsão</h3><p>Resumo de {monthName} até a data de referência, {formatDate(selectedDate) || '-'}.</p></div>
+            <div><h3>Aplicação de Emulsão</h3><p>{formatMonthYear(selectedDate)} · até {formatDate(selectedDate) || '-'}</p></div>
             <div className="reportLogos"><img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" /><img className="reportLogo reportLogoClient" src="assets/Mineracao Vale Verde.png" alt="Mineração Vale Verde" /></div>
           </div>
           <div className="dailyReportBody">
-          <div className="reportTitleLine">Indicadores de aplicação no mês e no dia:</div>
-          <div className="reportMetricPanel dailyReportMetrics">
-            <div className="reportMetricItem"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
-            <ReportKpi label="Aplicado (Month to date)" value={formatKg(monthTotal.emulsao)} tone="red" />
-            <ReportKpi label="Aplicado/Dia" value={formatKg(dayTotal.emulsao)} tone="gray" />
-            <ReportKpi label="Furos Carregados/Dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
-          </div>
-          <div className="reportDetailGrid">
-             <div><span className="reportSectionLabel">Acumulado mensal</span><strong>{monthTotal.registros.toLocaleString('pt-BR')} registros</strong><small>De {formatDate(monthStart)} até {formatDate(selectedDate)}</small></div>
-            <div className="reportDetailByPlan">
-              <span className="reportSectionLabel">Aplicação detalhada/dia</span>
+            <div className="reportMetricPanel dailyReportMetrics">
+              <ReportKpi label="Aplicado no mês" value={formatKg(monthTotal.emulsao)} tone="red" sub={`${monthTotal.registros.toLocaleString('pt-BR')} registros no mês`} />
+              <ReportKpi label="Aplicado no dia" value={formatKg(dayTotal.emulsao)} tone="gray" />
+              <ReportKpi label="Furos no dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
+            </div>
+            <section className="dailyReportSection">
+              <h4 className="dailyReportTitle">Planos do dia</h4>
               {dayByPolygon.length ? (
-                <div className="reportDetailTable" role="table" aria-label="Aplicação detalhada por plano">
-                  <div className="reportDetailTableHeader" role="row"><span role="columnheader">Plano</span><span role="columnheader">Emulsão</span><span role="columnheader">Furos</span></div>
+                <div className="dailyReportTable" role="table" aria-label="Planos do dia">
+                  <div className="dailyReportTableHeader" role="row"><span role="columnheader">Plano</span><span role="columnheader">Emulsão</span><span role="columnheader">Furos</span></div>
                   {dayByPolygon.map((row) => (
-                    <div className="reportDetailTableRow" role="row" key={`${row.data}-${row.poligono}`}>
+                    <div className="dailyReportTableRow" role="row" key={`${row.data}-${row.poligono}`}>
                       <span role="cell">{row.poligono || 'Sem plano'}</span>
-                      <strong role="cell">{formatKg(row.emulsao)}</strong>
-                      <strong role="cell">{row.furos.toLocaleString('pt-BR')}</strong>
+                      <span role="cell">{formatKg(row.emulsao)}</span>
+                      <span role="cell">{row.furos.toLocaleString('pt-BR')}</span>
                     </div>
                   ))}
                 </div>
-              ) : <small>Nenhuma aplicação encontrada nesta data.</small>}
-            </div>
+              ) : <p className="dailyReportEmpty">Nenhuma aplicação nesta data.</p>}
+            </section>
+            <section className="dailyReportSection">
+              <h4 className="dailyReportTitle">Justificativas</h4>
+              <JustificationList justifications={dayJustifications} emptyText="Nenhuma." />
+            </section>
           </div>
-          <div className="reportJustificationBlock"><span className="reportSectionLabel">Justificativas da data</span><JustificationList justifications={dayJustifications} emptyText="Nenhuma justificativa registrada para esta data." /></div>
-          </div>
-          <ReportFooter note="os valores de Aplicado (Month to date) somam a emulsão aplicada do primeiro dia do mês até a data de referência; Aplicado/Dia e Furos Carregados/Dia consideram apenas a data de referência, detalhada por plano." />
-         </div>
+          <p className="dailyReportNote">Mês: {formatDate(monthStart)} até a data · Dia: somente a data, por plano.</p>
+          <div className="reportFooter"><span>STRICTLY PRIVATE AND CONFIDENTIAL</span></div>
+        </div>
          {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}
          <div className="reportActions">
            <button className="secondaryButton" type="button" onClick={onClose}>Cancelar</button>
@@ -1334,8 +1332,8 @@ function ReportFooter({ note }) {
   );
 }
 
-function ReportKpi({ label, value, tone }) {
-  return <div className={`reportKpi ${tone}`}><span>{label}</span><strong>{value}</strong></div>;
+function ReportKpi({ label, value, tone, sub = null }) {
+  return <div className={`reportKpi ${tone}`}><span>{label}</span><strong>{value}</strong>{sub ? <small>{sub}</small> : null}</div>;
 }
 
 function DailyPanel({ rows, total }) {

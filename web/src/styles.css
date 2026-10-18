@@ -746,6 +746,22 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
 .reportNote strong { font-weight: 700; }
 .planReportPreview .reportNote { margin-top: 0; }
 .reportFooter { margin-top: 18px; padding-top: 9px; border-top: 2px solid var(--rp-dark); text-align: right; color: var(--rp-gray); font-size: 10.5px; letter-spacing: .02em; }
+/* Relatório diário enxuto: indicadores, planos e justificativas em blocos com a mesma régua. */
+.dailyReportBody { display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+.dailyReportPreview .reportMetricPanel { padding-bottom: 16px; border-bottom: 1px solid #e5e5e5; }
+.dailyReportPreview .reportMetricPanel strong { font-size: 22px; }
+.dailyReportPreview .reportMetricPanel small { display: block; margin-top: 4px; color: var(--rp-gray); font-size: 11px; }
+.dailyReportTitle { margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid #e5e5e5; color: var(--rp-dark); font-size: 13px; font-weight: 700; }
+.dailyReportTableHeader, .dailyReportTableRow { display: grid; grid-template-columns: minmax(0, 1fr) 180px 110px; column-gap: 16px; align-items: baseline; font-size: 12px; }
+.dailyReportTableHeader { padding: 6px 0; color: var(--rp-gray); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-bottom: 1px solid var(--rp-dark); }
+.dailyReportTableRow { padding: 7px 0; border-bottom: 1px solid #eee; }
+.dailyReportTableRow span:nth-child(n+2), .dailyReportTableHeader span:nth-child(n+2) { text-align: right; }
+.dailyReportTableRow span:nth-child(n+2) { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dailyReportEmpty, .dailyReportPreview .justificationEmpty { margin: 0; padding: 6px 0; color: var(--rp-gray); font-size: 12px; }
+.dailyReportPreview .justificationList { display: block; margin-top: 0; max-height: none; }
+.dailyReportPreview .justificationItem { padding: 6px 0; border-left: 0; border-bottom: 1px solid #eee; background: none; }
+.dailyReportPreview .justificationItem p { margin-top: 2px; font-size: 12px; }
+.dailyReportNote { margin: 14px 0 0; color: var(--rp-gray); font-size: 11px; }
 @media (max-width: 720px) {
   .reportPreview { padding: 18px 16px; }
   .dailyReportPreview { aspect-ratio: auto; }
