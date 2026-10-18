@@ -168,11 +168,36 @@ button { cursor: pointer; }
 .dashboardGrid {
   display: grid;
   grid-template-columns: minmax(0, 36fr) minmax(0, 64fr);
-  min-height: calc(100vh - 54px);
+  align-items: start;
   padding: 14px 20px 18px 22px;
   gap: 16px;
 }
 .leftPanel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.topSearchBar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 14px 20px 0 22px;
+  padding: 14px 16px;
+  background: #fff;
+  border-left: 4px solid var(--enaex-red);
+  box-shadow: 0 1px 3px rgba(56,66,75,0.06);
+}
+.topSearchField { flex: 1 1 auto; min-width: 0; display: grid; gap: 6px; }
+.topSearchLabel { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.planSearchInput input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #d7dce0;
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+  outline: none;
+}
+.planSearchInput input:focus { border-color: var(--enaex-red); box-shadow: 0 0 0 3px rgba(226, 6, 19, .1); }
+.topSearchClear { min-height: 44px; flex: 0 0 auto; }
+.periodSummarySub { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
 .periodSummary { grid-column: 1 / -1; }
 .rightPanel {
   display: grid;
@@ -187,7 +212,7 @@ button { cursor: pointer; }
   border: 0;
   box-shadow: 0 1px 3px rgba(56,66,75,0.06);
 }
-.dailyPanel { padding: 12px 14px 8px; min-height: 310px; }
+.dailyPanel { padding: 12px 14px 8px; }
 h2, h3 { margin: 0; }
 .tableHeader {
   display: flex;
@@ -253,7 +278,6 @@ tfoot td { font-weight: 750; background: transparent; color: #26323d; border-top
   background:
     linear-gradient(135deg, rgba(56,66,75,.04), rgba(255,255,255,.92) 54%),
     var(--panel);
-  border-top: 3px solid var(--enaex-red);
 }
 .periodSummaryHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .periodSummaryHeader h2 { margin-top: 4px; font-size: 14px; letter-spacing: .02em; }
@@ -419,7 +443,7 @@ tfoot td { font-weight: 750; background: transparent; color: #26323d; border-top
 .reportDetailTableRow strong { margin: 0; color: var(--topbar); font-size: 11px; }
 .reportJustificationBlock { margin-top: 20px; }
 .reportJustificationBlock .justificationList { margin-top: 8px; max-height: none; }
-.justificationsPanel { padding: 12px 14px 14px; min-height: 190px; }
+.justificationsPanel { padding: 12px 14px 14px; }
 .justificationList { display: grid; gap: 8px; margin-top: 8px; max-height: 230px; overflow: auto; }
 .justificationItem { padding: 9px 10px; border-left: 3px solid var(--enaex-red); background: #f5f6f7; }
 .justificationMeta { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; color: var(--muted); font-size: 11px; }
@@ -642,6 +666,9 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .filterFlyout .dateRow { grid-template-columns: 1fr; }
 
   .dashboardGrid { padding: 10px; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .topSearchBar { flex-direction: column; align-items: stretch; margin: 10px 10px 0; padding: 12px; }
+  .topSearchClear { width: 100%; }
+  .periodSummaryFooter { display: flex; }
   .dashboardGrid > *, .leftPanel, .rightPanel { min-width: 0; max-width: 100%; }
   .periodSummaryGrid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .summaryMetric { min-height: 0; padding: 10px; }

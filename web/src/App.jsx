@@ -623,8 +623,31 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing, r
         dateRange={dateRange}
       />
     </aside>
+    <div className="topSearchBar" role="search">
+      <div className="topSearchField">
+        <span className="topSearchLabel">Buscar plano</span>
+        <PlanSearchInput
+          id="top-plan-suggestions"
+          value={filters.poligonoSearch}
+          onChange={(value) => handleFilterChange('poligonoSearch', value)}
+          options={options.poligonos}
+          placeholder="Digite o nome do plano para buscar..."
+        />
+      </div>
+      {filtersActive ? (
+        <button className="clearButton topSearchClear" type="button" onClick={handleClearFilters}>Limpar filtros</button>
+      ) : null}
+    </div>
     <div className="dashboardGrid">
       <section className="leftPanel">
+        <PeriodSummary
+          total={total}
+          recordCount={filteredRecords.length}
+          dayCount={applicationDays}
+          justificationCount={filteredJustifications.length}
+          latestApplication={latestApplication}
+          dateRange={filters}
+        />
         <DailyPanel rows={dailyRows} total={total} />
         <JustificationsPanel justifications={filteredJustifications} />
       </section>
@@ -738,14 +761,6 @@ function Dashboard({ cache, status, config, dataSource, onRefresh, refreshing, r
         </ChartCard>
 
       </section>
-      <PeriodSummary
-        total={total}
-        recordCount={filteredRecords.length}
-        dayCount={applicationDays}
-        justificationCount={filteredJustifications.length}
-        latestApplication={latestApplication}
-        dateRange={filters}
-      />
       {reportType === 'chooser' ? (
         <ReportChooser
           onSelect={setReportType}
@@ -1382,10 +1397,6 @@ function JustificationList({ justifications, emptyText }) {
 }
 
 function FilterPanel({ filters, onFilterChange, options, dateRange }) {
-  const handlePoligonoSearch = useCallback((e) => {
-    onFilterChange('poligonoSearch', e.target.value);
-  }, [onFilterChange]);
-
   const handlePoligono = useCallback((e) => {
     onFilterChange('poligono', e.target.value);
   }, [onFilterChange]);
@@ -1418,17 +1429,12 @@ function FilterPanel({ filters, onFilterChange, options, dateRange }) {
     <div className="filtersGrid">
       <div className="panel filterBox span2">
         <h3>POLIGONO</h3>
-        <input
-          type="text"
+        <PlanSearchInput
+          id="dashboard-plan-suggestions"
           value={filters.poligonoSearch}
-          onChange={handlePoligonoSearch}
-          list="dashboard-plan-suggestions"
-          aria-label="Buscar plano pelo nome"
-          placeholder="Digite para buscar planos..."
+          onChange={(value) => onFilterChange('poligonoSearch', value)}
+          options={options.poligonos}
         />
-        <datalist id="dashboard-plan-suggestions">
-          {options.poligonos.map((item) => <option key={item} value={item} />)}
-        </datalist>
         <select value={filters.poligono} onChange={handlePoligono}>
           <option value="Todos">Todos</option>
           {options.poligonos.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -1489,14 +1495,33 @@ function FilterPanel({ filters, onFilterChange, options, dateRange }) {
   );
 }
 
+// Campo de busca de planos: mesma lógica usada no painel de filtros e na busca do topo.
+function PlanSearchInput({ id, value, onChange, options, placeholder = 'Digite para buscar planos...' }) {
+  return (
+    <div className="planSearchInput">
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        list={id}
+        aria-label="Buscar plano pelo nome"
+        placeholder={placeholder}
+      />
+      <datalist id={id}>
+        {options.map((item) => <option key={item} value={item} />)}
+      </datalist>
+    </div>
+  );
+}
+
 function PeriodSummary({ total, recordCount, dayCount, justificationCount, latestApplication, dateRange }) {
   return (
     <section className="panel periodSummary" aria-label="Resumo do período">
       <div className="periodSummaryHeader">
         <div>
           <h2>RESUMO DO PERÍODO</h2>
+          <p className="periodSummarySub">Indicadores do intervalo filtrado</p>
         </div>
-        <span className="periodSummaryMark" aria-hidden="true">◎</span>
       </div>
       <div className="periodSummaryGrid">
         <div className="summaryMetric summaryMetricAccent">
