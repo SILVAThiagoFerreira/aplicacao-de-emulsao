@@ -4,11 +4,11 @@ import { formatCompactPlanKg, formatDate, formatKg, formatPlanWaterfallTick } fr
 // PDF montado diretamente com texto, retângulos e linhas (vetor). Nada é capturado da tela.
 // Estilo: fundo branco, título vermelho em caixa alta, subtítulo cinza, seções com régua fina.
 const MARGIN = 15;
-const PAGE_WIDTH = 210;
+const PAGE_WIDTH = 297;
 const RIGHT_EDGE = PAGE_WIDTH - MARGIN;
 const CONTENT_WIDTH = RIGHT_EDGE - MARGIN;
-const CONTENT_BOTTOM = 268;
-const FOOTER_Y = 284;
+const CONTENT_BOTTOM = 184;
+const FOOTER_Y = 203;
 const PT_TO_MM = 0.3528;
 const LINE_SPACING = 1.35;
 const TABLE_TEXT_SIZE = 8;
@@ -18,6 +18,7 @@ const COLOR = {
   white: [255, 255, 255],
   charcoal: [60, 63, 68],
   gray: [138, 143, 150],
+  note: [60, 63, 68],
   body: [74, 74, 74],
   line: [229, 229, 229],
   hair: [238, 238, 238],
@@ -36,11 +37,46 @@ function formatGeneratedAt(date) {
   return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-function createReportWriter({ title, runningTitle, footerTitle }) {
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(img, 0, 0);
+      resolve({ data: canvas.toDataURL('image/png'), ratio: img.naturalWidth / img.naturalHeight });
+    };
+    img.onerror = () => reject(new Error('Não foi possível carregar os logotipos do relatório.'));
+    img.src = url;
+  });
+}
+
+// Logotipos Enaex + cliente, carregados antes de montar o PDF (que é síncrono).
+export async function loadReportLogos() {
+  const [enaex, client] = await Promise.all([loadImage('assets/Enaex Brasil.png'), loadImage('assets/Mineracao Vale Verde.png')]);
+  return { enaex, client };
+}
+
+function drawLogos(pdf, logos) {
+  if (!logos) return;
+  const clientHeight = 12;
+  const clientWidth = clientHeight * logos.client.ratio;
+  const enaexHeight = 10;
+  const enaexWidth = enaexHeight * logos.enaex.ratio;
+  pdf.addImage(logos.client.data, 'PNG', RIGHT_EDGE - clientWidth, MARGIN - 3, clientWidth, clientHeight);
+  pdf.addImage(logos.enaex.data, 'PNG', RIGHT_EDGE - clientWidth - 6 - enaexWidth, MARGIN - 2, enaexWidth, enaexHeight);
+}
+
+function createReportWriter({ title, runningTitle, footerTitle, logos = null }) {
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
   pdf.setProperties({ title, author: 'US Vale Verde', creator: 'Dashboard de Emulsão' });
   pdf.setDrawColor(...COLOR.line);
   const page = { y: MARGIN };
+  drawLogos(pdf, logos);
 
   const applyStyle = (size, bold, color) => {
     pdf.setFont('helvetica', bold ? 'bold' : 'normal');
@@ -106,11 +142,11 @@ function createReportWriter({ title, runningTitle, footerTitle }) {
     const total = pdf.getNumberOfPages();
     for (let number = 1; number <= total; number += 1) {
       pdf.setPage(number);
-      rule(MARGIN, FOOTER_Y - 4, RIGHT_EDGE, FOOTER_Y - 4, { color: COLOR.charcoal, width: 0.3 });
-      const pageLabel = `Página ${number} de ${total}`;
-      const pageLabelWidth = textWidth(pageLabel, 7);
-      write(fitText(footerTitle, CONTENT_WIDTH - pageLabelWidth - 6, { size: 7 }), MARGIN, FOOTER_Y, { size: 7, color: COLOR.gray });
-      write(pageLabel, RIGHT_EDGE, FOOTER_Y, { size: 7, color: COLOR.gray, align: 'right' });
+      rule(MARGIN, FOOTER_Y - 4, RIGHT_EDGE, FOOTER_Y - 4, { color: COLOR.charcoal, width: 0.6 });
+      const confidential = 'STRICTLY PRIVATE AND CONFIDENTIAL';
+      const confidentialWidth = textWidth(confidential, 7);
+      write(fitText(`${footerTitle} · Página ${number} de ${total}`, CONTENT_WIDTH - confidentialWidth - 6, { size: 7 }), MARGIN, FOOTER_Y, { size: 7, color: COLOR.gray });
+      write(confidential, RIGHT_EDGE, FOOTER_Y, { size: 7, color: COLOR.gray, align: 'right' });
     }
     return pdf;
   };
@@ -120,14 +156,13 @@ function createReportWriter({ title, runningTitle, footerTitle }) {
 
 function drawMasthead(writer, { title, subtitle }) {
   const { page, write, splitLines, writeLines, textWidth } = writer;
-  write('US VALE VERDE', MARGIN, page.y + 3, { size: 7.5, color: COLOR.gray, spacing: 0.15 });
-  page.y += 10;
+  page.y += 4;
   // Título em caixa alta, vermelho e sem negrito; cabe em no máximo duas linhas, reduzindo a fonte se preciso.
   const upper = title.toLocaleUpperCase('pt-BR');
   let titleFit = null;
-  for (const size of [24, 19, 15, 12]) {
-    const lines = splitLines(upper, CONTENT_WIDTH, { size });
-    if (lines.length <= 2 && lines.every((line) => textWidth(line, size) <= CONTENT_WIDTH)) {
+  for (const size of [28, 22, 17, 13]) {
+    const lines = splitLines(upper, CONTENT_WIDTH - 90, { size });
+    if (lines.length <= 2 && lines.every((line) => textWidth(line, size) <= CONTENT_WIDTH - 90)) {
       titleFit = { size, lines };
       break;
     }
@@ -135,7 +170,7 @@ function drawMasthead(writer, { title, subtitle }) {
   if (!titleFit) titleFit = { size: 12, lines: splitLines(upper, CONTENT_WIDTH, { size: 12 }).slice(0, 2) };
   page.y += writeLines(titleFit.lines, MARGIN, page.y + 6, { size: titleFit.size, color: COLOR.red }) + 1.5;
   write(subtitle, MARGIN, page.y + 3, { size: 11, color: COLOR.body });
-  page.y += 14;
+  page.y += 12;
 }
 
 function drawKpiPanel(writer, items) {
@@ -157,7 +192,7 @@ function drawKpiPanel(writer, items) {
 function drawSectionHeader(writer, kicker, aside = '') {
   const { page, write, rule, ensure } = writer;
   ensure(10);
-  write(kicker, MARGIN, page.y + 4, { size: 9.5, color: COLOR.body, spacing: 0.1 });
+  write(kicker, MARGIN, page.y + 4, { size: 11, color: COLOR.body });
   if (aside) write(aside, RIGHT_EDGE, page.y + 4, { size: 7.5, color: COLOR.gray, align: 'right' });
   rule(MARGIN, page.y + 6.5, RIGHT_EDGE, page.y + 6.5, { color: COLOR.line, width: 0.2 });
   page.y += 10;
@@ -230,7 +265,7 @@ function drawWaterfallChart(writer, rows) {
   drawSectionHeader(writer, 'GRÁFICO DE CASCATA', dense ? 'Emulsão acima da barra · furos na vertical' : 'Emulsão acima da barra · furos no centro');
 
   const plotTop = page.y + 6;
-  const plotHeight = 110;
+  const plotHeight = 100;
   const plotBottom = plotTop + plotHeight;
   // Folga acima da maior barra para o rótulo de valor não encostar no cabeçalho.
   const max = Math.max(1, ...rows.map((row) => row.base + row.value)) * 1.12;
@@ -278,12 +313,27 @@ function drawWaterfallChart(writer, rows) {
   page.y = legendY + 6;
 }
 
-export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, generatedAt = new Date() }) {
+// Nota final no estilo "Atenção, ..." (negrito + texto justificado em cinza escuro).
+function drawNote(writer, text) {
+  const { page, pdf, write, splitLines, writeLines, ensure, textWidth } = writer;
+  const lead = 'Atenção, ';
+  const size = 8.5;
+  const leadWidth = textWidth(lead, size, true);
+  const lines = splitLines(`${' '.repeat(Math.round(leadWidth / textWidth(' ', size)) + 1)}${text}`, CONTENT_WIDTH, { size });
+  ensure(lines.length * lineHeight(size) + 6);
+  page.y += 3;
+  writeLines(lines, MARGIN, page.y + 3, { size, color: COLOR.note });
+  write(lead.trim(), MARGIN, page.y + 3, { size, bold: true, color: COLOR.note });
+  page.y += lines.length * lineHeight(size) + 4;
+}
+
+export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, generatedAt = new Date(), logos = null }) {
   const reportDate = formatDate(selectedDate);
   const writer = createReportWriter({
     title: `Relatório de Aplicação Diária ${reportDate}`,
     runningTitle: `US VALE VERDE · Aplicação de Emulsão · ${reportDate}`,
-    footerTitle: `Relatório de Aplicação Diária · gerado em ${formatGeneratedAt(generatedAt)}`
+    footerTitle: `Relatório de Aplicação Diária · gerado em ${formatGeneratedAt(generatedAt)}`,
+    logos
   });
   const { page, write, splitLines, writeLines, ensure, rule } = writer;
   const monthLabel = capitalize(new Date(`${selectedDate}T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }));
@@ -341,14 +391,16 @@ export function createDailyReportPdf({ selectedDate, monthStart, monthTotal, day
     page.y += 2;
   });
 
+  drawNote(writer, 'os valores de Aplicado (Month to date) somam a emulsão aplicada do primeiro dia do mês até a data de referência; Aplicado/Dia e Furos Carregados/Dia consideram apenas a data de referência, detalhada por plano.');
   return writer.finish();
 }
 
-export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, lastDate, waterfallRows, generatedAt = new Date() }) {
+export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, lastDate, waterfallRows, generatedAt = new Date(), logos = null }) {
   const writer = createReportWriter({
     title: `Relatório de Aplicação por Plano ${plan}`,
     runningTitle: `US VALE VERDE · Aplicação por Plano · ${plan}`,
-    footerTitle: `Relatório de Aplicação por Plano · ${plan} · gerado em ${formatGeneratedAt(generatedAt)}`
+    footerTitle: `Relatório de Aplicação por Plano · ${plan} · gerado em ${formatGeneratedAt(generatedAt)}`,
+    logos
   });
 
   drawMasthead(writer, {
@@ -386,6 +438,6 @@ export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, las
   });
 
   drawWaterfallChart(writer, waterfallRows);
-
+  drawNote(writer, 'os valores são a emulsão aplicada (kg) e os furos carregados em cada dia de carregamento do plano. No gráfico de cascata, cada barra vermelha soma a emulsão do dia sobre o acumulado anterior (valor acima da barra) e traz os furos no centro; a barra escura é o total do plano.');
   return writer.finish();
 }

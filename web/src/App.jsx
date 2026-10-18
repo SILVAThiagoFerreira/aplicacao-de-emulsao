@@ -1026,13 +1026,13 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
     setExportError('');
     try {
       if (format === 'pdf') {
-        const { createDailyReportPdf } = await import('./lib/reportPdf.js');
-        createDailyReportPdf({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications })
+        const { createDailyReportPdf, loadReportLogos } = await import('./lib/reportPdf.js');
+        createDailyReportPdf({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, logos: await loadReportLogos() })
           .save(`relatorio-emulsao-${selectedDate}.pdf`);
       } else {
         await exportReportPng(reportRef.current, {
           filename: `relatorio-emulsao-${selectedDate}.png`,
-          fitTo: { width: 1920, height: 1080 }
+          fitTo: { width: 2000, height: 1279 }
         });
       }
     } catch (error) {
@@ -1060,11 +1060,12 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
           <span><CalendarDays size={16} /> Data da aplicação</span>
           <input type="date" value={selectedDate} min={dateBounds.start} max={dateBounds.end} onChange={(event) => onDateChange(event.target.value)} />
         </label>
-        <div className="reportPreview" ref={reportRef}>
+        <div className="reportPreview dailyReportPreview" ref={reportRef}>
           <div className="reportHeading">
-            <div><h3>Aplicação de Emulsão</h3><p>{monthName}</p></div>
-            <img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" />
+            <div><h3>Aplicação de Emulsão</h3><p>Resumo de {monthName} até a data de referência, {formatDate(selectedDate) || '-'}.</p></div>
+            <div className="reportLogos"><img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" /><img className="reportLogo reportLogoClient" src="assets/Mineracao Vale Verde.png" alt="Mineração Vale Verde" /></div>
           </div>
+          <div className="reportTitleLine">Indicadores de aplicação no mês e no dia:</div>
           <div className="reportMetricPanel dailyReportMetrics">
             <div className="reportMetricItem"><span>Data de referência</span><strong>{formatDate(selectedDate) || '-'}</strong></div>
             <ReportKpi label="Aplicado (Month to date)" value={formatKg(monthTotal.emulsao)} tone="red" />
@@ -1090,6 +1091,7 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
             </div>
           </div>
           <div className="reportJustificationBlock"><span className="reportSectionLabel">Justificativas da data</span><JustificationList justifications={dayJustifications} emptyText="Nenhuma justificativa registrada para esta data." /></div>
+          <ReportFooter note="os valores de Aplicado (Month to date) somam a emulsão aplicada do primeiro dia do mês até a data de referência; Aplicado/Dia e Furos Carregados/Dia consideram apenas a data de referência, detalhada por plano." />
          </div>
          {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}
          <div className="reportActions">
@@ -1179,14 +1181,15 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
     setExportError('');
     try {
       if (format === 'pdf') {
-        const { createPlanReportPdf } = await import('./lib/reportPdf.js');
+        const { createPlanReportPdf, loadReportLogos } = await import('./lib/reportPdf.js');
         createPlanReportPdf({
           plan: selectedPlan,
           dailyRows,
           planTotal,
           firstDate,
           lastDate,
-          waterfallRows: combinedWaterfallRows
+          waterfallRows: combinedWaterfallRows,
+          logos: await loadReportLogos()
         }).save(`relatorio-emulsao-plano-${safePlanName}.pdf`);
       } else {
         await exportReportPng(reportRef.current, { filename: `relatorio-emulsao-plano-${safePlanName}.png` });
@@ -1270,9 +1273,10 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
         {selectedPlan && dailyRows.length ? (
           <div className="reportPreview planReportPreview" ref={reportRef}>
             <div className="reportHeading">
-              <div><h3>{selectedPlan}</h3><p>Relatório de Aplicação por Plano · dias de carregamento</p></div>
-              <img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" />
+              <div><h3>{selectedPlan}</h3><p>Relatório de Aplicação por Plano · dias de carregamento.</p></div>
+              <div className="reportLogos"><img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" /><img className="reportLogo reportLogoClient" src="assets/Mineracao Vale Verde.png" alt="Mineração Vale Verde" /></div>
             </div>
+            <div className="reportTitleLine">Emulsão aplicada por dia de carregamento:</div>
             <div className="reportMetricPanel planReportMetrics">
               <div className="reportMetricItem"><span>Período do plano</span><strong>{formatDate(firstDate)} — {formatDate(lastDate)}</strong></div>
               <ReportKpi label="Emulsão aplicada" value={formatKg(planTotal.emulsao)} tone="red" />
@@ -1280,7 +1284,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
               <ReportKpi label="Dias de carregamento" value={dailyRows.length.toLocaleString('pt-BR')} tone="dark" />
             </div>
             <div className="planReportTableBlock">
-              <div className="reportSectionHeading"><span className="reportSectionLabel">Aplicação por dia de carregamento</span><small>{dailyRows.length.toLocaleString('pt-BR')} dias consolidados</small></div>
+              <div className="reportSectionHeading"><span className="reportSectionLabel">Aplicação por dia de carregamento</span><small>{dailyRows.length.toLocaleString('pt-BR')} {dailyRows.length === 1 ? 'dia consolidado' : 'dias consolidados'}</small></div>
               <div className="reportDataTableWrap">
                 <table className="reportDataTable">
                   <thead><tr><th>Dia de carregamento</th><th>Furos carregados</th><th>Emulsão aplicada</th></tr></thead>
@@ -1298,6 +1302,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
                 />
               </div>
             </div>
+            <ReportFooter note="os valores são a emulsão aplicada (kg) e os furos carregados em cada dia de carregamento do plano. No gráfico de cascata, cada barra vermelha soma a emulsão do dia sobre o acumulado anterior (valor acima da barra) e traz os furos no centro; a barra escura é o total do plano." />
           </div>
         ) : (
           <div className="planReportEmpty" data-testid="plan-report-empty">
@@ -1315,6 +1320,15 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function ReportFooter({ note }) {
+  return (
+    <>
+      <p className="reportNote"><strong>Atenção,</strong> {note}</p>
+      <div className="reportFooter"><span>STRICTLY PRIVATE AND CONFIDENTIAL</span></div>
+    </>
   );
 }
 
@@ -1669,9 +1683,9 @@ function PlanWaterfallChart({ rows, ariaLabel }) {
           <BarChart data={rows} margin={{ top: 34, right: 22, bottom: 10, left: 12 }}>
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 8 }}
+              tick={{ fontSize: 10, fill: '#3C3F45' }}
               tickFormatter={formatPlanWaterfallTick}
-              axisLine={{ stroke: '#C4C7CC', strokeWidth: 0.75 }}
+              axisLine={{ stroke: '#C4C7CC', strokeWidth: 1 }}
               tickLine={false}
               minTickGap={0}
               interval="preserveStartEnd"
@@ -1680,7 +1694,7 @@ function PlanWaterfallChart({ rows, ariaLabel }) {
             <Tooltip content={<PlanWaterfallTooltip valueFormatter={formatKg} valueLabel="Emulsão aplicada" />} cursor={{ fill: 'rgba(56,66,75,.06)' }} />
             <Bar dataKey="base" stackId="waterfall" fill="transparent" stroke="transparent" isAnimationActive={false} legendType="none" />
             <Bar dataKey="value" name="Emulsão aplicada (kg)" stackId="waterfall" isAnimationActive={false}>
-              {rows.map((row) => <Cell key={`${row.label}-${row.data}`} fill={row.isTotal ? '#38424B' : '#E20613'} />)}
+              {rows.map((row) => <Cell key={`${row.label}-${row.data}`} fill={row.isTotal ? '#3C3F45' : '#B5121B'} />)}
               <LabelList dataKey="displayValue" content={<PlanWaterfallEmulsionLabel />} />
               <LabelList dataKey="furos" content={<PlanWaterfallHoleLabel />} />
             </Bar>
@@ -1696,7 +1710,7 @@ function PlanWaterfallEmulsionLabel({ viewBox, value }) {
   if (!width) return null;
 
   return (
-    <text className="planWaterfallEmulsionLabel" x={x + width / 2} y={Math.max(y - 9, 12)} textAnchor="middle" fill="#38424B" fontSize={10} fontWeight={700}>
+    <text className="planWaterfallEmulsionLabel" x={x + width / 2} y={Math.max(y - 9, 12)} textAnchor="middle" fill="#3C3F45" fontSize={11} fontWeight={700}>
       {formatCompactPlanKg(value)}
     </text>
   );
