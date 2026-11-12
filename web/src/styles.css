@@ -818,7 +818,9 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
 .reportMetricPanel > .reportKpi.red { border-top: 3px solid var(--rp-red); }
 .dailyReportPreview .reportMetricPanel { padding-bottom: 0; border-bottom: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .dailyReportPreview .reportMetricPanel strong { font-size: 20px; }
-.planReportMetrics .reportMetricItem strong { font-size: 15px; }
+/* Período em uma linha só: a primeira coluna é mais larga e o texto não quebra. */
+.planReportMetrics { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); }
+.planReportMetrics .reportMetricItem strong { font-size: 15px; white-space: nowrap; }
 /* Altura pelo conteúdo: com proporção fixa, planos ou justificativas longas ficariam cortados no PNG. */
 .dailyReportPreview { aspect-ratio: auto; }
 .reportSectionLabel { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; }
@@ -834,6 +836,8 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
 
 @media (max-width: 720px) {
   .dailyReportPreview .reportMetricPanel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .planReportMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .planReportMetrics .reportMetricItem { grid-column: 1 / -1; }
   .dailyReportPreview .reportMetricPanel strong { font-size: 16px; }
   /* No celular, as ações não ficam fixas: fixas cobririam boa parte da tela sobre o relatório. */
   .reportActions { position: static; }

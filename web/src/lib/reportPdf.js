@@ -433,7 +433,7 @@ export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, las
 
   drawMasthead(writer, {
     title: plan,
-    subtitle: 'Relatório de Aplicação por Plano · dias de carregamento'
+    subtitle: 'Emulsão aplicada por dia de carregamento:'
   });
   drawKpiPanel(writer, [
     { label: 'Período do plano', value: `${formatDate(firstDate)} — ${formatDate(lastDate)}`, size: 10 },

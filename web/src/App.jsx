@@ -1261,10 +1261,9 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
         {selectedPlan && dailyRows.length ? (
           <div className="reportPreview planReportPreview" ref={reportRef}>
             <div className="reportHeading">
-              <div><h3>{selectedPlan}</h3><p>Relatório de Aplicação por Plano · dias de carregamento.</p></div>
+              <div><h3>{selectedPlan}</h3><p>Emulsão aplicada por dia de carregamento:</p></div>
               <div className="reportLogos"><img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" /><img className="reportLogo reportLogoClient" src="assets/Mineracao Vale Verde.png" alt="Mineração Vale Verde" /></div>
             </div>
-            <div className="reportTitleLine">Emulsão aplicada por dia de carregamento:</div>
             <div className="reportMetricPanel planReportMetrics">
               <div className="reportMetricItem"><span>Período do plano</span><strong>{formatDate(firstDate)} — {formatDate(lastDate)}</strong></div>
               <ReportKpi label="Emulsão aplicada" value={formatKg(planTotal.emulsao)} tone="red" />
