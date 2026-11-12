@@ -22,6 +22,7 @@ const COLOR = {
   body: [74, 74, 74],
   line: [229, 229, 229],
   hair: [238, 238, 238],
+  panel: [245, 246, 248],
   ink: [60, 63, 68]
 };
 
@@ -127,6 +128,7 @@ function createReportWriter({ title, runningTitle, footerTitle, logos = null }) 
 
   const newPage = () => {
     pdf.addPage();
+    box(0, 0, PAGE_WIDTH, 2.6, { fill: COLOR.red });
     write(fitText(runningTitle, CONTENT_WIDTH, { size: 7.5 }), MARGIN, MARGIN + 2, { size: 7.5, color: COLOR.gray });
     page.y = MARGIN + 10;
   };
@@ -154,47 +156,58 @@ function createReportWriter({ title, runningTitle, footerTitle, logos = null }) 
   return { pdf, page, write, splitLines, writeLines, textWidth, rule, box, newPage, ensure, finish };
 }
 
+// Cabeçalho da primeira página: faixa vermelha no topo, título vermelho em negrito (à esquerda dos logos) e régua fina.
 function drawMasthead(writer, { title, subtitle }) {
-  const { page, write, splitLines, writeLines, textWidth } = writer;
+  const { page, write, splitLines, writeLines, textWidth, rule, box } = writer;
+  box(0, 0, PAGE_WIDTH, 2.6, { fill: COLOR.red });
   page.y += 4;
-  // Título em caixa alta, vermelho e sem negrito; cabe em no máximo duas linhas, reduzindo a fonte se preciso.
+  // Título em caixa alta, vermelho e em negrito; cabe em no máximo duas linhas, reduzindo a fonte se preciso.
   const upper = title.toLocaleUpperCase('pt-BR');
   let titleFit = null;
   for (const size of [22, 18, 15, 12]) {
-    const lines = splitLines(upper, CONTENT_WIDTH - 90, { size });
-    if (lines.length <= 2 && lines.every((line) => textWidth(line, size) <= CONTENT_WIDTH - 90)) {
+    const lines = splitLines(upper, CONTENT_WIDTH - 90, { size, bold: true });
+    if (lines.length <= 2 && lines.every((line) => textWidth(line, size, true) <= CONTENT_WIDTH - 90)) {
       titleFit = { size, lines };
       break;
     }
   }
-  if (!titleFit) titleFit = { size: 12, lines: splitLines(upper, CONTENT_WIDTH, { size: 12 }).slice(0, 2) };
-  page.y += writeLines(titleFit.lines, MARGIN, page.y + 6, { size: titleFit.size, color: COLOR.red }) + 1.5;
-  write(subtitle, MARGIN, page.y + 3, { size: 9, color: COLOR.body });
-  page.y += 12;
+  if (!titleFit) titleFit = { size: 12, lines: splitLines(upper, CONTENT_WIDTH, { size: 12, bold: true }).slice(0, 2) };
+  page.y += writeLines(titleFit.lines, MARGIN, page.y + 6, { size: titleFit.size, bold: true, color: COLOR.red }) + 1.5;
+  write(subtitle, MARGIN, page.y + 3, { size: 9.5, color: COLOR.body });
+  page.y += 8;
+  rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.line, width: 0.3 });
+  page.y += 4;
 }
 
+// Indicadores em cartões claros (um por coluna); o indicador em destaque leva uma faixa vermelha no topo.
 function drawKpiPanel(writer, items, { height = 20, valueSize = null } = {}) {
-  const { page, rule, writeLines, write, ensure } = writer;
-  ensure(height);
-  const cellWidth = CONTENT_WIDTH / items.length;
+  const { page, write, writeLines, splitLines, ensure, box } = writer;
+  ensure(height + 4);
+  const gap = 3;
+  const cellWidth = (CONTENT_WIDTH - gap * (items.length - 1)) / items.length;
   items.forEach((item, index) => {
-    const x = MARGIN + index * cellWidth;
-    write(item.label, x, page.y + 4, { size: 7, color: COLOR.gray });
+    const x = MARGIN + index * (cellWidth + gap);
+    box(x, page.y, cellWidth, height, { fill: COLOR.panel });
+    if (item.red) box(x, page.y, cellWidth, 0.9, { fill: COLOR.red });
+    const labelLines = splitLines(item.label.toLocaleUpperCase('pt-BR'), cellWidth - 6, { size: 6.5, bold: true });
+    writeLines(labelLines, x + 3, page.y + 4.8, { size: 6.5, bold: true, color: COLOR.gray });
     const size = valueSize ?? item.size;
-    const lines = writer.splitLines(item.value, cellWidth - 4, { size, bold: true });
-    writeLines(lines, x, page.y + 11, { size, bold: true, color: item.red ? COLOR.red : COLOR.charcoal });
-    if (item.sub) write(item.sub, x, page.y + 17, { size: 7.5, color: COLOR.gray });
+    const valueY = page.y + 4.8 + labelLines.length * lineHeight(6.5) + 3;
+    const lines = splitLines(item.value, cellWidth - 6, { size, bold: true });
+    writeLines(lines, x + 3, valueY, { size, bold: true, color: item.red ? COLOR.red : COLOR.charcoal });
+    if (item.sub) write(item.sub, x + 3, valueY + lines.length * lineHeight(size) + 1.2, { size: 7, color: COLOR.gray });
   });
-  rule(MARGIN, page.y + height - 2, RIGHT_EDGE, page.y + height - 2, { color: COLOR.line, width: 0.2 });
   page.y += height + 2;
 }
 
 // Régua fina clara sob o título da seção; o título em cinza, sem caixa.
-function drawSectionHeader(writer, kicker, aside = '', { size = 9, bold = false } = {}) {
-  const { page, write, rule, ensure } = writer;
+// Título de seção com marcador vermelho, em negrito, e régua fina clara abaixo.
+function drawSectionHeader(writer, kicker, aside = '', { size = 9, bold = true } = {}) {
+  const { page, write, rule, ensure, box } = writer;
   ensure(10);
-  write(kicker, MARGIN, page.y + 4, { size, bold, color: COLOR.body });
-  if (aside) write(aside, RIGHT_EDGE, page.y + 4, { size: 7.5, color: COLOR.gray, align: 'right' });
+  box(MARGIN, page.y + 4.3 - size * 0.3, 0.9, size * 0.42, { fill: COLOR.red });
+  write(kicker, MARGIN + 2.6, page.y + 4.3, { size, bold, color: COLOR.charcoal, spacing: 0.08 });
+  if (aside) write(aside, RIGHT_EDGE, page.y + 4.3, { size: 7.5, color: COLOR.gray, align: 'right' });
   rule(MARGIN, page.y + 6.5, RIGHT_EDGE, page.y + 6.5, { color: COLOR.line, width: 0.2 });
   page.y += 10;
 }
@@ -202,7 +215,7 @@ function drawSectionHeader(writer, kicker, aside = '', { size = 9, bold = false 
 // Tabela que quebra entre linhas e repete o cabeçalho em cada página nova.
 // Com `section`, o título da seção nunca fica sozinho no fim de uma página.
 function drawTable(writer, { section = null, columns, rows, total = null, emptyText = '', textSize = TABLE_TEXT_SIZE }) {
-  const { page, write, rule, ensure, splitLines, writeLines } = writer;
+  const { page, write, rule, box, ensure, splitLines, writeLines } = writer;
 
   const drawHeader = () => {
     columns.forEach((column) => write(column.label.toLocaleUpperCase('pt-BR'), column.x, page.y + 4.6, { size: 6.8, bold: true, color: COLOR.gray, spacing: column.align === 'right' ? 0 : 0.1, align: column.align }));
@@ -211,7 +224,7 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
   };
 
   const measure = (row) => columns.map((column) => splitLines(row[column.key] ?? '', column.wrapWidth, { size: textSize, bold: column.bold }));
-  const heightOf = (cells) => Math.max(1, ...cells.map((lines) => lines.length)) * lineHeight(textSize) + 3.4;
+  const heightOf = (cells) => Math.max(1, ...cells.map((lines) => lines.length)) * lineHeight(textSize) + 2.6;
 
   const firstRowHeight = rows.length ? heightOf(measure(rows[0])) : 9;
   if (section) {
@@ -242,6 +255,7 @@ function drawTable(writer, { section = null, columns, rows, total = null, emptyT
     const cells = measure(total);
     const height = heightOf(cells);
     if (ensure(height)) drawHeader();
+    box(MARGIN, page.y, CONTENT_WIDTH, height, { fill: COLOR.panel });
     rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.charcoal, width: 0.3 });
     columns.forEach((column, columnIndex) => {
       writeLines(cells[columnIndex], column.x, page.y + 4.6, { size: textSize, bold: true, align: column.align });
@@ -341,7 +355,7 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
     footerTitle: `Relatório de Aplicação Diária · gerado em ${formatGeneratedAt(generatedAt)}`,
     logos
   });
-  const { page, write, splitLines, writeLines, ensure, rule } = writer;
+  const { page, write, splitLines, writeLines, ensure, rule, box } = writer;
 
   drawMasthead(writer, { title: 'Aplicação de Emulsão', subtitle: `${formatMonthYear(selectedDate)} · até ${reportDate}` });
   const bodyStart = page.y;
@@ -359,7 +373,7 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
     section: {
       size: 11,
       bold: true,
-      kicker: 'Planos do dia',
+      kicker: 'PLANOS DO DIA',
       aside: `${dayByPolygon.length.toLocaleString('pt-BR')} ${dayByPolygon.length === 1 ? 'plano' : 'planos'}`
     },
     columns: [
@@ -377,23 +391,24 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
 
   const justificationBoxes = dayJustifications.filter((item) => item.motivo).map((item) => ({
     item,
-    lines: splitLines(item.motivo, CONTENT_WIDTH, { size: 9.5 })
+    lines: splitLines(item.motivo, CONTENT_WIDTH - 8, { size: 9.5 })
   }));
   const blockHeight = (lines) => 5.5 + lines.length * lineHeight(9.5) + 1.5;
   ensure(10 + (justificationBoxes.length ? blockHeight(justificationBoxes[0].lines) : 8));
-  drawSectionHeader(writer, 'Justificativas', '', { size: 11, bold: true });
+  drawSectionHeader(writer, 'JUSTIFICATIVAS', '', { size: 11, bold: true });
   if (!justificationBoxes.length) {
     write('Nenhuma.', MARGIN, page.y + 3, { size: 9.5, color: COLOR.gray });
     page.y += 8;
   }
+  // Cada justificativa vai num bloco claro com faixa vermelha à esquerda.
   justificationBoxes.forEach(({ item, lines }) => {
     const height = blockHeight(lines);
-    ensure(height + 2);
-    write(`${formatDate(item.data)} · ${item.poligono || 'Geral'}`, MARGIN, page.y + 3.5, { size: 8, bold: true });
-    writeLines(lines, MARGIN, page.y + 8, { size: 9.5, color: COLOR.body });
-    page.y += height;
-    rule(MARGIN, page.y, RIGHT_EDGE, page.y, { color: COLOR.hair, width: 0.15 });
-    page.y += 2;
+    ensure(height + 2.5);
+    box(MARGIN, page.y, CONTENT_WIDTH, height, { fill: COLOR.panel });
+    box(MARGIN, page.y, 0.9, height, { fill: COLOR.red });
+    write(`${formatDate(item.data)} · ${item.poligono || 'Geral'}`, MARGIN + 4, page.y + 3.5, { size: 8, bold: true });
+    writeLines(lines, MARGIN + 4, page.y + 8, { size: 9.5, color: COLOR.body });
+    page.y += height + 2.5;
   });
 
   const bodyEnd = page.y;

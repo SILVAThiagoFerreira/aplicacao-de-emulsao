@@ -805,3 +805,33 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .reportChooserHint { padding: 14px 18px 18px; }
   .reportActions { margin: 16px -16px 0; padding: 12px 16px 16px; }
 }
+
+/* Restyle dos relatórios (tela e PNG): folha com faixa vermelha, indicadores em cartões claros, seções com marcador vermelho e tabelas com régua fina. */
+.reportPreview { border-top: 6px solid var(--rp-red); }
+.reportHeading { padding-bottom: 18px; border-bottom: 1px solid #dfe3e7; }
+.reportHeading h3 { font-weight: 700; }
+.reportMetricPanel { gap: 10px; margin-top: 18px; }
+.reportMetricPanel > * { position: relative; padding: 13px 14px 14px; background: #f5f6f8; border-radius: 8px; }
+.reportMetricPanel span { min-height: 2.7em; color: #6b7480; font-size: 9.5px; font-weight: 700; line-height: 1.35; letter-spacing: .06em; text-transform: uppercase; }
+.reportMetricPanel strong { margin-top: 8px; font-size: 20px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.reportMetricPanel > .reportKpi.red { box-shadow: inset 0 3px 0 var(--rp-red); }
+.dailyReportPreview .reportMetricPanel { padding-bottom: 0; border-bottom: 0; }
+.dailyReportPreview .reportMetricPanel strong { font-size: 20px; }
+/* Altura pelo conteúdo: com proporção fixa, planos ou justificativas longas ficariam cortados no PNG. */
+.dailyReportPreview { aspect-ratio: auto; }
+.reportSectionLabel { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.reportSectionLabel::before, .dailyReportTitle::before { content: ''; flex: 0 0 auto; width: 3px; height: 12px; background: var(--rp-red); }
+.dailyReportTitle { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding-bottom: 8px; border-bottom: 1px solid #dfe3e7; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.dailyReportTableHeader { padding: 7px 0; color: #6b7480; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; border-bottom: 1px solid #cfd5db; }
+.dailyReportTableRow { padding: 8px 0; border-bottom: 1px solid #edf0f2; }
+.dailyReportPreview .justificationList { display: grid; gap: 8px; }
+.dailyReportPreview .justificationItem { padding: 10px 12px; border-left: 3px solid var(--rp-red); border-bottom: 0; background: #f5f6f8; }
+.reportDataTable th { padding: 8px 10px; border-bottom: 1px solid #cfd5db; color: #6b7480; font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.reportDataTable td { padding: 7px 10px; border-bottom: 1px solid #edf0f2; font-variant-numeric: tabular-nums; }
+.reportDataTable tfoot td { padding-top: 9px; border-top: 1px solid #cfd5db; border-bottom: 0; background: #f5f6f8; font-weight: 800; }
+
+@media (max-width: 720px) {
+  .dailyReportPreview .reportMetricPanel strong { font-size: 16px; }
+  /* No celular, as ações não ficam fixas: fixas cobririam boa parte da tela sobre o relatório. */
+  .reportActions { position: static; }
+}
