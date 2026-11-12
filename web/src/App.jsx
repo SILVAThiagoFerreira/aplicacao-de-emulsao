@@ -1072,9 +1072,9 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
           </div>
           <div className="dailyReportBody">
             <div className="reportMetricPanel dailyReportMetrics">
-              <ReportKpi label="Aplicado no mês" value={formatKg(monthTotal.emulsao)} tone="red" sub={`${monthTotal.registros.toLocaleString('pt-BR')} registros no mês`} />
-              <ReportKpi label="Aplicado no dia" value={formatKg(dayTotal.emulsao)} tone="gray" />
+              <ReportKpi label="Aplicado no dia" value={formatKg(dayTotal.emulsao)} tone="red" />
               <ReportKpi label="Furos no dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
+              <ReportKpi label="Aplicado no mês" value={formatKg(monthTotal.emulsao)} tone="gray" sub={`${monthTotal.registros.toLocaleString('pt-BR')} registros no mês`} />
             </div>
             <section className="dailyReportSection">
               <h4 className="dailyReportTitle">Planos do dia</h4>

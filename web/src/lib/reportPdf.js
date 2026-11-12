@@ -202,7 +202,7 @@ function drawKpiPanel(writer, items, { height = 20, valueSize = null } = {}) {
 
 // Régua fina clara sob o título da seção; o título em cinza, sem caixa.
 // Título de seção com marcador vermelho, em negrito, e régua fina clara abaixo.
-function drawSectionHeader(writer, kicker, aside = '', { size = 9, bold = true } = {}) {
+function drawSectionHeader(writer, kicker, aside = '', { size = 10, bold = true } = {}) {
   const { page, write, rule, ensure, box } = writer;
   ensure(10);
   box(MARGIN, page.y + 4.3 - size * 0.3, 0.9, size * 0.42, { fill: COLOR.red });
@@ -277,7 +277,7 @@ function drawWaterfallChart(writer, rows) {
   const dense = slot < 9;
   const hasTotal = rows.some((row) => row.isTotal);
   newPage();
-  drawSectionHeader(writer, 'GRÁFICO DE CASCATA', dense ? 'Emulsão acima da barra · furos na vertical' : 'Emulsão acima da barra · furos no centro');
+  drawSectionHeader(writer, 'Gráfico de cascata', dense ? 'Emulsão acima da barra · furos na vertical' : 'Emulsão acima da barra · furos no centro');
 
   const plotTop = page.y + 6;
   const plotHeight = 100;
@@ -362,9 +362,9 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
   page.y += gap;
 
   drawKpiPanel(writer, [
-    { label: 'Aplicado no mês', value: formatKg(monthTotal.emulsao), red: true, sub: `${monthTotal.registros.toLocaleString('pt-BR')} registros no mês` },
-    { label: 'Aplicado no dia', value: formatKg(dayTotal.emulsao) },
-    { label: 'Furos no dia', value: dayTotal.furos.toLocaleString('pt-BR') }
+    { label: 'Aplicado no dia', value: formatKg(dayTotal.emulsao), red: true },
+    { label: 'Furos no dia', value: dayTotal.furos.toLocaleString('pt-BR') },
+    { label: 'Aplicado no mês', value: formatKg(monthTotal.emulsao), sub: `${monthTotal.registros.toLocaleString('pt-BR')} registros no mês` }
   ], { height: 26, valueSize: 20 });
 
   page.y += 4;
@@ -373,7 +373,7 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
     section: {
       size: 11,
       bold: true,
-      kicker: 'PLANOS DO DIA',
+      kicker: 'Planos do dia',
       aside: `${dayByPolygon.length.toLocaleString('pt-BR')} ${dayByPolygon.length === 1 ? 'plano' : 'planos'}`
     },
     columns: [
@@ -395,7 +395,7 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
   }));
   const blockHeight = (lines) => 5.5 + lines.length * lineHeight(9.5) + 1.5;
   ensure(10 + (justificationBoxes.length ? blockHeight(justificationBoxes[0].lines) : 8));
-  drawSectionHeader(writer, 'JUSTIFICATIVAS', '', { size: 11, bold: true });
+  drawSectionHeader(writer, 'Justificativas', '', { size: 11, bold: true });
   if (!justificationBoxes.length) {
     write('Nenhuma.', MARGIN, page.y + 3, { size: 9.5, color: COLOR.gray });
     page.y += 8;
@@ -446,7 +446,7 @@ export function createPlanReportPdf({ plan, dailyRows, planTotal, firstDate, las
 
   drawTable(writer, {
     section: {
-      kicker: 'APLICAÇÃO POR DIA DE CARREGAMENTO',
+      kicker: 'Aplicação por dia de carregamento',
       aside: `${dailyRows.length.toLocaleString('pt-BR')} dias consolidados`
     },
     columns: [
