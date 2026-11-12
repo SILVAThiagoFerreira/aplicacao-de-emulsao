@@ -819,7 +819,7 @@ function StatusStrip({ total, latestApplication, status, cache }) {
   return (
     <div className={`statusStrip ${failed ? 'hasError' : ''}`}>
       <div>
-        <span className="label">Registros filtrados</span>
+        <span className="label">Amostras filtradas</span>
         <strong>{total.registros.toLocaleString('pt-BR')}</strong>
       </div>
       <div>
@@ -866,7 +866,7 @@ function RefreshDialog({ onRefresh, refreshing, onClose }) {
     try {
       const result = await onRefresh(password);
       const records = Number(result?.records);
-      const recordLabel = Number.isFinite(records) && records > 0 ? ` ${records.toLocaleString('pt-BR')} registros foram processados.` : '';
+      const recordLabel = Number.isFinite(records) && records > 0 ? ` ${records.toLocaleString('pt-BR')} amostras foram processadas.` : '';
       setRefreshSuccess(`Dados lidos diretamente da planilha.${recordLabel}`);
       setAdminPassword('');
     } catch (error) {
@@ -1343,7 +1343,7 @@ function DailyPanel({ rows, total }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td className="tableEmptyState" colSpan="4">Nenhum registro encontrado para os filtros selecionados.</td>
+                <td className="tableEmptyState" colSpan="4">Nenhuma amostra encontrada para os filtros selecionados.</td>
               </tr>
             ) : (
               rows.slice(0, 18).map((row) => (
@@ -1531,7 +1531,7 @@ function PeriodSummary({ total, recordCount, dayCount, justificationCount, lates
         <div className="summaryMetric">
           <span>Furos realizados</span>
           <strong>{total.furos.toLocaleString('pt-BR')}</strong>
-          <small>{recordCount.toLocaleString('pt-BR')} registros de aplicação</small>
+          <small>{recordCount.toLocaleString('pt-BR')} amostras de aplicação</small>
         </div>
         <div className="summaryMetric">
           <span>Dias com aplicação</span>
@@ -1541,7 +1541,7 @@ function PeriodSummary({ total, recordCount, dayCount, justificationCount, lates
         <div className="summaryMetric">
           <span>Justificativas</span>
           <strong>{justificationCount.toLocaleString('pt-BR')}</strong>
-          <small>registros associados ao período</small>
+          <small>amostras associadas ao período</small>
         </div>
       </div>
       <div className="periodSummaryFooter">
