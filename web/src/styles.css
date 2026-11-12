@@ -769,3 +769,39 @@ code { background: #eef0f2; padding: 2px 5px; border-radius: 3px; }
   .reportLogos { gap: 10px; } .reportLogo { height: 26px; } .reportLogo.reportLogoClient { height: 30px; }
   .reportDataTable { min-width: 0; }
 }
+
+/* Janela "Escolha o relatório" (exportação rápida): cartões limpos com os formatos PNG e PDF. */
+.reportOverlay { grid-template-columns: minmax(0, 1fr); }
+.reportDialog.reportChooserDialog { width: min(780px, 100%); padding: 0; border-top: 4px solid var(--enaex-red); border-radius: 14px; overflow: hidden; box-shadow: 0 30px 80px rgba(18, 26, 33, .28); }
+.reportChooserHeader { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; padding: 26px 28px 22px; border-bottom: 1px solid #eceff2; }
+.reportChooserEyebrow { display: block; color: var(--enaex-red); font-size: 10.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.reportChooserHeader h2 { margin: 8px 0 6px; color: var(--ink); font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
+.reportChooserHeader p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+.reportChooserHeader .iconButton { flex: 0 0 auto; }
+.reportTypeGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 24px 28px; }
+.reportTypeCard { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 18px; width: 100%; padding: 22px; border: 1px solid #e0e5ea; border-radius: 12px; background: #fff; color: var(--ink); text-align: left; overflow: hidden; box-shadow: 0 1px 2px rgba(56, 66, 75, .05); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.reportTypeCard::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--enaex-red); transform: scaleX(0); transform-origin: left; transition: transform .25s ease; }
+.reportTypeCard:hover { border-color: rgba(226, 6, 19, .35); box-shadow: 0 14px 30px rgba(56, 66, 75, .12); transform: translateY(-2px); }
+.reportTypeCard:hover::before, .reportTypeCard:focus-visible::before { transform: scaleX(1); }
+.reportTypeCard:focus-visible { outline: 3px solid rgba(226, 6, 19, .28); outline-offset: 2px; }
+.reportTypeIcon { display: grid; place-items: center; width: 46px; height: 46px; color: var(--enaex-red); background: #fff0f1; border-radius: 10px; }
+.reportTypeCardBody { display: grid; gap: 8px; min-width: 0; }
+.reportTypeCardBody strong { color: var(--ink); font-size: 16px; font-weight: 700; line-height: 1.3; }
+.reportTypeCardBody small { color: var(--muted); font-size: 12.5px; line-height: 1.55; }
+.reportTypeFooter { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; padding-top: 16px; border-top: 1px solid #eef1f3; }
+.reportFormatTags { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.reportFormatTags em { padding: 3px 7px; border-radius: 4px; background: #f1f3f5; color: #4a5560; font-size: 9.5px; font-style: normal; font-weight: 800; letter-spacing: .08em; }
+.reportTypeAction { display: inline-flex; align-items: center; gap: 2px; color: var(--enaex-red); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.reportChooserHint { margin: 0; padding: 16px 28px 20px; border-top: 1px solid #eceff2; background: #f7f8f9; color: var(--muted); font-size: 11.5px; line-height: 1.5; }
+
+/* Ações do relatório ficam fixas na base da janela, mesmo com o relatório rolando. */
+.reportActions { position: sticky; bottom: 0; z-index: 2; margin: 18px -24px 0; padding: 14px 24px 20px; border-top: 1px solid #eceff2; background: #fff; }
+
+@media (max-width: 720px) {
+  .reportDialog.reportChooserDialog { padding: 0; }
+  .reportChooserHeader { padding: 20px 18px 16px; }
+  .reportTypeGrid { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px 18px; }
+  .reportTypeCard { padding: 18px; }
+  .reportChooserHint { padding: 14px 18px 18px; }
+  .reportActions { margin: 16px -16px 0; padding: 12px 16px 16px; }
+}

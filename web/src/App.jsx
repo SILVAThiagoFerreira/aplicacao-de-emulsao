@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis
 } from 'recharts';
-import { ArrowLeft, BarChart3, CalendarDays, Download, FileSpreadsheet, FileText, ImageDown, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowLeft, BarChart3, CalendarDays, ChevronRight, Download, FileSpreadsheet, FileText, ImageDown, RefreshCw, Search, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
   applyMetaFilters,
@@ -933,9 +933,9 @@ function ReportChooser({ onSelect, onClose }) {
   return (
     <div className="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="report-chooser-title">
       <div className="reportDialog reportChooserDialog">
-        <div className="reportDialogHeader">
+        <div className="reportChooserHeader">
           <div>
-            <span className="eyebrow">Exportação rápida</span>
+            <span className="reportChooserEyebrow">Exportação rápida</span>
             <h2 id="report-chooser-title">Escolha o relatório</h2>
             <p>Selecione o formato que melhor responde à sua análise operacional.</p>
           </div>
@@ -948,15 +948,21 @@ function ReportChooser({ onSelect, onClose }) {
               <strong>Relatório de Aplicação Diária</strong>
               <small>Resumo do mês até a data de referência, com indicadores e aplicação detalhada do dia.</small>
             </span>
-            <span className="reportTypeAction">Escolher <span aria-hidden="true">›</span></span>
+            <span className="reportTypeFooter">
+              <span className="reportFormatTags" aria-hidden="true"><em>PNG</em><em>PDF</em></span>
+              <span className="reportTypeAction">Escolher <ChevronRight size={16} aria-hidden="true" /></span>
+            </span>
           </button>
-          <button className="reportTypeCard reportTypeCardFeatured" type="button" onClick={() => onSelect('plan')} data-testid="report-type-plan">
+          <button className="reportTypeCard" type="button" onClick={() => onSelect('plan')} data-testid="report-type-plan">
             <span className="reportTypeIcon"><BarChart3 size={22} /></span>
             <span className="reportTypeCardBody">
               <strong>Relatório de Aplicação por Plano</strong>
               <small>Pesquise um plano e veja furos, emulsão por dia de carregamento, total e gráfico de cascata.</small>
             </span>
-            <span className="reportTypeAction">Escolher <span aria-hidden="true">›</span></span>
+            <span className="reportTypeFooter">
+              <span className="reportFormatTags" aria-hidden="true"><em>PNG</em><em>PDF</em></span>
+              <span className="reportTypeAction">Escolher <ChevronRight size={16} aria-hidden="true" /></span>
+            </span>
           </button>
         </div>
         <p className="reportChooserHint">Os dois relatórios podem ser baixados em PNG (imagem) ou PDF, prontos para compartilhar.</p>
@@ -1267,7 +1273,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
               ) : null}
             </div>
           </label>
-          <div className="planResultsHeader"><span>{visiblePlans.length.toLocaleString('pt-BR')} planos encontrados no histórico</span><small>{selectedPlan ? `Selecionado: ${selectedPlan}` : 'Digite para ver sugestões de todos os meses'}</small></div>
+          <div className="planResultsHeader"><span>{visiblePlans.length.toLocaleString('pt-BR')} {visiblePlans.length === 1 ? 'plano encontrado' : 'planos encontrados'} no histórico</span><small>{selectedPlan ? `Selecionado: ${selectedPlan}` : 'Digite para ver sugestões de todos os meses'}</small></div>
         </div>
 
         {selectedPlan && dailyRows.length ? (
