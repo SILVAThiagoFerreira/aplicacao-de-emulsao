@@ -33,7 +33,7 @@ import {
   uniqueValues,
   uniquePlanValues
 } from './lib/aggregate.js';
-import { formatAxisKg, formatCompactPlanKg, formatDate, formatKg, formatMil, formatMonthYear, formatPlanWaterfallTick, monthNames } from './lib/format.js';
+import { formatAxisKg, formatCompactPlanKg, formatDate, formatKg, formatMil, formatMonthShortYear, formatPlanWaterfallTick, monthNames } from './lib/format.js';
 import { parseWorkbookToDashboard } from './lib/parseWorkbook.js';
 
 const DEFAULT_SOURCE = 'https://docs.google.com/spreadsheets/d/1OGBE4wurFr0ZdsrU57dxPDF2M7IYwaLL/edit?usp=sharing&ouid=10613097494102742878&rtpof=true&sd=true';
@@ -1050,14 +1050,14 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
         </label>
         <div className="reportPreview dailyReportPreview" ref={reportRef}>
           <div className="reportHeading">
-            <div><h3>Aplicação de Emulsão</h3><p>{formatMonthYear(selectedDate)} · até {formatDate(selectedDate) || '-'}</p></div>
+            <div><h3>Aplicação de Emulsão</h3><p>{formatMonthShortYear(selectedDate)} - {formatDate(selectedDate) || '-'}</p></div>
             <div className="reportLogos"><img className="reportLogo" src="assets/Enaex Brasil.png" alt="Enaex" /><img className="reportLogo reportLogoClient" src="assets/Mineracao Vale Verde.png" alt="Mineração Vale Verde" /></div>
           </div>
           <div className="dailyReportBody">
             <div className="reportMetricPanel dailyReportMetrics">
               <ReportKpi label="Aplicado no dia" value={formatKg(dayTotal.emulsao)} tone="red" />
               <ReportKpi label="Furos no dia" value={dayTotal.furos.toLocaleString('pt-BR')} tone="dark" />
-              <ReportKpi label="Aplicado no mês" value={formatKg(monthTotal.emulsao)} tone="gray" sub={`${monthTotal.registros.toLocaleString('pt-BR')} registros no mês`} />
+              <ReportKpi label="Aplicado no mês" value={formatKg(monthTotal.emulsao)} tone="gray" sub={`${monthTotal.registros.toLocaleString('pt-BR')} amostras`} />
             </div>
             <section className="dailyReportSection">
               <h4 className="dailyReportTitle">Planos do dia</h4>
@@ -1079,7 +1079,6 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
               <JustificationList justifications={dayJustifications} emptyText="Nenhuma." />
             </section>
           </div>
-          <p className="dailyReportNote">Mês: {formatDate(monthStart)} até a data · Dia: somente a data, por plano.</p>
           <div className="reportFooter"><span>STRICTLY PRIVATE AND CONFIDENTIAL</span></div>
         </div>
          {exportError ? <div className="refreshFeedback error" role="alert">{exportError}</div> : null}

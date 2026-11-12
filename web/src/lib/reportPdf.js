@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { formatCompactPlanKg, formatDate, formatKg, formatMonthYear, formatPlanWaterfallTick } from './format.js';
+import { formatCompactPlanKg, formatDate, formatKg, formatMonthShortYear, formatPlanWaterfallTick } from './format.js';
 
 // PDF montado diretamente com texto, retângulos e linhas (vetor). Nada é capturado da tela.
 // Estilo: fundo branco, título vermelho em caixa alta, subtítulo cinza, seções com régua fina.
@@ -345,7 +345,6 @@ function drawNote(writer, text) {
 // Relatório diário: cabeçalho, três indicadores, planos do dia, justificativas e uma linha de nota.
 // O bloco de conteúdo fica centralizado entre o cabeçalho e a nota (quando cabe em uma página).
 const DAILY_BODY_BOTTOM = CONTENT_BOTTOM;
-const DAILY_NOTE_Y = FOOTER_Y - 10;
 
 function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayByPolygon, dayJustifications, generatedAt = new Date(), logos = null }, { gap = 0 } = {}) {
   const reportDate = formatDate(selectedDate);
@@ -357,14 +356,14 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
   });
   const { page, write, splitLines, writeLines, ensure, rule, box } = writer;
 
-  drawMasthead(writer, { title: 'Aplicação de Emulsão', subtitle: `${formatMonthYear(selectedDate)} · até ${reportDate}` });
+  drawMasthead(writer, { title: 'Aplicação de Emulsão', subtitle: `${formatMonthShortYear(selectedDate)} - ${reportDate}` });
   const bodyStart = page.y;
   page.y += gap;
 
   drawKpiPanel(writer, [
     { label: 'Aplicado no dia', value: formatKg(dayTotal.emulsao), red: true },
     { label: 'Furos no dia', value: dayTotal.furos.toLocaleString('pt-BR') },
-    { label: 'Aplicado no mês', value: formatKg(monthTotal.emulsao), sub: `${monthTotal.registros.toLocaleString('pt-BR')} registros no mês` }
+    { label: 'Aplicado no mês', value: formatKg(monthTotal.emulsao), sub: `${monthTotal.registros.toLocaleString('pt-BR')} amostras` }
   ], { height: 26, valueSize: 20 });
 
   page.y += 4;
@@ -412,7 +411,6 @@ function buildDailyReport({ selectedDate, monthStart, monthTotal, dayTotal, dayB
   });
 
   const bodyEnd = page.y;
-  write(`Mês: ${formatDate(monthStart)} até a data · Dia: somente a data, por plano.`, MARGIN, DAILY_NOTE_Y, { size: 7.5, color: COLOR.gray });
   return { writer, bodyStart, bodyEnd };
 }
 

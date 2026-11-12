@@ -71,3 +71,13 @@ export function formatMonthYear(value) {
   if (!year || !name) return '';
   return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${year}`;
 }
+
+const monthShortNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+// "Nov/2026" a partir de uma data ISO (yyyy-mm-dd).
+export function formatMonthShortYear(value) {
+  const [year, month] = String(value || '').slice(0, 10).split('-');
+  const name = monthShortNames[Number(month) - 1];
+  if (!year || !name) return '';
+  return `${name}/${year}`;
+}
