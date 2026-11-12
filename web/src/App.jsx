@@ -988,26 +988,10 @@ function renderReportCanvas(element) {
   });
 }
 
-function fitReportCanvas(previewCanvas, fitTo) {
-  const canvas = document.createElement('canvas');
-  canvas.width = fitTo.width;
-  canvas.height = fitTo.height;
-  const context = canvas.getContext('2d');
-  context.fillStyle = '#ffffff';
-  context.fillRect(0, 0, fitTo.width, fitTo.height);
-  // min mantém o relatório inteiro dentro do quadro; max cortava topo e base quando ele ficava mais alto que 16:9.
-  const fitScale = Math.min(fitTo.width / previewCanvas.width, fitTo.height / previewCanvas.height);
-  const drawWidth = previewCanvas.width * fitScale;
-  const drawHeight = previewCanvas.height * fitScale;
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = 'high';
-  context.drawImage(previewCanvas, (fitTo.width - drawWidth) / 2, (fitTo.height - drawHeight) / 2, drawWidth, drawHeight);
-  return canvas;
-}
-
-async function exportReportPng(element, { filename, fitTo = null }) {
+// PNG com o tamanho natural do relatório: sem moldura fixa, não sobram margens brancas em volta.
+async function exportReportPng(element, { filename }) {
   const previewCanvas = await renderReportCanvas(element);
-  downloadCanvas(fitTo ? fitReportCanvas(previewCanvas, fitTo) : previewCanvas, filename);
+  downloadCanvas(previewCanvas, filename);
 }
 
 function ReportModal({ allRecords, justifications, filters, date, dateBounds, onDateChange, onBack, onClose }) {
@@ -1036,8 +1020,7 @@ function ReportModal({ allRecords, justifications, filters, date, dateBounds, on
           .save(`relatorio-emulsao-${selectedDate}.pdf`);
       } else {
         await exportReportPng(reportRef.current, {
-          filename: `relatorio-emulsao-${selectedDate}.png`,
-          fitTo: { width: 2000, height: 1279 }
+          filename: `relatorio-emulsao-${selectedDate}.png`
         });
       }
     } catch (error) {
