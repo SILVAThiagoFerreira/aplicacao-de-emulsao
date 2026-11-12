@@ -1281,7 +1281,7 @@ function PlanReportModal({ allRecords, onBack, onClose }) {
               </div>
             </div>
             <div className="planReportChartBlock">
-              <div className="reportSectionHeading"><span className="reportSectionLabel">Gráfico de cascata</span><small>Emulsão acima da barra · furos no centro</small></div>
+              <div className="reportSectionHeading"><span className="reportSectionLabel">Gráfico de cascata</span></div>
               <div className="planWaterfallGrid">
                 <PlanWaterfallChart
                   rows={combinedWaterfallRows}

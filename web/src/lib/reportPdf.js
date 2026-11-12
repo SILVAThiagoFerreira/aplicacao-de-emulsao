@@ -277,7 +277,7 @@ function drawWaterfallChart(writer, rows) {
   const dense = slot < 9;
   const hasTotal = rows.some((row) => row.isTotal);
   newPage();
-  drawSectionHeader(writer, 'Gráfico de cascata', dense ? 'Emulsão acima da barra · furos na vertical' : 'Emulsão acima da barra · furos no centro');
+  drawSectionHeader(writer, 'Gráfico de cascata');
 
   const plotTop = page.y + 6;
   const plotHeight = 100;
