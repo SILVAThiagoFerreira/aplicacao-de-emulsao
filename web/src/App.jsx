@@ -1374,7 +1374,7 @@ function JustificationsPanel({ justifications }) {
     <div className="panel justificationsPanel">
       <div className="tableHeader">
         <h2>JUSTIFICATIVAS</h2>
-        <span className="tableMeta">{justifications.length.toLocaleString('pt-BR')} registros</span>
+        <span className="tableMeta">{justifications.length.toLocaleString('pt-BR')} amostras</span>
       </div>
       <JustificationList justifications={justifications} emptyText="Nenhuma justificativa registrada para os filtros selecionados." />
     </div>
